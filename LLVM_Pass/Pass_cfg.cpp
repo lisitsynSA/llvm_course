@@ -25,7 +25,7 @@ struct MyPass : public FunctionPass {
     }
     // Dump Function
     outs() << "In a function called " << F.getName() << "\n";
-    F.print(outs());
+    /*F.print(outs());
     outs() << "\n";
 
     // Dump function uses
@@ -52,7 +52,7 @@ struct MyPass : public FunctionPass {
           outs() << "\n";
         }
       }
-    }
+    }*/
 
     // Prepare builder for IR modification
     LLVMContext &Ctx = F.getContext();
@@ -61,8 +61,7 @@ struct MyPass : public FunctionPass {
 
     // Prepare funcStartLogger function
     std::vector<Type *> funcStartParamTypes = {
-        builder.getInt8Ty()->getPointerTo(),
-        builder.getInt8Ty()->getPointerTo(), Type::getInt32Ty(Ctx)};
+        builder.getInt8Ty()->getPointerTo()};
     FunctionType *funcStartLogFuncType =
         FunctionType::get(retType, funcStartParamTypes, false);
     FunctionCallee funcStartLogFunc = F.getParent()->getOrInsertFunction(
@@ -78,7 +77,7 @@ struct MyPass : public FunctionPass {
     // Prepare callLogger function
     std::vector<Type *> callParamTypes = {builder.getInt8Ty()->getPointerTo(),
                                           builder.getInt8Ty()->getPointerTo(),
-                                          Type::getInt32Ty(Ctx)};
+                                          Type::getInt64Ty(Ctx)};
     FunctionType *callLogFuncType =
         FunctionType::get(retType, callParamTypes, false);
     FunctionCallee callLogFunc =
@@ -86,7 +85,7 @@ struct MyPass : public FunctionPass {
 
     // Prepare funcEndLogger function
     std::vector<Type *> funcEndParamTypes = {
-        builder.getInt8Ty()->getPointerTo(), Type::getInt32Ty(Ctx)};
+        builder.getInt8Ty()->getPointerTo(), Type::getInt64Ty(Ctx)};
     FunctionType *funcEndLogFuncType =
         FunctionType::get(retType, funcEndParamTypes, false);
     FunctionCallee funcEndLogFunc =
@@ -98,12 +97,12 @@ struct MyPass : public FunctionPass {
                                             Type::getInt32Ty(Ctx),
                                             builder.getInt8Ty()->getPointerTo(),
                                             builder.getInt8Ty()->getPointerTo(),
-                                            Type::getInt32Ty(Ctx)};
+                                            Type::getInt64Ty(Ctx)};
     FunctionType *binOptLogFuncType =
         FunctionType::get(retType, binOptParamTypes, false);
     FunctionCallee binOptLogFunc =
         F.getParent()->getOrInsertFunction("binOptLogger", binOptLogFuncType);
-
+    
     // Insert loggers for call, binOpt and ret instructions
     for (auto &B : F) {
       for (auto &I : B) {
