@@ -25,7 +25,7 @@ struct MyPass : public FunctionPass {
     }
     // Dump Function
     outs() << "In a function called " << F.getName() << "\n";
-    F.print(llvm::outs());
+    F.print(outs());
     outs() << "\n";
 
     // Dump function uses
@@ -33,26 +33,22 @@ struct MyPass : public FunctionPass {
       User *user = U.getUser();
       outs() << "[DOT] " << (uint64_t)(&F) << " -> " << (uint64_t)user << "\n";
       outs() << "    User:  " << (uint64_t)user;
-      user->print(llvm::outs(), true);
+      user->print(outs(), true);
       outs() << "\n";
     }
 
     for (auto &B : F) {
-      // Dump BasicBlocks
-      // outs() << "Basic block:\n";
-      // B.print(llvm::outs());
-      // outs() << "\n";
       for (auto &I : B) {
         // Dump Instructions
         outs() << "Instruction: " << (uint64_t)(&I) << "\n";
-        I.print(llvm::outs(), true);
+        I.print(outs(), true);
         outs() << "\n";
         // Dump instruction uses
         for (auto &U : I.uses()) {
           User *user = U.getUser();
           outs() << "[DOT] " << (uint64_t)(&I) << " -> " << (uint64_t)user
                  << "\n    User:  " << (uint64_t)user;
-          user->print(llvm::outs(), true);
+          user->print(outs(), true);
           outs() << "\n";
         }
       }
@@ -79,18 +75,6 @@ struct MyPass : public FunctionPass {
     Value *args[] = {funcName};
     builder.CreateCall(funcStartLogFunc, args);
 
-    // Prepare binOptLogger function
-    std::vector<Type *> binOptParamTypes = {Type::getInt32Ty(Ctx),
-                                            Type::getInt32Ty(Ctx),
-                                            Type::getInt32Ty(Ctx),
-                                            builder.getInt8Ty()->getPointerTo(),
-                                            builder.getInt8Ty()->getPointerTo(),
-                                            Type::getInt32Ty(Ctx)};
-    FunctionType *binOptLogFuncType =
-        FunctionType::get(retType, binOptParamTypes, false);
-    FunctionCallee binOptLogFunc =
-        F.getParent()->getOrInsertFunction("binOptLogger", binOptLogFuncType);
-
     // Prepare callLogger function
     std::vector<Type *> callParamTypes = {builder.getInt8Ty()->getPointerTo(),
                                           builder.getInt8Ty()->getPointerTo(),
@@ -108,24 +92,23 @@ struct MyPass : public FunctionPass {
     FunctionCallee funcEndLogFunc =
         F.getParent()->getOrInsertFunction("funcEndLogger", funcEndLogFuncType);
 
+    // Prepare binOptLogger function
+    std::vector<Type *> binOptParamTypes = {Type::getInt32Ty(Ctx),
+                                            Type::getInt32Ty(Ctx),
+                                            Type::getInt32Ty(Ctx),
+                                            builder.getInt8Ty()->getPointerTo(),
+                                            builder.getInt8Ty()->getPointerTo(),
+                                            Type::getInt32Ty(Ctx)};
+    FunctionType *binOptLogFuncType =
+        FunctionType::get(retType, binOptParamTypes, false);
+    FunctionCallee binOptLogFunc =
+        F.getParent()->getOrInsertFunction("binOptLogger", binOptLogFuncType);
+
     // Insert loggers for call, binOpt and ret instructions
     for (auto &B : F) {
       for (auto &I : B) {
         Value *valueAddr =
             ConstantInt::get(builder.getInt64Ty(), (int64_t)(&I));
-        if (auto *op = dyn_cast<BinaryOperator>(&I)) {
-          // Insert after op
-          builder.SetInsertPoint(op);
-          builder.SetInsertPoint(&B, ++builder.GetInsertPoint());
-
-          // Insert a call to binOptLogFunc function
-          Value *lhs = op->getOperand(0);
-          Value *rhs = op->getOperand(1);
-          Value *funcName = builder.CreateGlobalStringPtr(F.getName());
-          Value *opName = builder.CreateGlobalStringPtr(op->getOpcodeName());
-          Value *args[] = {op, lhs, rhs, opName, funcName, valueAddr};
-          builder.CreateCall(binOptLogFunc, args);
-        }
         if (auto *call = dyn_cast<CallInst>(&I)) {
           // Insert before call
           builder.SetInsertPoint(call);
@@ -148,6 +131,19 @@ struct MyPass : public FunctionPass {
           Value *funcName = builder.CreateGlobalStringPtr(F.getName());
           Value *args[] = {funcName, valueAddr};
           builder.CreateCall(funcEndLogFunc, args);
+        }
+        if (auto *op = dyn_cast<BinaryOperator>(&I)) {
+          // Insert after op
+          builder.SetInsertPoint(op);
+          builder.SetInsertPoint(&B, ++builder.GetInsertPoint());
+
+          // Insert a call to binOptLogFunc function
+          Value *lhs = op->getOperand(0);
+          Value *rhs = op->getOperand(1);
+          Value *funcName = builder.CreateGlobalStringPtr(F.getName());
+          Value *opName = builder.CreateGlobalStringPtr(op->getOpcodeName());
+          Value *args[] = {op, lhs, rhs, opName, funcName, valueAddr};
+          builder.CreateCall(binOptLogFunc, args);
         }
       }
     }

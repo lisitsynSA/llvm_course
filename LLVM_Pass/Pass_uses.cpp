@@ -11,19 +11,34 @@ namespace {
     MyPass() : FunctionPass(ID) {}
 
     virtual bool runOnFunction(Function &F) {
-      outs() << "In a function called " << F.getName() << "!\n";
-
-      outs() << "Function body:\n";
+      outs() << "\nIn a function called " << F.getName() << "!\n";
       F.print(outs());
+      outs() << "\nFunction Uses: \n";
+      for (auto &U : F.uses()) {
+        User *user = U.getUser();
+        user->print(outs(), true);
+        outs() << "\n";
+      }
 
       for (auto &B : F) {
-        outs() << "Basic block:\n";
+        outs() << "\nBasic block:";
         B.print(outs());
+        outs() << "BasicBlock Uses: \n";
+        for (auto &U : B.uses()) {
+          User *user = U.getUser();
+          user->print(outs(), true);
+          outs() << "\n";
+        }
 
         for (auto &I : B) {
-          outs() << "Instruction: \n";
+          outs() << "\nInstruction: \n";
           I.print(outs(), true);
-          outs() << "\n";
+          outs() << "\nUses: \n";
+          for (auto &U : I.uses()) {
+            User *user = U.getUser();
+            user->print(outs(), true);
+            outs() << "\n";
+          }
         }
       }
 
