@@ -39,6 +39,12 @@ namespace {
             user->print(outs(), true);
             outs() << "\n";
           }
+          outs() << "Use: \n";
+          for (auto &U : I.operands()) {
+            Value *use = U.get();
+            use->print(outs(), true);
+            outs() << "\n";
+          }
         }
       }
 
