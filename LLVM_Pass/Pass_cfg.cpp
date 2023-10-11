@@ -10,9 +10,9 @@
 using namespace llvm;
 
 namespace {
-struct SkeletonPass : public FunctionPass {
+struct MyPass : public FunctionPass {
   static char ID;
-  SkeletonPass() : FunctionPass(ID) {}
+  MyPass() : FunctionPass(ID) {}
 
   bool isFuncLogger(StringRef name) {
     return name == "binOptLogger" || name == "callLogger" ||
@@ -156,14 +156,14 @@ struct SkeletonPass : public FunctionPass {
 };
 } // namespace
 
-char SkeletonPass::ID = 0;
+char MyPass::ID = 0;
 
 // Automatically enable the pass.
 // http://adriansampson.net/blog/clangpass.html
-static void registerSkeletonPass(const PassManagerBuilder &,
+static void registerMyPass(const PassManagerBuilder &,
                                  legacy::PassManagerBase &PM) {
-  PM.add(new SkeletonPass());
+  PM.add(new MyPass());
 }
 static RegisterStandardPasses
     RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
-                   registerSkeletonPass);
+                   registerMyPass);

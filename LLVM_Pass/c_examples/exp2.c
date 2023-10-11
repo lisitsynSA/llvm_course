@@ -5,7 +5,7 @@
 
 double fact(uint64_t arg) {
   double res = 1.0;
-  for (uint64_t j = 1.0; j <= arg; ++j){
+  for (uint64_t j = 1; j <= arg; ++j) {
     res *= j;
   }
   return res;
@@ -14,7 +14,7 @@ double fact(uint64_t arg) {
 double calc_exp(uint64_t len) {
   double exp = 0.0;
   for (uint64_t i = len; i > 0; --i) {
-    exp += 1.0/fact(i);;
+    exp += 1.0 / fact(i);
   }
   return exp + 1.0;
 }
@@ -28,8 +28,7 @@ int main(int argc, char **argv) {
 
   double exp = calc_exp(arg);
   double res = 0.0;
-  for (uint64_t i = 0; i < 10000; i++)
-  {
+  for (uint64_t i = 0; i < 10000; i++) {
     res += exp;
   }
   printf("Res = %.10lf\n", res);

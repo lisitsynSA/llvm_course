@@ -28,5 +28,3 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
-
-void logop(int res, int arg1, int arg2) { printf("[LOG] : %d = %d ? %d\n", res, arg1, arg2); }
