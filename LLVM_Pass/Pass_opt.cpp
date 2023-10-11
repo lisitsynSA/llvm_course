@@ -16,7 +16,7 @@ struct SkeletonPass : public FunctionPass {
 
   virtual bool runOnFunction(Function &F) {
     outs() << "In a function " << F.getName() << "\n";
-    F.print(llvm::outs());
+    F.print(outs());
     outs() << "\n";
 
     bool changed = false;
@@ -24,7 +24,7 @@ struct SkeletonPass : public FunctionPass {
       for (auto &I : B) {
         if (AllocaInst *Alloca = dyn_cast<AllocaInst>(&I)) {
           outs() << "\nAllocation: (BB " << &B << "):\n";
-          Alloca->print(llvm::outs(), true);
+          Alloca->print(outs(), true);
           outs() << "\n";
           StoreInst *Store = nullptr;
           LoadInst *Load = nullptr;
@@ -32,7 +32,7 @@ struct SkeletonPass : public FunctionPass {
           for (auto &U : Alloca->uses()) {
             Instruction *UseInst = cast<Instruction>(U.getUser());
             outs() << "\tUse: ";
-            UseInst->print(llvm::outs(), true);
+            UseInst->print(outs(), true);
 
             if (StoreInst *S = dyn_cast<StoreInst>(UseInst)) {
               if (Store == nullptr) {
@@ -67,7 +67,7 @@ struct SkeletonPass : public FunctionPass {
             }
             outs() << "[PASS] Allocation is candidate\n";
             changed = true;
-            llvm::Value *Val = Store->getOperand(0);
+            Value *Val = Store->getOperand(0);
             Instruction *ValInst = dyn_cast<Instruction>(Val);
 
             if (ValInst) {
@@ -81,7 +81,7 @@ struct SkeletonPass : public FunctionPass {
             for (auto &U : Load->uses()) {
               Instruction *UseInst = cast<Instruction>(U.getUser());
               outs() << "\t Load Use: ";
-              UseInst->print(llvm::outs(), true);
+              UseInst->print(outs(), true);
               outs() << "\n";
               for (int i = 0; i < UseInst->getNumOperands(); i++) {
                 if (UseInst->getOperand(i) == Load) {
@@ -89,7 +89,7 @@ struct SkeletonPass : public FunctionPass {
                 }
               }
               outs() << "\t Fixed Load Use: ";
-              UseInst->print(llvm::outs(), true);
+              UseInst->print(outs(), true);
               outs() << "\n";
             }
             Load->removeFromParent();
@@ -112,5 +112,5 @@ static void registerSkeletonPass(const PassManagerBuilder &,
   PM.add(new SkeletonPass());
 }
 static RegisterStandardPasses
-    RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
+    RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible, // EP_OptimizerLast
                    registerSkeletonPass);

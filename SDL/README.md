@@ -22,5 +22,15 @@ void sim_put_pixel(int x, int y, int argb);
 int sim_rand();
 ```
 
+## Graphical app instrumentation:
+```
+clang++ ../LLVM_Pass/Pass_cfg.cpp -c -fPIC -I`llvm-config --includedir` -o Pass.o
+clang++ Pass.o -fPIC -shared -o libPass.so
+clang app2.c -c -Xclang -load -Xclang ./libPass.so -flegacy-pass-manager
+clang sim.c app2.o ../LLVM_Pass/log.c -lSDL2
+./a.out
+
+```
+
 ## SDL 2.0 documentation:
 https://wiki.libsdl.org
