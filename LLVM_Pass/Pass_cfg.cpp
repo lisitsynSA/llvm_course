@@ -24,18 +24,7 @@ struct MyPass : public FunctionPass {
       return false;
     }
     // Dump Function
-    outs() << "In a function called " << F.getName() << "\n";
-    /*F.print(outs());
-    outs() << "\n";
-
-    // Dump function uses
-    for (auto &U : F.uses()) {
-      User *user = U.getUser();
-      outs() << "[DOT] " << (uint64_t)(&F) << " -> " << (uint64_t)user << "\n";
-      outs() << "    User:  " << (uint64_t)user;
-      user->print(outs(), true);
-      outs() << "\n";
-    }
+    outs() << "In a function called " << F.getName() << "\n\n";
 
     for (auto &B : F) {
       for (auto &I : B) {
@@ -43,16 +32,9 @@ struct MyPass : public FunctionPass {
         outs() << "Instruction: " << (uint64_t)(&I) << "\n";
         I.print(outs(), true);
         outs() << "\n";
-        // Dump instruction uses
-        for (auto &U : I.uses()) {
-          User *user = U.getUser();
-          outs() << "[DOT] " << (uint64_t)(&I) << " -> " << (uint64_t)user
-                 << "\n    User:  " << (uint64_t)user;
-          user->print(outs(), true);
-          outs() << "\n";
-        }
       }
-    }*/
+      outs() << "\n";
+    }
 
     // Prepare builder for IR modification
     LLVMContext &Ctx = F.getContext();
