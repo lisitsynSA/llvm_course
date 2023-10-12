@@ -7,8 +7,6 @@ Simple run:
 sudo apt install libsdl2-dev
 clang sim.c app.c -lSDL2
 ./a.out
-clang sim.c app2.c -lSDL2
-./a.out
 ```
 Run with your LLVM Pass:
 ```
@@ -17,9 +15,12 @@ clang sim.c app2.c -lSDL2 -Xclang -load -Xclang ../LLVM_PASS/libPass.so -flegacy
 
 ## Graphical Interface:
 ```
-void sim_flush();
-void sim_put_pixel(int x, int y, int argb);
-int sim_rand();
+#define SIM_X_SIZE 512
+#define SIM_Y_SIZE 256
+
+void simFlush();
+void simPutPixel(int x, int y, int argb);
+int simRand();
 ```
 
 ## Graphical app instrumentation:

@@ -12,16 +12,16 @@ static Uint32 Ticks = 0;
 
 extern void app();
 
-void sim_init()
+void simInit()
 {
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_CreateWindowAndRenderer(X_SIZE, Y_SIZE, 0, &Window, &Renderer);
+    SDL_CreateWindowAndRenderer(SIM_X_SIZE, SIM_Y_SIZE, 0, &Window, &Renderer);
     SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 0);
     SDL_RenderClear(Renderer);
     srand(time(NULL));
 }
 
-void sim_exit()
+void simExit()
 {
     SDL_Event event;
     while (1)
@@ -36,13 +36,13 @@ void sim_exit()
 
 int main(void)
 {
-    sim_init();
+    simInit();
     app();
-    sim_exit();
+    simExit();
     return EXIT_SUCCESS;
 }
 
-void sim_flush()
+void simFlush()
 {
     SDL_PumpEvents();
     assert(SDL_TRUE != SDL_HasEvent(SDL_QUIT) && "User-requested quit");
@@ -54,10 +54,10 @@ void sim_flush()
     SDL_RenderPresent(Renderer);
 }
 
-void sim_put_pixel(int x, int y, int argb)
+void simPutPixel(int x, int y, int argb)
 {
-    assert(0 <= x && x < X_SIZE && "Out of range");
-    assert(0 <= y && y < Y_SIZE && "Out of range");
+    assert(0 <= x && x < SIM_X_SIZE && "Out of range");
+    assert(0 <= y && y < SIM_Y_SIZE && "Out of range");
     Uint8 a = argb >> 24;
     Uint8 r = (argb >> 16) & 0xFF;
     Uint8 g = (argb >> 8) & 0xFF;
@@ -67,7 +67,7 @@ void sim_put_pixel(int x, int y, int argb)
     Ticks = SDL_GetTicks();
 }
 
-int sim_rand()
+int simRand()
 {
     return rand();
 }
