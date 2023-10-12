@@ -6,7 +6,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include <fstream>
-#include <iostream>
+using namespace llvm;
 
 const int REG_FILE_SIZE = 8;
 uint32_t REG_FILE[REG_FILE_SIZE] = {};
@@ -15,40 +15,34 @@ void INSTR_sort() { std::sort(REG_FILE, REG_FILE + REG_FILE_SIZE); }
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cout << "[ERROR] Need 1 argument: file with RISC-V assembler\n";
+    outs() << "[ERROR] Need 1 argument: file with RISC-V assembler\n";
     return 1;
   }
   std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    std::cout << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << "\n";
     return 1;
   }
 
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmPrinter();
-
-  llvm::LLVMContext context;
+  LLVMContext context;
   // ; ModuleID = 'top'
   // source_filename = "top"
-  llvm::Module *module = new llvm::Module("top", context);
-  llvm::IRBuilder<> builder(context);
+  Module *module = new Module("top", context);
+  IRBuilder<> builder(context);
 
   //[32 x i32] regFile = {0, 0, 0, 0}
-  llvm::ArrayType *regFileType =
-      llvm::ArrayType::get(builder.getInt32Ty(), REG_FILE_SIZE);
+  ArrayType *regFileType = ArrayType::get(builder.getInt32Ty(), REG_FILE_SIZE);
   module->getOrInsertGlobal("regFile", regFileType);
-  llvm::GlobalVariable *regFile = module->getNamedGlobal("regFile");
+  GlobalVariable *regFile = module->getNamedGlobal("regFile");
 
   // declare void @main()
-  llvm::FunctionType *funcType =
-      llvm::FunctionType::get(builder.getInt32Ty(), false);
-  llvm::Function *mainFunc = llvm::Function::Create(
-      funcType, llvm::Function::ExternalLinkage, "main", module);
+  FunctionType *funcType = FunctionType::get(builder.getInt32Ty(), false);
+  Function *mainFunc =
+      Function::Create(funcType, Function::ExternalLinkage, "main", module);
 
   // entrypoint:
-  llvm::BasicBlock *entry =
-      llvm::BasicBlock::Create(context, "entrypoint", mainFunc);
+  BasicBlock *entry = BasicBlock::Create(context, "entrypoint", mainFunc);
   builder.SetInsertPoint(entry);
 
   std::string name;
@@ -56,55 +50,54 @@ int main(int argc, char **argv) {
   while (input >> name) {
     if (!name.compare("add")) {
       input >> arg;
-      std::cout << arg;
+      outs() << arg;
       // res
-      llvm::Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                      std::stoi(arg.substr(1)));
+      Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                std::stoi(arg.substr(1)));
       input >> arg;
-      std::cout << " = " << arg;
+      outs() << " = " << arg;
       // arg1
-      llvm::Value *arg1_p = builder.CreateConstGEP2_32(
-          regFileType, regFile, 0, std::stoi(arg.substr(1)));
+      Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 std::stoi(arg.substr(1)));
       input >> arg;
-      std::cout << " + " << arg << "\n";
+      outs() << " + " << arg << "\n";
       // arg2
-      llvm::Value *arg2_p = builder.CreateConstGEP2_32(
-          regFileType, regFile, 0, std::stoi(arg.substr(1)));
-      llvm::Value *add_arg1_arg2 = builder.CreateAdd(
-          builder.CreateLoad(arg1_p), builder.CreateLoad(arg2_p));
+      Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 std::stoi(arg.substr(1)));
+      Value *add_arg1_arg2 =
+          builder.CreateAdd(builder.CreateLoad(builder.getInt32Ty(), arg1_p),
+                            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
       builder.CreateStore(add_arg1_arg2, res_p);
       continue;
     }
     if (!name.compare("addi")) {
       input >> arg;
-      std::cout << arg;
+      outs() << arg;
       // res
-      llvm::Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                      std::stoi(arg.substr(1)));
+      Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                std::stoi(arg.substr(1)));
       input >> arg;
-      std::cout << " = " << arg;
+      outs() << " = " << arg;
       // arg1
-      llvm::Value *arg1_p = builder.CreateConstGEP2_32(
-          regFileType, regFile, 0, std::stoi(arg.substr(1)));
+      Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 std::stoi(arg.substr(1)));
       input >> arg;
-      std::cout << " + " << arg << "\n";
+      outs() << " + " << arg << "\n";
       // arg2
-      llvm::Value *arg2 =
-          llvm::ConstantInt::get(builder.getInt32Ty(), std::stoi(arg));
-      llvm::Value *add_arg1_arg2 =
-          builder.CreateAdd(builder.CreateLoad(arg1_p), arg2);
+      Value *arg2 = ConstantInt::get(builder.getInt32Ty(), std::stoi(arg));
+      Value *add_arg1_arg2 = builder.CreateAdd(
+          builder.CreateLoad(builder.getInt32Ty(), arg1_p), arg2);
       builder.CreateStore(add_arg1_arg2, res_p);
       continue;
     }
     if (!name.compare("sort")) {
-      std::cout << "sort "
-                << "\n";
+      outs() << "sort "
+             << "\n";
       // arg1
-      llvm::Function *CalleeF = llvm::Function::Create(
-          llvm::FunctionType::get(
-              builder.getVoidTy(),
-              llvm::ArrayRef<llvm::Type *>(builder.getVoidTy()), false),
-          llvm::Function::ExternalLinkage, "INSTR_sort", module);
+      Function *CalleeF = Function::Create(
+          FunctionType::get(builder.getVoidTy(),
+                            ArrayRef<Type *>(builder.getVoidTy()), false),
+          Function::ExternalLinkage, "INSTR_sort", module);
       builder.CreateCall(CalleeF);
       continue;
     }
@@ -112,25 +105,23 @@ int main(int argc, char **argv) {
   input.close();
 
   // ret i32 0
-  builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+  builder.CreateRet(ConstantInt::get(builder.getInt32Ty(), 0));
 
   // Dump LLVM IR
-  std::string s;
-  llvm::raw_string_ostream os(s);
-  module->print(os, nullptr);
-  os.flush();
-  std::cout << s;
+  module->print(outs(), nullptr);
 
-  std::cout << "# [REG FILE]:\n";
+  outs() << "# [REG FILE]:\n";
   int i = 0;
   for (auto &reg : REG_FILE) {
-    std::cout << "[" << i++ << "] " << reg << "\n";
+    outs() << "[" << i++ << "] " << reg << "\n";
   }
 
   // Interpreter of LLVM IR
-  std::cout << "Running code...\n";
-  llvm::ExecutionEngine *ee =
-      llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).create();
+  outs() << "Running code...\n";
+  InitializeNativeTarget();
+  InitializeNativeTargetAsmPrinter();
+
+  ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
   ee->addGlobalMapping(regFile, (void *)REG_FILE);
   ee->InstallLazyFunctionCreator([&](const std::string &fnName) -> void * {
     if (fnName == "INSTR_sort") {
@@ -139,14 +130,14 @@ int main(int argc, char **argv) {
     return nullptr;
   });
   ee->finalizeObject();
-  std::vector<llvm::GenericValue> noargs;
-  llvm::GenericValue v = ee->runFunction(mainFunc, noargs);
-  std::cout << "Code was run.\n";
+  ArrayRef<GenericValue> noargs;
+  GenericValue v = ee->runFunction(mainFunc, noargs);
+  outs() << "Code was run.\n";
 
   i = 0;
-  std::cout << "# [REG FILE]:\n";
+  outs() << "# [REG FILE]:\n";
   for (auto &reg : REG_FILE) {
-    std::cout << "[" << i++ << "] " << reg << "\n";
+    outs() << "[" << i++ << "] " << reg << "\n";
   }
 
   return 0;

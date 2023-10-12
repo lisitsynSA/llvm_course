@@ -2,34 +2,29 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
-#include <fstream>
-#include <iostream>
+using namespace llvm;
 
 int main() {
-  llvm::LLVMContext context;
+  LLVMContext context;
   // ; ModuleID = 'top'
   // source_filename = "top"
-  llvm::Module *module = new llvm::Module("top", context);
-  llvm::IRBuilder<> builder(context);
+  Module *module = new Module("top", context);
+  IRBuilder<> builder(context);
 
   // declare void @main()
-  llvm::FunctionType *funcType =
-      llvm::FunctionType::get(builder.getVoidTy(), false);
-  llvm::Function *mainFunc = llvm::Function::Create(
-      funcType, llvm::Function::ExternalLinkage, "main", module);
+  FunctionType *funcType =
+      FunctionType::get(builder.getVoidTy(), false);
+  Function *mainFunc = Function::Create(
+      funcType, Function::ExternalLinkage, "main", module);
   // entry:
-  llvm::BasicBlock *entryBB =
-      llvm::BasicBlock::Create(context, "entry", mainFunc);
+  BasicBlock *entryBB =
+      BasicBlock::Create(context, "entry", mainFunc);
 
   builder.SetInsertPoint(entryBB);
   builder.CreateRetVoid();
 
-  std::cout << "#[LLVM IR]:\n";
-  std::string s;
-  llvm::raw_string_ostream os(s);
-  module->print(os, nullptr);
-  os.flush();
-  std::cout << s;
+  outs() << "#[LLVM IR]:\n";
+  module->print(outs(), nullptr);
 
   return 0;
 }

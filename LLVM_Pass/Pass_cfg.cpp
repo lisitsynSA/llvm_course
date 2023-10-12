@@ -42,7 +42,7 @@ struct MyPass : public FunctionPass {
     Type *retType = Type::getVoidTy(Ctx);
 
     // Prepare funcStartLogger function
-    std::vector<Type *> funcStartParamTypes = {
+    ArrayRef<Type *> funcStartParamTypes = {
         builder.getInt8Ty()->getPointerTo()};
     FunctionType *funcStartLogFuncType =
         FunctionType::get(retType, funcStartParamTypes, false);
@@ -57,7 +57,7 @@ struct MyPass : public FunctionPass {
     builder.CreateCall(funcStartLogFunc, args);
 
     // Prepare callLogger function
-    std::vector<Type *> callParamTypes = {builder.getInt8Ty()->getPointerTo(),
+    ArrayRef<Type *> callParamTypes = {builder.getInt8Ty()->getPointerTo(),
                                           builder.getInt8Ty()->getPointerTo(),
                                           Type::getInt64Ty(Ctx)};
     FunctionType *callLogFuncType =
@@ -66,7 +66,7 @@ struct MyPass : public FunctionPass {
         F.getParent()->getOrInsertFunction("callLogger", callLogFuncType);
 
     // Prepare funcEndLogger function
-    std::vector<Type *> funcEndParamTypes = {
+    ArrayRef<Type *> funcEndParamTypes = {
         builder.getInt8Ty()->getPointerTo(), Type::getInt64Ty(Ctx)};
     FunctionType *funcEndLogFuncType =
         FunctionType::get(retType, funcEndParamTypes, false);
@@ -74,7 +74,7 @@ struct MyPass : public FunctionPass {
         F.getParent()->getOrInsertFunction("funcEndLogger", funcEndLogFuncType);
 
     // Prepare binOptLogger function
-    std::vector<Type *> binOptParamTypes = {Type::getInt32Ty(Ctx),
+    ArrayRef<Type *> binOptParamTypes = {Type::getInt32Ty(Ctx),
                                             Type::getInt32Ty(Ctx),
                                             Type::getInt32Ty(Ctx),
                                             builder.getInt8Ty()->getPointerTo(),

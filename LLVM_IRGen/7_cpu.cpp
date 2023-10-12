@@ -1,7 +1,6 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
-#include <vector>
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
@@ -10,8 +9,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
-
-using namespace std;
+using namespace llvm;
 
 //////////////////////////////
 // All instructions
@@ -51,7 +49,7 @@ enum InsnId_t {
 
 using RegId_t = uint8_t;
 using RegVal_t = uint32_t;
-using Stack_t = vector<RegVal_t>;
+using Stack_t = std::vector<RegVal_t>;
 
 const int REG_FILE_SIZE = 4;
 class CPU {
@@ -65,7 +63,7 @@ public:
   bool stack_ok() {
     if (STACK.empty()) {
       RUN = 0;
-      cout << "[RUNTIME ERROR] STACK ERROR\n";
+      outs() << "[RUNTIME ERROR] STACK ERROR\n";
       return false;
     }
     return true;
@@ -73,7 +71,7 @@ public:
   bool call_stack_ok() {
     if (STACK.empty()) {
       RUN = 0;
-      cout << "[RUNTIME ERROR] CALL STACK ERROR\n";
+      outs() << "[RUNTIME ERROR] CALL STACK ERROR\n";
       return false;
     }
     return true;
@@ -92,23 +90,24 @@ public:
   RegId_t m_rs2;
   RegId_t m_rs3;
   RegVal_t m_imm;
-  string m_name;
-  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), string name)
+  std::string m_name;
+  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), std::string name)
       : m_ID(ID), m_INSTR(do_INSTR), m_name(name) {}
-  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), string name, RegId_t rs1)
+  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), std::string name,
+        RegId_t rs1)
       : m_ID(ID), m_INSTR(do_INSTR), m_name(name), m_rs1(rs1) {}
-  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), string name,
+  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), std::string name,
         RegVal_t imm)
       : m_ID(ID), m_INSTR(do_INSTR), m_name(name), m_imm(imm) {}
-  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), string name, RegId_t rs1,
-        RegId_t rs2, RegId_t rs3)
+  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), std::string name,
+        RegId_t rs1, RegId_t rs2, RegId_t rs3)
       : m_ID(ID), m_INSTR(do_INSTR), m_name(name), m_rs1(rs1), m_rs2(rs2),
         m_rs3(rs3) {}
-  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), string name, RegId_t rs1,
-        RegId_t rs2, RegVal_t imm)
+  Instr(InsnId_t ID, void (*do_INSTR)(CPU *, Instr *), std::string name,
+        RegId_t rs1, RegId_t rs2, RegVal_t imm)
       : m_ID(ID), m_INSTR(do_INSTR), m_name(name), m_rs1(rs1), m_rs2(rs2),
         m_imm(imm) {}
-  void dump() { cout << m_name << "\n"; }
+  void dump() { outs() << m_name << "\n"; }
 };
 
 //////////////////////////////
@@ -266,16 +265,16 @@ void do_blt(CPU *cpu, Instr *instr) {
 }
 void do_read(CPU *cpu, Instr *instr) {
   instr->dump();
-  cout << "[x" << (uint32_t)instr->m_rs1 << "] = ";
-  cin >> cpu->REG_FILE[instr->m_rs1];
+  outs() << "[x" << (uint32_t)instr->m_rs1 << "] = ";
+  std::cin >> cpu->REG_FILE[instr->m_rs1];
 }
 void do_write(CPU *cpu, Instr *instr) {
   instr->dump();
-  cout << "[x" << (uint32_t)instr->m_rs1
-       << "] = " << cpu->REG_FILE[instr->m_rs1] << "\n";
+  outs() << "[x" << (uint32_t)instr->m_rs1
+         << "] = " << cpu->REG_FILE[instr->m_rs1] << "\n";
 }
 
-void *lazyFunctionCreator(const string &fnName) {
+void *lazyFunctionCreator(const std::string &fnName) {
   if (fnName == "do_exit") {
     return reinterpret_cast<void *>(do_exit);
   }
@@ -360,21 +359,21 @@ void *lazyFunctionCreator(const string &fnName) {
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
-    cout << "[ERROR] Need 1 argument: file with assembler\n";
+    outs() << "[ERROR] Need 1 argument: file with assembler\n";
     return 1;
   }
-  ifstream input;
+  std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    cout << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << "\n";
     return 1;
   }
 
-  string name;
-  string arg;
-  unordered_map<string, RegVal_t> BB_PC;
+  std::string name;
+  std::string arg;
+  std::unordered_map<std::string, RegVal_t> BB_PC;
 
-  cout << "\n#[FILE]:\nBBs:";
+  outs() << "\n#[FILE]:\nBBs:";
   RegVal_t pc = 1;
   while (input >> name) {
     // 3 args
@@ -396,52 +395,52 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    cout << " " << name << "(" << pc << ")";
+    outs() << " " << name << "(" << pc << ")";
     BB_PC[name] = pc;
   }
-  cout << "\n";
+  outs() << "\n";
   input.close();
   input.open(argv[1]);
 
-  string arg1;
-  string arg2;
-  string arg3;
-  vector<Instr *> Instructions;
+  std::string arg1;
+  std::string arg2;
+  std::string arg3;
+  std::vector<Instr *> Instructions;
   Instructions.push_back(
       new Instr(InsnId_t::EXIT, do_exit, "[RUNTIME ERROR] Segmentation fault"));
   // Read instruction from file
-  cout << "#[FILE] BEGIN\n";
+  outs() << "#[FILE] BEGIN\n";
   while (input >> name) {
-    cout << name;
+    outs() << name;
     // 0 registers
     if (!name.compare("exit")) {
       Instructions.push_back(new Instr(InsnId_t::EXIT, do_exit, name));
-      cout << "\n";
+      outs() << "\n";
       continue;
     }
     if (!name.compare("ret")) {
       Instructions.push_back(new Instr(InsnId_t::RET, do_ret, name));
-      cout << "\n";
+      outs() << "\n";
       continue;
     }
     if (!name.compare("add_s")) {
       Instructions.push_back(new Instr(InsnId_t::ADD_S, do_add_s, name));
-      cout << "\n";
+      outs() << "\n";
       continue;
     }
     if (!name.compare("sub_s")) {
       Instructions.push_back(new Instr(InsnId_t::SUB_S, do_sub_s, name));
-      cout << "\n";
+      outs() << "\n";
       continue;
     }
     if (!name.compare("mul_s")) {
       Instructions.push_back(new Instr(InsnId_t::MUL_S, do_mul_s, name));
-      cout << "\n";
+      outs() << "\n";
       continue;
     }
     if (!name.compare("div_s")) {
       Instructions.push_back(new Instr(InsnId_t::DIV_S, do_div_s, name));
-      cout << "\n";
+      outs() << "\n";
       continue;
     }
 
@@ -449,7 +448,7 @@ int main(int argc, char *argv[]) {
     if (!name.compare("add") || !name.compare("sub") || !name.compare("mul") ||
         !name.compare("div")) {
       input >> arg1 >> arg2 >> arg3;
-      cout << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
+      outs() << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
       RegId_t rs1 = stoi(arg1.substr(1));
       RegId_t rs2 = stoi(arg2.substr(1));
       RegId_t rs3 = stoi(arg3.substr(1));
@@ -476,7 +475,7 @@ int main(int argc, char *argv[]) {
     if (!name.compare("read") || !name.compare("write") ||
         !name.compare("neg") || !name.compare("pop")) {
       input >> arg1;
-      cout << " " << arg1 << "\n";
+      outs() << " " << arg1 << "\n";
       RegId_t rs1 = stoi(arg1.substr(1));
       if (!name.compare("read")) {
         Instructions.push_back(new Instr(InsnId_t::READ, do_read, name, rs1));
@@ -496,7 +495,7 @@ int main(int argc, char *argv[]) {
     // 1 imm
     if (!name.compare("b") || !name.compare("bl") || !name.compare("push")) {
       input >> arg1;
-      cout << " " << arg1 << "\n";
+      outs() << " " << arg1 << "\n";
       RegVal_t imm = stoi(arg1);
       if (!name.compare("b")) {
         Instructions.push_back(new Instr(InsnId_t::B, do_b, name, imm));
@@ -514,7 +513,7 @@ int main(int argc, char *argv[]) {
     if (!name.compare("addi") || !name.compare("subi") ||
         !name.compare("muli") || !name.compare("divi")) {
       input >> arg1 >> arg2 >> arg3;
-      cout << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
+      outs() << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
       RegId_t rs1 = stoi(arg1.substr(1));
       RegId_t rs2 = stoi(arg2.substr(1));
       RegVal_t imm = stoi(arg3);
@@ -541,7 +540,7 @@ int main(int argc, char *argv[]) {
     if (!name.compare("beq") || !name.compare("bne") || !name.compare("bge") ||
         !name.compare("blt")) {
       input >> arg1 >> arg2 >> arg3;
-      cout << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
+      outs() << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
       RegId_t rs1 = stoi(arg1.substr(1));
       RegId_t rs2 = stoi(arg2.substr(1));
       RegVal_t imm = BB_PC[arg3];
@@ -565,16 +564,16 @@ int main(int argc, char *argv[]) {
     }
 
     if (BB_PC.find(name) == BB_PC.end()) {
-      cout << "\n[ERROR] Unknown instruction: " << name << "\n";
+      outs() << "\n[ERROR] Unknown instruction: " << name << "\n";
       Instructions.clear();
       return 1;
     }
-    cout << "\n";
+    outs() << "\n";
   }
-  cout << "#[FILE] END\n";
+  outs() << "#[FILE] END\n";
 
   // App simulation
-  cout << "\n#[EXEC] BEGIN\n";
+  outs() << "\n#[EXEC] BEGIN\n";
   CPU cpu;
   for (int i = 0; i < REG_FILE_SIZE; i++) {
     cpu.REG_FILE[i] = 0;
@@ -587,52 +586,46 @@ int main(int argc, char *argv[]) {
     Instructions[cpu.PC]->m_INSTR(&cpu, Instructions[cpu.PC]);
     cpu.PC = cpu.NEXT_PC;
   }
-  cout << "#[EXEC] END\n";
+  outs() << "#[EXEC] END\n";
 
   // Dump registers after simulation
   for (int i = 0; i < REG_FILE_SIZE; i++) {
-    cout << "[" << i << "] " << cpu.REG_FILE[i] << "\n";
+    outs() << "[" << i << "] " << cpu.REG_FILE[i] << "\n";
   }
 
   // Build IR for application
-  cout << "#[LLVM IR] BEGIN\n";
-  llvm::LLVMContext context;
+  outs() << "#[LLVM IR] BEGIN\n";
+  LLVMContext context;
   // ; ModuleID = 'top'
   // source_filename = "top"
-  llvm::Module *module = new llvm::Module("top", context);
-  llvm::IRBuilder<> builder(context);
+  Module *module = new Module("top", context);
+  IRBuilder<> builder(context);
 
   // declare void @main()
-  llvm::FunctionType *funcType =
-      llvm::FunctionType::get(builder.getVoidTy(), false);
-  llvm::Function *mainFunc = llvm::Function::Create(
-      funcType, llvm::Function::ExternalLinkage, "main", module);
+  FunctionType *funcType = FunctionType::get(builder.getVoidTy(), false);
+  Function *mainFunc =
+      Function::Create(funcType, Function::ExternalLinkage, "main", module);
   // entry:
-  llvm::BasicBlock *entryBB =
-      llvm::BasicBlock::Create(context, "entry", mainFunc);
+  BasicBlock *entryBB = BasicBlock::Create(context, "entry", mainFunc);
 
   builder.SetInsertPoint(entryBB);
 
   // createCalleeFunctions(builder, module);
-  llvm::FunctionType *CalleType = llvm::FunctionType::get(
+  FunctionType *CalleType = FunctionType::get(
       builder.getVoidTy(),
-      llvm::ArrayRef<llvm::Type *>(
-          {builder.getInt8PtrTy(), builder.getInt8PtrTy()}),
+      ArrayRef<Type *>({builder.getInt8PtrTy(), builder.getInt8PtrTy()}),
       false);
 
   // Get poointer to CPU for function args
-  llvm::Value *cpu_p =
-      llvm::ConstantInt::get(builder.getInt64Ty(), (uint64_t)&cpu);
-  llvm::ArrayType *regFileType =
-      llvm::ArrayType::get(builder.getInt32Ty(), REG_FILE_SIZE);
+  Value *cpu_p = ConstantInt::get(builder.getInt64Ty(), (uint64_t)&cpu);
+  ArrayType *regFileType = ArrayType::get(builder.getInt32Ty(), REG_FILE_SIZE);
   module->getOrInsertGlobal("regFile", regFileType);
-  llvm::GlobalVariable *regFile = module->getNamedGlobal("regFile");
+  GlobalVariable *regFile = module->getNamedGlobal("regFile");
 
-  unordered_map<RegVal_t, llvm::BasicBlock *> BBMap;
+  std::unordered_map<RegVal_t, BasicBlock *> BBMap;
 
   for (auto &name : BB_PC) {
-    BBMap[name.second] =
-        llvm::BasicBlock::Create(context, name.first, mainFunc);
+    BBMap[name.second] = BasicBlock::Create(context, name.first, mainFunc);
   }
 
   for (RegVal_t PC = 1; PC < Instructions.size(); PC++) {
@@ -658,28 +651,32 @@ int main(int argc, char *argv[]) {
     if (Instructions[PC]->m_ID == BEQ || Instructions[PC]->m_ID == BNE ||
         Instructions[PC]->m_ID == BGE || Instructions[PC]->m_ID == BLT) {
       // arg1
-      llvm::Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                       Instructions[PC]->m_rs1);
+      Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 Instructions[PC]->m_rs1);
       // arg2
-      llvm::Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                       Instructions[PC]->m_rs2);
-      llvm::Value *cond = nullptr;
+      Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 Instructions[PC]->m_rs2);
+      Value *cond = nullptr;
       switch (Instructions[PC]->m_ID) {
       case BEQ:
-        cond = builder.CreateICmpEQ(builder.CreateLoad(arg1_p),
-                                    builder.CreateLoad(arg2_p));
+        cond = builder.CreateICmpEQ(
+            builder.CreateLoad(builder.getInt32Ty(), arg1_p),
+            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
         break;
       case BNE:
-        cond = builder.CreateICmpNE(builder.CreateLoad(arg1_p),
-                                    builder.CreateLoad(arg2_p));
+        cond = builder.CreateICmpNE(
+            builder.CreateLoad(builder.getInt32Ty(), arg1_p),
+            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
         break;
       case BGE:
-        cond = builder.CreateICmpSGE(builder.CreateLoad(arg1_p),
-                                     builder.CreateLoad(arg2_p));
+        cond = builder.CreateICmpSGE(
+            builder.CreateLoad(builder.getInt32Ty(), arg1_p),
+            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
         break;
       case BLT:
-        cond = builder.CreateICmpSLT(builder.CreateLoad(arg1_p),
-                                     builder.CreateLoad(arg2_p));
+        cond = builder.CreateICmpSLT(
+            builder.CreateLoad(builder.getInt32Ty(), arg1_p),
+            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
         break;
       default:
         break;
@@ -694,73 +691,73 @@ int main(int argc, char *argv[]) {
     // IR implementation for ADD instruction
     if (Instructions[PC]->m_ID == ADD) {
       // res
-      llvm::Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                      Instructions[PC]->m_rs1);
+      Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                Instructions[PC]->m_rs1);
       // arg1
-      llvm::Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                       Instructions[PC]->m_rs2);
+      Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 Instructions[PC]->m_rs2);
       // arg2
-      llvm::Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                       Instructions[PC]->m_rs3);
-      llvm::Value *add_arg1_arg2 = builder.CreateAdd(
-          builder.CreateLoad(arg1_p), builder.CreateLoad(arg2_p));
+      Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 Instructions[PC]->m_rs3);
+      Value *add_arg1_arg2 =
+          builder.CreateAdd(builder.CreateLoad(builder.getInt32Ty(), arg1_p),
+                            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
       builder.CreateStore(add_arg1_arg2, res_p);
       continue;
     }
     // IR implementation for ADD instruction
     if (Instructions[PC]->m_ID == ADDI) {
       // res
-      llvm::Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                      Instructions[PC]->m_rs1);
+      Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                Instructions[PC]->m_rs1);
       // arg1
-      llvm::Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                                       Instructions[PC]->m_rs2);
+      Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                 Instructions[PC]->m_rs2);
       // arg2
-      llvm::Value *arg2 =
-          llvm::ConstantInt::get(builder.getInt32Ty(), Instructions[PC]->m_imm);
-      llvm::Value *add_arg1_arg2 =
-          builder.CreateAdd(builder.CreateLoad(arg1_p), arg2);
+      Value *arg2 =
+          ConstantInt::get(builder.getInt32Ty(), Instructions[PC]->m_imm);
+      Value *add_arg1_arg2 = builder.CreateAdd(
+          builder.CreateLoad(builder.getInt32Ty(), arg1_p), arg2);
       builder.CreateStore(add_arg1_arg2, res_p);
       continue;
     }
     // Get poointer to instruction for function args
-    llvm::Value *instr_p = llvm::ConstantInt::get(builder.getInt64Ty(),
-                                                  (uint64_t)Instructions[PC]);
+    Value *instr_p =
+        ConstantInt::get(builder.getInt64Ty(), (uint64_t)Instructions[PC]);
     // Call simulation function for other instructions
     builder.CreateCall(module->getOrInsertFunction(
                            "do_" + Instructions[PC]->m_name, CalleType),
-                       llvm::ArrayRef<llvm::Value *>({cpu_p, instr_p}));
+                       ArrayRef<Value *>({cpu_p, instr_p}));
   }
   // ret i32 0
-  builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+  builder.CreateRet(ConstantInt::get(builder.getInt32Ty(), 0));
 
-  llvm::outs() << "#[LLVM IR] DUMP\n";
-  module->print(llvm::outs(), nullptr);
-  llvm::outs() << "#[LLVM IR] END\n";
+  outs() << "#[LLVM IR] DUMP\n";
+  module->print(outs(), nullptr);
+  outs() << "#[LLVM IR] END\n";
   for (int i = 0; i < REG_FILE_SIZE; i++) {
     cpu.REG_FILE[i] = 0;
   }
 
   // App simulation with execution engine
-  llvm::outs() << "#[LLVM EE] RUN\n";
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmPrinter();
+  outs() << "#[LLVM EE] RUN\n";
+  InitializeNativeTarget();
+  InitializeNativeTargetAsmPrinter();
 
-  llvm::ExecutionEngine *ee =
-      llvm::EngineBuilder(unique_ptr<llvm::Module>(module)).create();
+  ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
   ee->InstallLazyFunctionCreator(lazyFunctionCreator);
   ee->addGlobalMapping(regFile, (void *)cpu.REG_FILE);
   ee->finalizeObject();
-  vector<llvm::GenericValue> noargs;
+  ArrayRef<GenericValue> noargs;
 
   cpu.RUN = 1;
   cpu.PC = 1;
   ee->runFunction(mainFunc, noargs);
-  cout << "#[LLVM EE] END\n";
+  outs() << "#[LLVM EE] END\n";
 
   // Registers dump after simulation with EE
   for (int i = 0; i < REG_FILE_SIZE; i++) {
-    cout << "[" << i << "] " << cpu.REG_FILE[i] << "\n";
+    outs() << "[" << i << "] " << cpu.REG_FILE[i] << "\n";
   }
 
   Instructions.clear();
