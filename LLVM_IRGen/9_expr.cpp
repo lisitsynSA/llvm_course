@@ -564,7 +564,7 @@ void LLVM_GEN_cpu(info_t *info, llvm::IRBuilder<> &builder) {
   llvm::Value *res;
   if (info->kind == NUMBER) {
     // fprintf(File, " push %d\n", info->value);
-    arg1 = llvm::ConstantInt::get(builder.getInt32Ty(), info->value);
+    arg1 = builder.getInt32(info->value);
     stackIR.push_back(arg1);
     return;
   }

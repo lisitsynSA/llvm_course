@@ -15,14 +15,12 @@ int main() {
   IRBuilder<> builder(context);
 
   // declare void @main()
-  FunctionType *funcType =
-      FunctionType::get(builder.getInt32Ty(), false);
-  Function *mainFunc = Function::Create(
-      funcType, Function::ExternalLinkage, "main", module);
+  FunctionType *funcType = FunctionType::get(builder.getInt32Ty(), false);
+  Function *mainFunc =
+      Function::Create(funcType, Function::ExternalLinkage, "main", module);
 
   // entrypoint:
-  BasicBlock *entry =
-      BasicBlock::Create(context, "entrypoint", mainFunc);
+  BasicBlock *entry = BasicBlock::Create(context, "entrypoint", mainFunc);
   builder.SetInsertPoint(entry);
 
   // @0 = private unnamed_addr constant [14 x i8] c"hello world!\0A\00", align 1
@@ -40,7 +38,7 @@ int main() {
   // i32 0, i32 0))
   builder.CreateCall(putsFunc, helloWorld);
   // ret i32 0
-  builder.CreateRet(ConstantInt::get(builder.getInt32Ty(), 0));
+  builder.CreateRet(builder.getInt32(0));
 
   // Dump LLVM IR
   module->print(outs(), nullptr);
@@ -50,8 +48,7 @@ int main() {
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
 
-  ExecutionEngine *ee =
-      EngineBuilder(std::unique_ptr<Module>(module)).create();
+  ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);

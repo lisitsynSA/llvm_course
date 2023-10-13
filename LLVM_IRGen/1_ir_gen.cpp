@@ -12,13 +12,11 @@ int main() {
   IRBuilder<> builder(context);
 
   // declare void @main()
-  FunctionType *funcType =
-      FunctionType::get(builder.getVoidTy(), false);
-  Function *mainFunc = Function::Create(
-      funcType, Function::ExternalLinkage, "main", module);
+  FunctionType *funcType = FunctionType::get(builder.getVoidTy(), false);
+  Function *mainFunc =
+      Function::Create(funcType, Function::ExternalLinkage, "main", module);
   // entry:
-  BasicBlock *entryBB =
-      BasicBlock::Create(context, "entry", mainFunc);
+  BasicBlock *entryBB = BasicBlock::Create(context, "entry", mainFunc);
 
   builder.SetInsertPoint(entryBB);
   builder.CreateRetVoid();

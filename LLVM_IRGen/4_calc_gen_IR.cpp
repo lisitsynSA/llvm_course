@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
       input >> arg;
       outs() << " + " << arg << "\n";
       // arg2
-      Value *arg2 = ConstantInt::get(builder.getInt32Ty(), std::stoi(arg));
+      Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *add_arg1_arg2 = builder.CreateAdd(
           builder.CreateLoad(builder.getInt32Ty(), arg1_p), arg2);
       builder.CreateStore(add_arg1_arg2, res_p);
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
   input.close();
 
   // ret i32 0
-  builder.CreateRet(ConstantInt::get(builder.getInt32Ty(), 0));
+  builder.CreateRet(builder.getInt32(0));
 
   // Dump LLVM IR
   module->print(outs(), nullptr);

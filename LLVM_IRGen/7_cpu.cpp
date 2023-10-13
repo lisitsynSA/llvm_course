@@ -617,7 +617,7 @@ int main(int argc, char *argv[]) {
       false);
 
   // Get poointer to CPU for function args
-  Value *cpu_p = ConstantInt::get(builder.getInt64Ty(), (uint64_t)&cpu);
+  Value *cpu_p = builder.getInt64((uint64_t)&cpu);
   ArrayType *regFileType = ArrayType::get(builder.getInt32Ty(), REG_FILE_SIZE);
   module->getOrInsertGlobal("regFile", regFileType);
   GlobalVariable *regFile = module->getNamedGlobal("regFile");
@@ -714,23 +714,21 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  Instructions[PC]->m_rs2);
       // arg2
-      Value *arg2 =
-          ConstantInt::get(builder.getInt32Ty(), Instructions[PC]->m_imm);
+      Value *arg2 = builder.getInt32(Instructions[PC]->m_imm);
       Value *add_arg1_arg2 = builder.CreateAdd(
           builder.CreateLoad(builder.getInt32Ty(), arg1_p), arg2);
       builder.CreateStore(add_arg1_arg2, res_p);
       continue;
     }
     // Get poointer to instruction for function args
-    Value *instr_p =
-        ConstantInt::get(builder.getInt64Ty(), (uint64_t)Instructions[PC]);
+    Value *instr_p = builder.getInt64((uint64_t)Instructions[PC]);
     // Call simulation function for other instructions
     builder.CreateCall(module->getOrInsertFunction(
                            "do_" + Instructions[PC]->m_name, CalleType),
                        ArrayRef<Value *>({cpu_p, instr_p}));
   }
   // ret i32 0
-  builder.CreateRet(ConstantInt::get(builder.getInt32Ty(), 0));
+  builder.CreateRet(builder.getInt32(0));
 
   outs() << "#[LLVM IR] DUMP\n";
   module->print(outs(), nullptr);

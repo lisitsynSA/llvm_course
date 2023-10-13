@@ -93,9 +93,8 @@ int main(int argc, char *argv[]) {
           FunctionType::get(builder.getVoidTy(),
                             ArrayRef<Type *>(builder.getInt32Ty()), false),
           Function::ExternalLinkage, "INSTR_dump", module);
-      builder.CreateCall(CalleeF,
-                         ArrayRef<Value *>(ConstantInt::get(
-                             builder.getInt32Ty(), std::stoi(arg.substr(1)))));
+      builder.CreateCall(CalleeF, ArrayRef<Value *>(builder.getInt32(
+                                      std::stoi(arg.substr(1)))));
       continue;
     }
 
@@ -106,9 +105,8 @@ int main(int argc, char *argv[]) {
           FunctionType::get(builder.getVoidTy(),
                             ArrayRef<Type *>(builder.getInt32Ty()), false),
           Function::ExternalLinkage, "INSTR_read", module);
-      builder.CreateCall(CalleeF,
-                         ArrayRef<Value *>(ConstantInt::get(
-                             builder.getInt32Ty(), std::stoi(arg.substr(1)))));
+      builder.CreateCall(CalleeF, ArrayRef<Value *>(builder.getInt32(
+                                      std::stoi(arg.substr(1)))));
       continue;
     }
     if (!name.compare("sort")) {
@@ -155,7 +153,7 @@ int main(int argc, char *argv[]) {
       input >> arg;
       outs() << " + " << arg << "\n";
       // arg2
-      Value *arg2 = ConstantInt::get(builder.getInt32Ty(), std::stoi(arg));
+      Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *add_arg1_arg2 = builder.CreateAdd(
           builder.CreateLoad(builder.getInt32Ty(), arg1_p), arg2);
       builder.CreateStore(add_arg1_arg2, res_p);
@@ -198,7 +196,7 @@ int main(int argc, char *argv[]) {
       input >> arg;
       outs() << " * " << arg << "\n";
       // arg2
-      Value *arg2 = ConstantInt::get(builder.getInt32Ty(), std::stoi(arg));
+      Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *add_arg1_arg2 = builder.CreateMul(
           builder.CreateLoad(builder.getInt32Ty(), arg1_p), arg2);
       builder.CreateStore(add_arg1_arg2, res_p);
