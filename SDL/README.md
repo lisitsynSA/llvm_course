@@ -32,6 +32,11 @@ clang sim.c app2.o ../LLVM_Pass/log.c -lSDL2
 ./a.out
 
 ```
+## Graphical app IR generation:
+```
+clang++ `llvm-config --cppflags --ldflags --libs` app_ir_gen.cpp -lSDL2
+./a.out
+```
 
 ## SDL 2.0 documentation:
 https://wiki.libsdl.org
