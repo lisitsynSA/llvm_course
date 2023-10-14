@@ -248,7 +248,9 @@ int main(int argc, char *argv[]) {
     }
     outs() << "BB " << name << "\n";
 
-    builder.CreateBr(BBMap[name]);
+    if (builder.GetInsertBlock()) {
+      builder.CreateBr(BBMap[name]);
+    }
     builder.SetInsertPoint(BBMap[name]);
   }
 

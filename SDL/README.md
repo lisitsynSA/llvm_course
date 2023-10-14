@@ -32,10 +32,16 @@ clang sim.c app2.o ../LLVM_Pass/log.c -lSDL2
 ./a.out
 
 ```
-## Graphical app IR generation:
+## Graphical app IR generations:
 ```
-clang++ `llvm-config --cppflags --ldflags --libs` app_ir_gen.cpp -lSDL2
+clang++ `llvm-config --cppflags --ldflags --libs` IRGen/app_ir_gen.cpp -lSDL2
 ./a.out
+
+clang++ `llvm-config --cppflags --ldflags --libs` IRGen/app_asm_IRgen_1.cpp -lSDL2
+./a.out IRGen/app.s
+
+clang++ `llvm-config --cppflags --ldflags --libs` IRGen/app_asm_IRgen_2.cpp -lSDL2
+./a.out IRGen/app.s
 ```
 
 ## SDL 2.0 documentation:
