@@ -597,7 +597,7 @@ int main(int argc, char *argv[]) {
       builder.CreateStore(add_arg1_arg2, res_p);
       continue;
     }
-    // IR implementation for ADD instruction
+    // IR implementation for ADDI instruction
     if (Instructions[PC]->m_ID == ADDI) {
       // res
       Value *res_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,

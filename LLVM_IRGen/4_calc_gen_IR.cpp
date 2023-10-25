@@ -11,11 +11,11 @@ using namespace llvm;
 const int REG_FILE_SIZE = 8;
 uint32_t REG_FILE[REG_FILE_SIZE] = {};
 
-void INSTR_sort() { std::sort(REG_FILE, REG_FILE + REG_FILE_SIZE); }
+void INSTR_sort() { printf("SORT is called\n"); std::sort(REG_FILE, REG_FILE + REG_FILE_SIZE); }
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    outs() << "[ERROR] Need 1 argument: file with RISC-V assembler\n";
+    outs() << "[ERROR] Need 1 argument: file with assembler\n";
     return 1;
   }
   std::ifstream input;
@@ -91,9 +91,7 @@ int main(int argc, char **argv) {
       continue;
     }
     if (!name.compare("sort")) {
-      outs() << "sort "
-             << "\n";
-      // arg1
+      outs() << "sort \n";
       Function *CalleeF = Function::Create(
           FunctionType::get(builder.getVoidTy(),
                             ArrayRef<Type *>(builder.getVoidTy()), false),
