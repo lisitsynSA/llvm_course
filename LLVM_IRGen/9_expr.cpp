@@ -17,12 +17,12 @@
 #include <stack>
 
 /*
-    S ::= E
-    E ::= T (['+''-'] E)*
-    T ::= P (['*''/'] T)*
-    P ::= '(' E ')' | N | F
-    N ::= ['0' - '9']+
-    F ::= ['sin''cos''sqr''sqrt']+ '(' E ')'
+    S -> E
+    E -> T (['+''-'] E)*
+    T -> P (['*''/'] T)*
+    P -> '(' E ')' | N | F
+    N -> ['0' - '9']+
+    F -> ['sin''cos''sqr''sqrt']+ '(' E ')'
 */
 
 #define LENGTH 100
