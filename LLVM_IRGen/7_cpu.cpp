@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
+#include <stack>
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
@@ -49,7 +50,7 @@ enum InsnId_t {
 
 using RegId_t = uint8_t;
 using RegVal_t = uint32_t;
-using Stack_t = std::vector<RegVal_t>;
+using Stack_t = std::stack<RegVal_t>;
 
 const int REG_FILE_SIZE = 4;
 class CPU {
@@ -120,71 +121,71 @@ void do_exit(CPU *cpu, Instr *instr) {
 }
 void do_push(CPU *cpu, Instr *instr) {
   instr->dump();
-  cpu->STACK.push_back(instr->m_imm);
+  cpu->STACK.push(instr->m_imm);
 }
 void do_pop(CPU *cpu, Instr *instr) {
   instr->dump();
   if (!cpu->stack_ok()) {
     return;
   }
-  cpu->REG_FILE[instr->m_rs1] = cpu->STACK.back();
-  cpu->STACK.pop_back();
+  cpu->REG_FILE[instr->m_rs1] = cpu->STACK.top();
+  cpu->STACK.pop();
 }
 void do_add_s(CPU *cpu, Instr *instr) {
   instr->dump();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val1 = cpu->STACK.back();
-  cpu->STACK.pop_back();
+  RegVal_t val1 = cpu->STACK.top();
+  cpu->STACK.pop();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val2 = cpu->STACK.back();
-  cpu->STACK.pop_back();
-  cpu->STACK.push_back(val1 + val2);
+  RegVal_t val2 = cpu->STACK.top();
+  cpu->STACK.pop();
+  cpu->STACK.push(val1 + val2);
 }
 void do_sub_s(CPU *cpu, Instr *instr) {
   instr->dump();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val1 = cpu->STACK.back();
-  cpu->STACK.pop_back();
+  RegVal_t val1 = cpu->STACK.top();
+  cpu->STACK.pop();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val2 = cpu->STACK.back();
-  cpu->STACK.pop_back();
-  cpu->STACK.push_back(val2 - val1);
+  RegVal_t val2 = cpu->STACK.top();
+  cpu->STACK.pop();
+  cpu->STACK.push(val2 - val1);
 }
 void do_mul_s(CPU *cpu, Instr *instr) {
   instr->dump();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val1 = cpu->STACK.back();
-  cpu->STACK.pop_back();
+  RegVal_t val1 = cpu->STACK.top();
+  cpu->STACK.pop();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val2 = cpu->STACK.back();
-  cpu->STACK.pop_back();
-  cpu->STACK.push_back(val1 * val2);
+  RegVal_t val2 = cpu->STACK.top();
+  cpu->STACK.pop();
+  cpu->STACK.push(val1 * val2);
 }
 void do_div_s(CPU *cpu, Instr *instr) {
   instr->dump();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val1 = cpu->STACK.back();
-  cpu->STACK.pop_back();
+  RegVal_t val1 = cpu->STACK.top();
+  cpu->STACK.pop();
   if (!cpu->stack_ok()) {
     return;
   }
-  RegVal_t val2 = cpu->STACK.back();
-  cpu->STACK.pop_back();
-  cpu->STACK.push_back(val2 / val1);
+  RegVal_t val2 = cpu->STACK.top();
+  cpu->STACK.pop();
+  cpu->STACK.push(val2 / val1);
 }
 void do_neg(CPU *cpu, Instr *instr) {
   instr->dump();
@@ -235,12 +236,12 @@ void do_ret(CPU *cpu, Instr *instr) {
   if (!cpu->call_stack_ok()) {
     return;
   }
-  cpu->NEXT_PC = cpu->CALL_STACK.back();
-  cpu->CALL_STACK.pop_back();
+  cpu->NEXT_PC = cpu->CALL_STACK.top();
+  cpu->CALL_STACK.pop();
 }
 void do_bl(CPU *cpu, Instr *instr) {
   instr->dump();
-  cpu->CALL_STACK.push_back(cpu->PC + 1);
+  cpu->CALL_STACK.push(cpu->PC + 1);
   cpu->NEXT_PC = instr->m_imm;
 }
 void do_beq(CPU *cpu, Instr *instr) {

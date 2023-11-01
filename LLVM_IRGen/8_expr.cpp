@@ -14,28 +14,22 @@
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
+#include <stack>
 
 /*
-    G0::= E
-    E ::= T {['+''-'] T}*
-    T ::= D {'*' D}*
-    D ::= P {'^' D}*
-    P ::= '(' E ')' | N | F
+    S ::= E
+    E ::= T (['+''-'] E)*
+    T ::= P (['*''/'] T)*
+    P ::= '(' E ')' | N
     N ::= ['0' - '9']+
-    F ::= ['a' - 'z']+ '(' E ')'
 */
 
-#define MAX_LENGTH 20
-#define NODE 2
 #define LENGTH 100
 
 #define NUMBER 1
 #define ACTION 2
-#define FUNCTION 3
 
 char *S;
-int Error;
-const char *Namefile;
 FILE *File;
 
 struct info_t {
@@ -63,14 +57,12 @@ void dump_tree(tree_t *tree);
 void print_node(tree_node_t *current);
 void print_info(info_t *info);
 
-void GetG0(tree_t *tree, char *string);
+void GetS(tree_t *tree, char *string);
 void GetN(tree_t *tree, tree_node_t *current, int level);
 void GetE(tree_t *tree, tree_node_t *current, int level);
 void GetT(tree_t *tree, tree_node_t *current, int level);
-void GetD(tree_t *tree, tree_node_t *current, int level);
 void GetP(tree_t *tree, tree_node_t *current, int level);
-void GetS();
-void GetF(tree_t *tree, tree_node_t *current, int level);
+void GetWS();
 
 tree_node_t *fscanf_tree(tree_t *tree);
 void copy_node(tree_node_t *current1, tree_node_t *current2);
@@ -79,14 +71,6 @@ void level_up(tree_node_t *new_current);
 void level_down(tree_node_t *current);
 void shifting_node(tree_t *tree, tree_node_t *current);
 
-void node_ok(tree_node_t *current, int *size, int level);
-void tree_ok(tree_t *tree);
-#define ASSERT(tree)                                                           \
-  if (tree)                                                                    \
-    tree_ok(tree);                                                             \
-  else                                                                         \
-    printf("TREE doesn't exist");
-
 void fprint_tree(tree_t *tree);
 void fprint_posnode(tree_node_t *current);
 void fprint_innode(tree_node_t *current);
@@ -94,8 +78,8 @@ void fprint_info(info_t *info);
 void fprint_cpu(info_t *info);
 
 void LLVM_GEN(tree_t *tree);
-void LLVM_GEN_posnode(tree_node_t *current, llvm::IRBuilder<> &builder);
-void LLVM_GEN_cpu(info_t *info, llvm::IRBuilder<> &builder);
+void LLVM_GEN_node(tree_node_t *current, llvm::IRBuilder<> &builder);
+void LLVM_GEN_value(info_t *info, llvm::IRBuilder<> &builder);
 
 void destruct_tree(tree_t *tree);
 void delete_node_tree(tree_node_t *current);
@@ -106,30 +90,29 @@ int main(int argc, const char *argv[]) {
     std::cout << "[ERROR] Need 1 argument: file with exspression\n";
     return 1;
   }
-  Namefile = argv[1];
+  File = fopen(argv[1], "r");
 
   tree_t *tree = construct_tree();
-  tree_node_t *current = NULL;
 
   fscanf_tree(tree);
+  dump_tree(tree);
   fprint_tree(tree);
-  // dump_tree(tree);
   destruct_tree(tree);
   return 0;
 }
+
+///////////////////
+/// Tree functions
+///////////////////
 
 tree_t *construct_tree() {
   tree_t *tree = (tree_t *)calloc(1, sizeof(tree_t));
   tree->size = 0;
   tree->root = NULL;
-
-  ASSERT(tree)
   return tree;
 }
 
 void destruct_tree(tree_t *tree) {
-  ASSERT(tree)
-
   if (tree->root)
     delete_node_tree(tree->root);
   free(tree);
@@ -138,9 +121,10 @@ void destruct_tree(tree_t *tree) {
 void delete_node_tree(tree_node_t *current) {
   if (current == NULL)
     return;
-  for (int i = 0; i < NODE; i++)
-    if (current->link[i])
-      delete_node_tree(current->link[i]);
+  if (current->link[0])
+    delete_node_tree(current->link[0]);
+  if (current->link[1])
+    delete_node_tree(current->link[1]);
   free_info(current->info);
   free(current);
 }
@@ -151,242 +135,14 @@ void free_info(info_t *info) {
   free(info);
 }
 
-void dump_tree(tree_t *tree) {
-  ASSERT(tree)
-
-  printf("\n*******TREE*******\nSIZE: %d\n------------------\n", tree->size);
-  print_node(tree->root);
-  printf("\n******************\n");
-
-  ASSERT(tree)
-}
-
-void print_node(tree_node_t *current) {
-  if (!current)
-    return;
-  print_node(current->link[0]);
-  printf("%*s", current->level * 3, " ");
-  print_info(current->info);
-  printf("\n");
-  print_node(current->link[1]);
-}
-
-void print_info(info_t *info) {
-  if (info->kind == NUMBER) {
-    printf("%d", info->value);
-    return;
-  }
-  if (info->kind == FUNCTION) {
-    printf("%s", info->name);
-    return;
-  }
-  printf("%c", info->action);
-}
-
 tree_node_t *fscanf_tree(tree_t *tree) {
-  ASSERT(tree)
-
-  File = fopen(Namefile, "r");
   char *string = (char *)calloc(LENGTH, sizeof(char));
   fgets(string, LENGTH, File);
   fclose(File);
 
-  GetG0(tree, string);
+  GetS(tree, string);
   free(string);
-
-  ASSERT(tree)
   return tree->root;
-}
-
-void GetG0(tree_t *tree, char *string) {
-  ASSERT(tree)
-  // printf("G0\n");dump_tree(tree);
-
-  S = string;
-  Error = 0;
-
-  tree->size++;
-  tree->root = (tree_node_t *)calloc(1, sizeof(tree_node_t));
-  calloc_node(tree->root);
-  GetE(tree, tree->root, 0);
-
-  if (S[0])
-    printf("%s\n", string);
-  switch (Error) {
-  case 1:
-    printf("ERROR in GETN!!!");
-    break;
-
-  case 2:
-    printf("ERROR in GETP!!!");
-    break;
-
-  case 3:
-    printf("ERROR in GETF!!!");
-    break;
-  }
-
-  ASSERT(tree)
-}
-
-void GetN(tree_t *tree, tree_node_t *current, int level) {
-  ASSERT(tree)
-  // printf("N\n");dump_tree(tree);
-
-  GetS();
-
-  double val = 0;
-  char *dap = S;
-  while ('0' <= S[0] && S[0] <= '9')
-    val = val * 10 + (S++)[0] - '0';
-
-  if (dap != S) {
-    calloc_node(current);
-    current->info->kind = NUMBER;
-    current->level = level;
-    current->info->value = val;
-  } else {
-    Error = 1;
-    printf("ERROR:IN GETN: %s\n", S);
-  }
-  GetS();
-
-  ASSERT(tree)
-}
-
-void GetE(tree_t *tree, tree_node_t *current, int level) {
-  ASSERT(tree)
-  // printf("E\n");dump_tree(tree);
-
-  GetS();
-
-  GetT(tree, current, level);
-
-  if (S[0] == '+' || S[0] == '-') {
-    shifting_node(tree, current);
-    current->link[1] = (tree_node_t *)calloc(1, sizeof(tree_node_t));
-    calloc_node(current->link[1]);
-    GetE(tree, current->link[1], level + 1);
-  }
-
-  GetS();
-
-  ASSERT(tree)
-}
-
-void GetT(tree_t *tree, tree_node_t *current, int level) {
-  ASSERT(tree)
-  // printf("T\n");dump_tree(tree);
-
-  GetS();
-
-  GetD(tree, current, level);
-
-  if (S[0] == '*' || S[0] == '/') {
-    shifting_node(tree, current);
-    current->link[1] = (tree_node_t *)calloc(1, sizeof(tree_node_t));
-    calloc_node(current->link[1]);
-    GetT(tree, current->link[1], level + 1);
-  }
-
-  GetS();
-
-  ASSERT(tree)
-}
-
-void GetD(tree_t *tree, tree_node_t *current, int level) {
-  ASSERT(tree)
-  // printf("D\n");dump_tree(tree);
-
-  GetS();
-
-  GetP(tree, current, level);
-
-  if ((S)[0] == '^') {
-    shifting_node(tree, current);
-    current->link[1] = (tree_node_t *)calloc(1, sizeof(tree_node_t));
-    calloc_node(current->link[1]);
-    GetD(tree, current->link[1], level + 1);
-  }
-
-  GetS();
-
-  ASSERT(tree)
-}
-
-void GetP(tree_t *tree, tree_node_t *current, int level) {
-  ASSERT(tree)
-  // printf("P\n");dump_tree(tree);
-
-  GetS();
-
-  if (S[0] == '(') {
-    S++;
-    GetE(tree, current, level);
-    if (S[0] != ')') {
-      Error = 2;
-      printf("ERROR:IN GETE: %s\n", S);
-    }
-    S++;
-  } else if ('a' <= S[0] && S[0] <= 'z')
-    GetF(tree, current, level);
-  else
-    GetN(tree, current, level);
-
-  GetS();
-
-  ASSERT(tree)
-}
-
-void GetS() {
-  while (S[0] == ' ' || S[0] == 10)
-    S++;
-}
-
-void GetF(tree_t *tree, tree_node_t *current, int level) {
-  ASSERT(tree)
-  // printf("F\n");dump_tree(tree);
-
-  GetS();
-
-  char *function = (char *)calloc(LENGTH, sizeof(char));
-  int counter = 0;
-  function[counter] = (S++)[0];
-  char *dap = S;
-  while ('a' <= S[0] && S[0] <= 'z')
-    function[++counter] = (S++)[0];
-  function[++counter] = 0;
-
-  GetS();
-
-  if ((dap != S) && ((S++)[0] == '(')) {
-    current->level = level;
-    if (!(strcmp(function, "sin") && strcmp(function, "cos") &&
-          strcmp(function, "sqr") && strcmp(function, "sqrt"))) {
-      current->info->kind = FUNCTION;
-      current->info->name = function;
-      tree->size++;
-      current->link[0] = (tree_node_t *)calloc(1, sizeof(tree_node_t));
-      calloc_node(current->link[0]);
-      GetE(tree, current->link[0], level + 1);
-
-      if ((S++)[0] != ')') {
-        Error = 3;
-        printf("ERROR:IN GETF: %s\n", S);
-      }
-
-      GetS();
-
-      ASSERT(tree)
-
-      return;
-    }
-  }
-  Error = 3;
-  printf("ERROR:IN GETF: %s\n", S);
-  free(function);
-
-  ASSERT(tree)
 }
 
 void copy_node(tree_node_t *current1, tree_node_t *current2) {
@@ -417,24 +173,123 @@ void calloc_node(tree_node_t *current) {
 }
 
 void shifting_node(tree_t *tree, tree_node_t *current) {
-  ASSERT(tree)
-
   tree->size += 2;
   tree_node_t *new_current = (tree_node_t *)calloc(1, sizeof(tree_node_t));
-  ;
   copy_node(current, new_current);
   level_up(new_current);
   calloc_node(current);
   current->info->kind = ACTION;
   current->info->action = (S++)[0];
   current->link[0] = new_current;
+}
 
-  ASSERT(tree)
+/////////////////////
+/// Grammar functions
+/////////////////////
+
+void GetS(tree_t *tree, char *string) {
+  S = string;
+  printf("%s\n", S);
+
+  tree->size++;
+  tree->root = (tree_node_t *)calloc(1, sizeof(tree_node_t));
+  calloc_node(tree->root);
+  GetE(tree, tree->root, 0);
+}
+
+void GetN(tree_t *tree, tree_node_t *current, int level) {
+  GetWS();
+
+  double val = 0;
+  char *start_pos = S;
+  while ('0' <= S[0] && S[0] <= '9')
+    val = val * 10 + (S++)[0] - '0';
+
+  if (start_pos != S) {
+    calloc_node(current);
+    current->info->kind = NUMBER;
+    current->level = level;
+    current->info->value = val;
+  } else {
+    printf("ERROR:IN GetN: %s\n", S);
+  }
+  GetWS();
+}
+
+void GetE(tree_t *tree, tree_node_t *current, int level) {
+  GetT(tree, current, level);
+
+  if (S[0] == '+' || S[0] == '-') {
+    shifting_node(tree, current);
+    current->link[1] = (tree_node_t *)calloc(1, sizeof(tree_node_t));
+    calloc_node(current->link[1]);
+    GetE(tree, current->link[1], level + 1);
+  }
+}
+
+void GetT(tree_t *tree, tree_node_t *current, int level) {
+  GetWS();
+
+  GetP(tree, current, level);
+
+  if (S[0] == '*' || S[0] == '/') {
+    shifting_node(tree, current);
+    current->link[1] = (tree_node_t *)calloc(1, sizeof(tree_node_t));
+    calloc_node(current->link[1]);
+    GetT(tree, current->link[1], level + 1);
+  }
+
+  GetWS();
+}
+
+void GetP(tree_t *tree, tree_node_t *current, int level) {
+  GetWS();
+  if (S[0] == '(') {
+    S++;
+    GetE(tree, current, level);
+    if (S[0] != ')') {
+      printf("ERROR:IN GetE: %s\n", S);
+    }
+    S++;
+  } else
+    GetN(tree, current, level);
+  GetWS();
+}
+
+void GetWS() {
+  while (S[0] == ' ')
+    S++;
+}
+
+///////////////////
+/// Print functions
+///////////////////
+
+void dump_tree(tree_t *tree) {
+  printf("\n*******TREE*******\nSIZE: %d\n------------------\n", tree->size);
+  print_node(tree->root);
+  printf("\n******************\n");
+}
+
+void print_node(tree_node_t *current) {
+  if (!current)
+    return;
+  print_node(current->link[0]);
+  printf("%*s", current->level * 3, " ");
+  print_info(current->info);
+  printf("\n");
+  print_node(current->link[1]);
+}
+
+void print_info(info_t *info) {
+  if (info->kind == NUMBER) {
+    printf("%d", info->value);
+    return;
+  }
+  printf("%c", info->action);
 }
 
 void fprint_tree(tree_t *tree) {
-  ASSERT(tree)
-
   File = fopen("expression_check.txt", "w");
   fprint_innode(tree->root);
   fclose(File);
@@ -445,13 +300,10 @@ void fprint_tree(tree_t *tree) {
   fclose(File);
 
   LLVM_GEN(tree);
-
-  ASSERT(tree)
 }
 
 void fprint_innode(tree_node_t *current) {
   if (!current) {
-    // fprintf(File,"n");
     return;
   }
   fprintf(File, "(");
@@ -463,7 +315,6 @@ void fprint_innode(tree_node_t *current) {
 
 void fprint_posnode(tree_node_t *current) {
   if (!current) {
-    // fprintf(File,"n");
     return;
   }
   fprint_posnode(current->link[0]);
@@ -476,10 +327,6 @@ void fprint_info(info_t *info) {
     fprintf(File, "%d", info->value);
     return;
   }
-  if (info->kind == FUNCTION) {
-    fprintf(File, "%s", info->name);
-    return;
-  }
   fprintf(File, "%c", info->action);
 }
 
@@ -488,15 +335,7 @@ void fprint_cpu(info_t *info) {
     fprintf(File, " push %d\n", info->value);
     return;
   }
-  if (info->kind == FUNCTION) {
-    fprintf(File, " %s\n", info->name);
-    return;
-  }
   switch (info->action) {
-  case '^':
-    fprintf(File, " pow_s\n");
-    break;
-
   case '+':
     fprintf(File, " add_s\n");
     break;
@@ -519,7 +358,11 @@ void fprint_cpu(info_t *info) {
   }
 }
 
-std::vector<llvm::Value *> stackIR;
+///////////////////
+/// LLVM functions
+///////////////////
+
+std::stack<llvm::Value *> stackIR;
 
 void LLVM_GEN(tree_t *tree) {
   if (!tree)
@@ -540,112 +383,86 @@ void LLVM_GEN(tree_t *tree) {
       llvm::BasicBlock::Create(context, "entry", mainFunc);
   builder.SetInsertPoint(mainBB);
 
-  LLVM_GEN_posnode(tree->root, builder);
+  LLVM_GEN_node(tree->root, builder);
 
-  builder.CreateRet(stackIR.back());
+  builder.CreateRet(stackIR.top());
 
   llvm::outs() << "#[LLVM IR]:\n";
   module->print(llvm::outs(), nullptr);
 }
 
-void LLVM_GEN_posnode(tree_node_t *current, llvm::IRBuilder<> &builder) {
+void LLVM_GEN_node(tree_node_t *current, llvm::IRBuilder<> &builder) {
   if (!current)
     return;
 
-  LLVM_GEN_posnode(current->link[0], builder);
-  LLVM_GEN_posnode(current->link[1], builder);
-  LLVM_GEN_cpu(current->info, builder);
+  LLVM_GEN_node(current->link[0], builder);
+  LLVM_GEN_node(current->link[1], builder);
+  LLVM_GEN_value(current->info, builder);
 }
 
-void LLVM_GEN_cpu(info_t *info, llvm::IRBuilder<> &builder) {
+void LLVM_GEN_value(info_t *info, llvm::IRBuilder<> &builder) {
   llvm::Value *arg1;
   llvm::Value *arg2;
   llvm::Value *res;
   if (info->kind == NUMBER) {
-    // fprintf(File, " push %d\n", info->value);
     arg1 = builder.getInt32(info->value);
-    // arg2 = builder.getInt32(0);
-    // res = builder.CreateAdd(arg1, arg2);
-    stackIR.push_back(arg1);
+    stackIR.push(arg1);
     return;
   }
-  switch (info->action) {
 
+  switch (info->action) {
   case '+':
-    // fprintf(File, " add_s\n");
     if (stackIR.empty())
       return;
-    arg1 = stackIR.back();
-    stackIR.pop_back();
+    arg1 = stackIR.top();
+    stackIR.pop();
     if (stackIR.empty())
       return;
-    arg2 = stackIR.back();
-    stackIR.pop_back();
+    arg2 = stackIR.top();
+    stackIR.pop();
     res = builder.CreateAdd(arg1, arg2);
-    stackIR.push_back(res);
+    stackIR.push(res);
     break;
 
   case '-':
-    // fprintf(File, " sub_s\n");
     if (stackIR.empty())
       return;
-    arg1 = stackIR.back();
-    stackIR.pop_back();
+    arg1 = stackIR.top();
+    stackIR.pop();
     if (stackIR.empty())
       return;
-    arg2 = stackIR.back();
-    stackIR.pop_back();
+    arg2 = stackIR.top();
+    stackIR.pop();
     res = builder.CreateSub(arg2, arg1);
-    stackIR.push_back(res);
+    stackIR.push(res);
     break;
 
   case '*':
-    // fprintf(File, " mul_s\n");
     if (stackIR.empty())
       return;
-    arg1 = stackIR.back();
-    stackIR.pop_back();
+    arg1 = stackIR.top();
+    stackIR.pop();
     if (stackIR.empty())
       return;
-    arg2 = stackIR.back();
-    stackIR.pop_back();
+    arg2 = stackIR.top();
+    stackIR.pop();
     res = builder.CreateMul(arg1, arg2);
-    stackIR.push_back(res);
+    stackIR.push(res);
     break;
 
   case '/':
-    // fprintf(File, " div_s\n");
     if (stackIR.empty())
       return;
-    arg1 = stackIR.back();
-    stackIR.pop_back();
+    arg1 = stackIR.top();
+    stackIR.pop();
     if (stackIR.empty())
       return;
-    arg2 = stackIR.back();
-    stackIR.pop_back();
+    arg2 = stackIR.top();
+    stackIR.pop();
     res = builder.CreateUDiv(arg2, arg1);
-    stackIR.push_back(res);
+    stackIR.push(res);
     break;
-
   default:
-    // fprintf(File, " error\n");
     break;
-  }
-}
-
-void tree_ok(tree_t *tree) {
-  int size = tree->size;
-  node_ok(tree->root, &size, 0);
-}
-
-void node_ok(tree_node_t *current, int *size, int level) {
-  if (!current)
-    return;
-  if ((*size == 0) && (current) && (current->level != level))
-    printf("ERROR IN TREE!!!\n");
-
-  for (int i = 0; i < NODE; i++) {
-    if (current->link[i])
-      node_ok(current->link[i], &--(*size), level + 1);
   }
 }

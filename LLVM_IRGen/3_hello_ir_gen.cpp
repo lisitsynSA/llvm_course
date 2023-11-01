@@ -27,9 +27,7 @@ int main() {
   Value *helloWorld = builder.CreateGlobalStringPtr("hello world!\n");
 
   // declare i32 @puts(i8*)
-  std::vector<Type *> putsArgs;
-  putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
-  ArrayRef<Type *> argsRef(putsArgs);
+  ArrayRef<Type *> argsRef(builder.getInt8PtrTy());
   FunctionType *putsType =
       FunctionType::get(builder.getInt32Ty(), argsRef, false);
   FunctionCallee putsFunc = module->getOrInsertFunction("puts", putsType);

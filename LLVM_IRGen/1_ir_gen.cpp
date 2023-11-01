@@ -21,7 +21,6 @@ int main() {
   builder.SetInsertPoint(entryBB);
   builder.CreateRetVoid();
 
-  outs() << "#[LLVM IR]:\n";
   module->print(outs(), nullptr);
 
   return 0;
