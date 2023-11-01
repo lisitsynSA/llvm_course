@@ -11,9 +11,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
-#include <fstream>
 #include <iostream>
-#include <unordered_map>
 #include <stack>
 
 /*
@@ -71,12 +69,6 @@ void level_up(tree_node_t *new_current);
 void level_down(tree_node_t *current);
 void shifting_node(tree_t *tree, tree_node_t *current);
 
-void fprint_tree(tree_t *tree);
-void fprint_posnode(tree_node_t *current);
-void fprint_innode(tree_node_t *current);
-void fprint_info(info_t *info);
-void fprint_cpu(info_t *info);
-
 void LLVM_GEN(tree_t *tree);
 void LLVM_GEN_node(tree_node_t *current, llvm::IRBuilder<> &builder);
 void LLVM_GEN_value(info_t *info, llvm::IRBuilder<> &builder);
@@ -96,7 +88,7 @@ int main(int argc, const char *argv[]) {
 
   fscanf_tree(tree);
   dump_tree(tree);
-  fprint_tree(tree);
+  LLVM_GEN(tree);
   destruct_tree(tree);
   return 0;
 }
@@ -289,75 +281,6 @@ void print_info(info_t *info) {
   printf("%c", info->action);
 }
 
-void fprint_tree(tree_t *tree) {
-  File = fopen("expression_check.txt", "w");
-  fprint_innode(tree->root);
-  fclose(File);
-
-  File = fopen("expr.s", "w");
-  fprint_posnode(tree->root);
-  fprintf(File, " pop x1\n write x1\n exit");
-  fclose(File);
-
-  LLVM_GEN(tree);
-}
-
-void fprint_innode(tree_node_t *current) {
-  if (!current) {
-    return;
-  }
-  fprintf(File, "(");
-  fprint_innode(current->link[0]);
-  fprint_info(current->info);
-  fprint_innode(current->link[1]);
-  fprintf(File, ")");
-}
-
-void fprint_posnode(tree_node_t *current) {
-  if (!current) {
-    return;
-  }
-  fprint_posnode(current->link[0]);
-  fprint_posnode(current->link[1]);
-  fprint_cpu(current->info);
-}
-
-void fprint_info(info_t *info) {
-  if (info->kind == NUMBER) {
-    fprintf(File, "%d", info->value);
-    return;
-  }
-  fprintf(File, "%c", info->action);
-}
-
-void fprint_cpu(info_t *info) {
-  if (info->kind == NUMBER) {
-    fprintf(File, " push %d\n", info->value);
-    return;
-  }
-  switch (info->action) {
-  case '+':
-    fprintf(File, " add_s\n");
-    break;
-
-  case '-':
-    fprintf(File, " sub_s\n");
-    break;
-
-  case '*':
-    fprintf(File, " mul_s\n");
-    break;
-
-  case '/':
-    fprintf(File, " div_s\n");
-    break;
-
-  default:
-    fprintf(File, " error\n");
-    break;
-  }
-}
-
 ///////////////////
 /// LLVM functions
 ///////////////////
@@ -404,61 +327,36 @@ void LLVM_GEN_value(info_t *info, llvm::IRBuilder<> &builder) {
   llvm::Value *arg1;
   llvm::Value *arg2;
   llvm::Value *res;
+  // NUMBER
   if (info->kind == NUMBER) {
     arg1 = builder.getInt32(info->value);
     stackIR.push(arg1);
     return;
   }
+  // ACTION
+  if (stackIR.empty())
+      return;
+    arg1 = stackIR.top();
+    stackIR.pop();
+    if (stackIR.empty())
+      return;
+    arg2 = stackIR.top();
+    stackIR.pop();
 
   switch (info->action) {
   case '+':
-    if (stackIR.empty())
-      return;
-    arg1 = stackIR.top();
-    stackIR.pop();
-    if (stackIR.empty())
-      return;
-    arg2 = stackIR.top();
-    stackIR.pop();
     res = builder.CreateAdd(arg1, arg2);
     stackIR.push(res);
     break;
-
   case '-':
-    if (stackIR.empty())
-      return;
-    arg1 = stackIR.top();
-    stackIR.pop();
-    if (stackIR.empty())
-      return;
-    arg2 = stackIR.top();
-    stackIR.pop();
     res = builder.CreateSub(arg2, arg1);
     stackIR.push(res);
     break;
-
   case '*':
-    if (stackIR.empty())
-      return;
-    arg1 = stackIR.top();
-    stackIR.pop();
-    if (stackIR.empty())
-      return;
-    arg2 = stackIR.top();
-    stackIR.pop();
     res = builder.CreateMul(arg1, arg2);
     stackIR.push(res);
     break;
-
   case '/':
-    if (stackIR.empty())
-      return;
-    arg1 = stackIR.top();
-    stackIR.pop();
-    if (stackIR.empty())
-      return;
-    arg2 = stackIR.top();
-    stackIR.pop();
     res = builder.CreateUDiv(arg2, arg1);
     stackIR.push(res);
     break;

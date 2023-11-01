@@ -11,7 +11,10 @@ using namespace llvm;
 const int REG_FILE_SIZE = 8;
 uint32_t REG_FILE[REG_FILE_SIZE] = {};
 
-void INSTR_sort() { printf("SORT is called\n"); std::sort(REG_FILE, REG_FILE + REG_FILE_SIZE); }
+void INSTR_sort() {
+  printf("SORT is called\n");
+  std::sort(REG_FILE, REG_FILE + REG_FILE_SIZE);
+}
 
 int main(int argc, char **argv) {
   if (argc != 2) {
