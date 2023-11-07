@@ -17,8 +17,8 @@
 
 /*
     S -> E
-    E -> T (['+''-'] E)*
-    T -> P (['*''/'] T)*
+    E -> T (['+''-'] E)?
+    T -> P (['*''/'] T)?
     P -> '(' E ')' | N | F
     N -> ['0' - '9']+
     F -> ['sin''cos''sqr''sqrt']+ '(' E ')'
@@ -34,7 +34,7 @@ char *S;
 FILE *File;
 
 struct info_t {
-  int value;
+  double value;
   char action;
   char *name;
   int kind;
@@ -177,6 +177,9 @@ void calloc_node(tree_node_t *current) {
   current->link = (tree_node_t **)calloc(2, sizeof(tree_node_t *));
 }
 
+bool division = false;
+bool substitution = false;
+
 void shifting_node(tree_t *tree, tree_node_t *current) {
   tree->size += 2;
   tree_node_t *new_current = (tree_node_t *)calloc(1, sizeof(tree_node_t));
@@ -184,7 +187,16 @@ void shifting_node(tree_t *tree, tree_node_t *current) {
   level_up(new_current);
   calloc_node(current);
   current->info->kind = ACTION;
-  current->info->action = (S++)[0];
+  if (S[0] == '-') {
+    current->info->action = '+';
+    substitution = true;
+  } else if (S[0] == '/') {
+    current->info->action = '*';
+    division = true;
+  } else {
+    current->info->action = S[0];
+  }
+  S++;
   current->link[0] = new_current;
 }
 
@@ -215,6 +227,14 @@ void GetN(tree_t *tree, tree_node_t *current, int level) {
     current->info->kind = NUMBER;
     current->level = level;
     current->info->value = val;
+    if (substitution) {
+      current->info->value = -val;
+      substitution = false;
+    }
+    if (division) {
+      current->info->value = 1 / val;
+      division = false;
+    }
   } else {
     printf("ERROR:IN GetN: %s\n", S);
   }
@@ -322,7 +342,7 @@ void print_node(tree_node_t *current) {
 
 void print_info(info_t *info) {
   if (info->kind == NUMBER) {
-    printf("%d", info->value);
+    printf("%lg", info->value);
     return;
   }
   if (info->kind == FUNCTION) {
@@ -383,7 +403,7 @@ void fprint_posnode(tree_node_t *current) {
 
 void fprint_info(info_t *info) {
   if (info->kind == NUMBER) {
-    fprintf(File, "%d", info->value);
+    fprintf(File, "%lg", info->value);
     return;
   }
   if (info->kind == FUNCTION) {
@@ -404,7 +424,7 @@ void fprint_stackVM(tree_node_t *current) {
 
 void fprint_cpu(info_t *info) {
   if (info->kind == NUMBER) {
-    fprintf(File, " push %d\n", info->value);
+    fprintf(File, " push %lg\n", info->value);
     return;
   }
   if (info->kind == FUNCTION) {
@@ -483,15 +503,16 @@ void LLVM_GEN_value(info_t *info, llvm::IRBuilder<> &builder) {
   llvm::Value *res;
   // NUMBER
   if (info->kind == NUMBER) {
-    arg1 = builder.getInt32(info->value);
+    arg1 =
+        llvm::ConstantFP::get(builder.getContext(), llvm::APFloat(info->value));
     stackIR.push(arg1);
     return;
   }
   // FUNCTION
   if (info->kind == FUNCTION) {
     llvm::FunctionType *funcType = llvm::FunctionType::get(
-        builder.getInt32Ty(),
-        llvm::ArrayRef<llvm::Type *>(builder.getInt32Ty()), false);
+        builder.getDoubleTy(),
+        llvm::ArrayRef<llvm::Type *>(builder.getDoubleTy()), false);
     llvm::FunctionCallee func =
         module->getOrInsertFunction(info->name, funcType);
 
@@ -504,21 +525,21 @@ void LLVM_GEN_value(info_t *info, llvm::IRBuilder<> &builder) {
 
   // ACTION
   if (stackIR.empty())
-      return;
-    arg1 = stackIR.top();
-    stackIR.pop();
-    if (stackIR.empty())
-      return;
-    arg2 = stackIR.top();
-    stackIR.pop();
+    return;
+  arg1 = stackIR.top();
+  stackIR.pop();
+  if (stackIR.empty())
+    return;
+  arg2 = stackIR.top();
+  stackIR.pop();
 
   switch (info->action) {
   case '+':
-    res = builder.CreateAdd(arg1, arg2);
+    res = builder.CreateFAdd(arg1, arg2);
     stackIR.push(res);
     break;
   case '-':
-    res = builder.CreateSub(arg2, arg1);
+    res = builder.CreateFSub(arg2, arg1);
     stackIR.push(res);
     break;
   case '*':

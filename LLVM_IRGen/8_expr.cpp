@@ -16,8 +16,8 @@
 
 /*
     S -> E
-    E -> T (['+''-'] E)*
-    T -> P (['*''/'] T)*
+    E -> T (['+''-'] E)?
+    T -> P (['*''/'] T)?
     P -> '(' E ')' | N
     N -> ['0' - '9']+
 */
@@ -335,13 +335,13 @@ void LLVM_GEN_value(info_t *info, llvm::IRBuilder<> &builder) {
   }
   // ACTION
   if (stackIR.empty())
-      return;
-    arg1 = stackIR.top();
-    stackIR.pop();
-    if (stackIR.empty())
-      return;
-    arg2 = stackIR.top();
-    stackIR.pop();
+    return;
+  arg1 = stackIR.top();
+  stackIR.pop();
+  if (stackIR.empty())
+    return;
+  arg2 = stackIR.top();
+  stackIR.pop();
 
   switch (info->action) {
   case '+':
