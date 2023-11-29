@@ -36,7 +36,6 @@ int main() {
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);
-  outs() << "Code was run.\n";
-
+  outs() << "Code was run: " << v.IntVal << "\n";
   return 0;
 }
