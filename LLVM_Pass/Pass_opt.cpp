@@ -75,24 +75,24 @@ struct SkeletonPass : public FunctionPass {
                 continue;
               }
               ValInst->moveBefore(&*LoadBB->getFirstInsertionPt());
-            }
 
-            Store->removeFromParent();
-            for (auto &U : Load->uses()) {
-              Instruction *UseInst = cast<Instruction>(U.getUser());
-              outs() << "\t Load Use: ";
-              UseInst->print(outs(), true);
-              outs() << "\n";
-              for (int i = 0; i < UseInst->getNumOperands(); i++) {
-                if (UseInst->getOperand(i) == Load) {
-                  UseInst->setOperand(i, Val);
+              Store->removeFromParent();
+              for (auto &U : Load->uses()) {
+                Instruction *UseInst = cast<Instruction>(U.getUser());
+                outs() << "\t Load Use: ";
+                UseInst->print(outs(), true);
+                outs() << "\n";
+                for (int i = 0; i < UseInst->getNumOperands(); i++) {
+                  if (UseInst->getOperand(i) == Load) {
+                    UseInst->setOperand(i, Val);
+                  }
                 }
+                outs() << "\t Fixed Load Use: ";
+                UseInst->print(outs(), true);
+                outs() << "\n";
               }
-              outs() << "\t Fixed Load Use: ";
-              UseInst->print(outs(), true);
-              outs() << "\n";
+              Load->removeFromParent();
             }
-            Load->removeFromParent();
           }
         }
       }
