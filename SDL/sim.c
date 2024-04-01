@@ -19,6 +19,8 @@ void simInit()
     SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 0);
     SDL_RenderClear(Renderer);
     srand(time(NULL));
+    simPutPixel(0, 0, 0);
+    simFlush();
 }
 
 void simExit()
