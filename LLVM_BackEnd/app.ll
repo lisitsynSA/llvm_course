@@ -1,39 +1,40 @@
 define dso_local void @app() local_unnamed_addr {
-  br label %1
+entry:
+  br label %for.cond1.preheader
 
-1:                                                ; preds = %0, %7
-  %2 = phi i32 [ 0, %0 ], [ %8, %7 ]
-  br label %4
+for.cond1.preheader:                              ; preds = %entry, %for.cond.cleanup3
+  %step.026 = phi i32 [ 0, %entry ], [ %inc14, %for.cond.cleanup3 ]
+  br label %for.cond5.preheader
 
-3:                                                ; preds = %7
+for.cond.cleanup:                                 ; preds = %for.cond.cleanup3
   ret void
 
-4:                                                ; preds = %1, %10
-  %5 = phi i32 [ 0, %1 ], [ %11, %10 ]
-  %6 = mul nuw nsw i32 %5, %2
-  br label %13
+for.cond5.preheader:                              ; preds = %for.cond1.preheader, %for.cond.cleanup7
+  %y.025 = phi i32 [ 0, %for.cond1.preheader ], [ %inc11, %for.cond.cleanup7 ]
+  %mul = mul nuw nsw i32 %y.025, %step.026
+  br label %for.body8
 
-7:                                                ; preds = %10
-  tail call void (...) @simFlush()
-  %8 = add nuw nsw i32 %2, 1
-  %9 = icmp eq i32 %8, 1000
-  br i1 %9, label %3, label %1
+for.cond.cleanup3:                                ; preds = %for.cond.cleanup7
+  tail call void @llvm.sim.flush()
+  %inc14 = add nuw nsw i32 %step.026, 1
+  %exitcond28.not = icmp eq i32 %inc14, 1000
+  br i1 %exitcond28.not, label %for.cond.cleanup, label %for.cond1.preheader
 
-10:                                               ; preds = %13
-  %11 = add nuw nsw i32 %5, 1
-  %12 = icmp eq i32 %11, 256
-  br i1 %12, label %7, label %4
+for.cond.cleanup7:                                ; preds = %for.body8
+  %inc11 = add nuw nsw i32 %y.025, 1
+  %exitcond27.not = icmp eq i32 %inc11, 256
+  br i1 %exitcond27.not, label %for.cond.cleanup3, label %for.cond5.preheader
 
-13:                                               ; preds = %4, %13
-  %14 = phi i32 [ 0, %4 ], [ %17, %13 ]
-  %15 = mul nuw nsw i32 %6, %14
-  %16 = add nsw i32 %15, -16777216
-  tail call void @simPutPixel(i32 noundef %14, i32 noundef %5, i32 noundef %16)
-  %17 = add nuw nsw i32 %14, 1
-  %18 = icmp eq i32 %17, 512
-  br i1 %18, label %10, label %13
+for.body8:                                        ; preds = %for.cond5.preheader, %for.body8
+  %x.024 = phi i32 [ 0, %for.cond5.preheader ], [ %inc, %for.body8 ]
+  %mul9 = mul nuw nsw i32 %mul, %x.024
+  %add = add nsw i32 %mul9, -16777216
+  tail call void @llvm.sim.putpixel(i32 %x.024, i32 %y.025, i32 %add)
+  %inc = add nuw nsw i32 %x.024, 1
+  %exitcond.not = icmp eq i32 %inc, 512
+  br i1 %exitcond.not, label %for.cond.cleanup7, label %for.body8
 }
 
-declare void @simPutPixel(i32 noundef, i32 noundef, i32 noundef) local_unnamed_addr
+declare void @llvm.sim.putpixel(i32, i32, i32)
 
-declare void @simFlush(...) local_unnamed_addr
+declare void @llvm.sim.flush()

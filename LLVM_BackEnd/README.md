@@ -68,7 +68,7 @@ SimGenRegisterInfo::getFrameLowering(const MachineFunction &MF) {
 >ERROR: llc: error: target does not support generation of this file type
 #### [Sim] 6. Add Sim info for Asm generation:
 + Many actions that should be splitted to several commits
-Check inctructions in asm file (test.s):
+Check instructions in asm file (test.s):
 ```
 main:                                   ; @main
 ; %bb.0:
@@ -126,15 +126,76 @@ New position 0x34 (.text section address)
 ... 0C 00 90 AA  00 00 00 BB ...
 
 ```
-### 4) Generate application ASM
+### 4) Generate graphic ASM
+#### [Sim] 8. Add Sim clang support and intrinsics (flush and putpixel)
 ```
+cmake .... -DLLVM_ENABLE_PROJECTS="clang" && ninja -j4
+.../llvm-project/build/bin/clang -emit-llvm -S ./graphic.c -target sim
+.../llvm-project/build/bin/llc graphic.ll -march sim
+```
+Check intrinsics in asm file (graphic.s):
+```
+void app() {
+    simPutPixel(5, 5, 0xFFFFFFFF);
+    simFlush();
+}
+```
+graphic.ll:
+```
+define dso_local void @app() {
+entry:
+  call void @llvm.sim.putpixel(i32 5, i32 5, i32 -1)
+  call void @llvm.sim.flush()
+  ret void
+}
+
+declare void @llvm.sim.putpixel(i32, i32, i32)
+
+declare void @llvm.sim.flush()
+```
+
+### 5) Generate graphic BIN
+```
+.../llvm-project/build/bin/llc graphic.ll -march sim --filetype=obj
+```
+```
+app:                                    ; @app
+; %bb.0:                                ; %entry
+	MOVli r2 -1
+	MOVli r4 5
+	PUTPIXEL r4 r4 r2
+	FLUSH
+	BR r0
+.Lfunc_end0:
+```
+Check intrinsics in object file:
+```
+hexedit test.o
+New position 0x34 (.text section address)
+... FF FF 20 AA  05 00 40 AA  02 00 44 EE  00 00 00 FF  00 00 00 BB ...
+
+```
+### 6) Generate application ASM
+```
+.../llvm-project/build/bin/clang ./app.c -target sim -emit-llvm -S -O2
 .../llvm-project/build/bin/llc app.ll -march sim
 ```
 >ERROR: LLVM ERROR: Cannot select: t5: ch = br t3
+#### [Sim] 9. Add all Sim instructions
+```
+.LBB0_3:
+	PUTPIXEL r14 r13 r15
+	ADD r15 r15 r12
+	ADDi r14 r14 1
+	B.NE r14 r9 .LBB0_3
+```
 
-### 5) Generate application BIN
+### 7) Generate application BIN
 ```
 .../llvm-project/build/bin/llc app.ll -march sim --filetype=obj
+```
+```
+... 0F 00 ED EE  0C 00 FF 30  01 00 EE 40  FD FF E9 71 ...
 ```
 
 # Steps for clang FrontEnd
