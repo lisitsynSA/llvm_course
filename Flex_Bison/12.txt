@@ -1,0 +1,27 @@
+func main
+  step = 0;
+  y = 0;
+  x = 0;
+  goto loopStep;
+
+  loopStep:
+    y = 0;
+    if step != 1000 | loopY | loopStep_end;
+      loopY:
+        x = 0;
+        if y != 256 | loopX | loopY_end;
+          loopX:
+            if x != 512 | iterX | loopX_end;
+              iterX:
+                PUT(x, y, x*y*step - 16777216);
+                x = x + 1;
+                goto loopX;
+          loopX_end:
+            y = y + 1;
+            goto loopY;
+      loopY_end:
+        step = step + 1;
+        FLUSH;
+        goto loopStep;
+  loopStep_end:
+end
