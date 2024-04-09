@@ -10,8 +10,6 @@ static SDL_Renderer *Renderer = NULL;
 static SDL_Window *Window = NULL;
 static Uint32 Ticks = 0;
 
-extern void app();
-
 void simInit()
 {
     SDL_Init(SDL_INIT_VIDEO);
@@ -34,14 +32,6 @@ void simExit()
     SDL_DestroyRenderer(Renderer);
     SDL_DestroyWindow(Window);
     SDL_Quit();
-}
-
-int main(void)
-{
-    simInit();
-    app();
-    simExit();
-    return EXIT_SUCCESS;
 }
 
 void simFlush()
