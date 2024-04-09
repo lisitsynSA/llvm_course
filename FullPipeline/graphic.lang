@@ -1,0 +1,7 @@
+func app
+  x = 5;
+  y = 5;
+  color = -1;
+  PUT(x, y, color);
+  FLUSH;
+end
