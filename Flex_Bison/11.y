@@ -20,9 +20,6 @@ extern "C" {
 }
 
 #include "../SDL/sim.h"
-extern void simInit();
-extern void app();
-extern void simExit();
 
 LLVMContext context;
 IRBuilder<>* builder;

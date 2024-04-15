@@ -1,5 +1,4 @@
-#define SIM_X_SIZE 512
-#define SIM_Y_SIZE 256
+#include "../SDL/sim.h"
 
 void app() {
   for (int step = 0; step < 1000; ++step) {

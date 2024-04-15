@@ -1,7 +1,4 @@
 #include "../SDL/sim.h"
-extern void simInit();
-extern void app();
-extern void simExit();
 
 #include <iostream>
 #include "elfio/elfio.hpp"

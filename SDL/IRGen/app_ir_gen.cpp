@@ -1,7 +1,4 @@
 #include "../sim.h"
-extern void simInit();
-extern void app();
-extern void simExit();
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"

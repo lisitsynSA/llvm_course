@@ -1,6 +1,4 @@
-extern void simInit();
-extern void app();
-extern void simExit();
+#include "sim.h"
 
 int main(void)
 {
