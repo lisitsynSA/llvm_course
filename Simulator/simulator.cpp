@@ -65,7 +65,7 @@ int main( int argc, char** argv )
         for (int i = 0; i < code_size; ++i) {
             printf("%04x: %08x%s\n", i, code[i], i == code_start ? "<=" : "");
         }
-        const int REG_FILE_SIZE = 8;
+        const int REG_FILE_SIZE = 16;
         uint32_t REG_FILE[REG_FILE_SIZE] = {};
         REG_FILE[0] = code_size + 1; // RA for exit
         uint32_t PC = code_start / 4;
@@ -141,6 +141,8 @@ int main( int argc, char** argv )
         }
 
         simExit();
+        // return value in r9 register
+        return REG_FILE[9];
     }
 
     return 0;
