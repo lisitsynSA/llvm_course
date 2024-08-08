@@ -54,7 +54,7 @@ int main( int argc, char** argv )
                 symbols.get_symbol( j, name, value, size, bind, type,
                                     section_index, other );
                 if (name == "app") {
-                    code_start = value;
+                    code_start = value / 4;
                     std::cout << j << " " << name << " " << value << std::endl;
                 }
             }
@@ -68,7 +68,7 @@ int main( int argc, char** argv )
         const int REG_FILE_SIZE = 16;
         uint32_t REG_FILE[REG_FILE_SIZE] = {};
         REG_FILE[0] = code_size + 1; // RA for exit
-        uint32_t PC = code_start / 4;
+        uint32_t PC = code_start;
         uint32_t NEXT_PC = PC + 1;
         uint32_t RUN = 1;
 

@@ -10,7 +10,7 @@ clang++ Pass.o -fPIC -shared -o libPass.so
 clang sim.c app2.c -lSDL2 -Xclang -load -Xclang ../LLVM_PASS/libPass.so -flegacy-pass-manager
 ```
 
-## Examples:
+## Examples for Functions processing:
 1. Print Functions name
 ```
 clang++ Pass_start.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
@@ -62,6 +62,19 @@ clang c_examples/exp2.c
 time ./a.out 1000
 clang -Xclang -load -Xclang ./libPass.so c_examples/exp2.c -flegacy-pass-manager
 time ./a.out 1000
+```
+## Examples for IR Modules:
+1. IR reading
+```
+clang++ -O3 IR_reader.cpp `llvm-config --cppflags --ldflags --libs` -o IR_reader
+./IR_reader hello.ll
+```
+2. Pass for Module dump
+```
+clang++ ModPass_dump.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager -O1 &> test.ll
+clang test.ll -o test
+./test
 ```
 
 ## Possible instructions classes:
