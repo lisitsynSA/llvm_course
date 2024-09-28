@@ -13,7 +13,7 @@ namespace {
     virtual bool runOnFunction(Function &F) {
       outs() << "\nIn a function called " << F.getName() << "!\n";
       F.print(outs());
-      outs() << "\nFunction Uses: \n";
+      outs() << "\nFunction Users: \n";
       for (auto &U : F.uses()) {
         User *user = U.getUser();
         user->print(outs(), true);
@@ -23,7 +23,7 @@ namespace {
       for (auto &B : F) {
         outs() << "\nBasic block:";
         B.print(outs());
-        outs() << "BasicBlock Uses: \n";
+        outs() << "BasicBlock Users: \n";
         for (auto &U : B.uses()) {
           User *user = U.getUser();
           user->print(outs(), true);
@@ -33,13 +33,13 @@ namespace {
         for (auto &I : B) {
           outs() << "\nInstruction: \n";
           I.print(outs(), true);
-          outs() << "\nUses: \n";
+          outs() << "\nUsers: \n";
           for (auto &U : I.uses()) {
             User *user = U.getUser();
             user->print(outs(), true);
             outs() << "\n";
           }
-          outs() << "Use: \n";
+          outs() << "Opernads: \n";
           for (auto &U : I.operands()) {
             Value *use = U.get();
             use->print(outs(), true);

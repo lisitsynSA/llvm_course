@@ -31,7 +31,7 @@ struct SkeletonPass : public FunctionPass {
 
           for (auto &U : Alloca->uses()) {
             Instruction *UseInst = cast<Instruction>(U.getUser());
-            outs() << "\tUse: ";
+            outs() << "\tUsers: ";
             UseInst->print(outs(), true);
 
             if (StoreInst *S = dyn_cast<StoreInst>(UseInst)) {
@@ -79,7 +79,7 @@ struct SkeletonPass : public FunctionPass {
               Store->removeFromParent();
               for (auto &U : Load->uses()) {
                 Instruction *UseInst = cast<Instruction>(U.getUser());
-                outs() << "\t Load Use: ";
+                outs() << "\t Load Users: ";
                 UseInst->print(outs(), true);
                 outs() << "\n";
                 for (int i = 0; i < UseInst->getNumOperands(); i++) {
@@ -87,7 +87,7 @@ struct SkeletonPass : public FunctionPass {
                     UseInst->setOperand(i, Val);
                   }
                 }
-                outs() << "\t Fixed Load Use: ";
+                outs() << "\t Fixed Load Users: ";
                 UseInst->print(outs(), true);
                 outs() << "\n";
               }
