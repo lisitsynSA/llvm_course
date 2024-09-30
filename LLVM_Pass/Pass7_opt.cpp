@@ -7,6 +7,7 @@ using namespace llvm;
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     outs() << "[Module] " << M.getName() << "\n";
+    bool changed = false;
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
@@ -17,7 +18,6 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       F.print(outs());
       outs() << "\n";
 
-      bool changed = false;
       for (auto &B : F) {
         for (auto &I : B) {
           if (AllocaInst *Alloca = dyn_cast<AllocaInst>(&I)) {
@@ -97,7 +97,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       }
     }
     outs() << "\n";
-    return PreservedAnalyses::all();
+    return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   };
 };
 

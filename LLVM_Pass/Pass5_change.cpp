@@ -7,9 +7,13 @@ using namespace llvm;
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     outs() << "[Module] " << M.getName() << "\n";
+    bool changed = false;
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
+      if (F.isDeclaration()) {
+        return PreservedAnalyses::all();
+      }
       F.print(outs());
       // Prepare builder for IR modification
       LLVMContext &Ctx = F.getContext();
@@ -35,11 +39,12 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
               User *user = U.getUser(); // A User is anything with operands.
               user->setOperand(U.getOperandNo(), sub);
             }
+            changed = true;
           }
         }
       }
     }
-    return PreservedAnalyses::all();
+    return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   };
 };
 

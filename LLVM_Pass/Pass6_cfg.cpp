@@ -123,7 +123,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       }
     }
     outs() << "\n";
-    return PreservedAnalyses::all();
+    return PreservedAnalyses::none();
   };
 };
 
