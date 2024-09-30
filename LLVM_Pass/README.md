@@ -5,75 +5,73 @@ This is example of LLVM pass that collect static inforamtion about app IR and in
 ## Usage:
 ```
 sudo apt install llvm
-clang++ Pass.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
-clang sim.c app2.c -lSDL2 -fpass-plugin=libPass.so
+clang++ Pass6_cfg.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang -fpass-plugin=./libPass.so log.c ../SDL/sim.c ../SDL/app2.c ../SDL/start.c -lSDL2
 ```
 
 ## Examples for Functions processing:
-1. Print Functions name
+1. Pass registration
 ```
-clang++ Pass_start.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
-clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager
+clang++ Pass1_reg.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang -fpass-plugin=./libPass.so hello.c
+opt hello.ll -load-pass-plugin ./libPass.so -passes="function(mem2reg,sroa,myFuncPass),module(myModPass)" -o a.out -print-pipeline-passes
 ```
-2. Dump Functions, BasicBlocks and Instructions
+2. Print Functions name
 ```
-clang++ Pass_dump.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
-clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager
+clang++ Pass2_names.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so 
+clang -fpass-plugin=./libPass.so c_examples/hello.c -O2
 ```
-3. Dump Uses of Functions, BasicBlocks and Instructions
+3. Dump Functions, BasicBlocks and Instructions
 ```
-clang++ Pass_uses.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
-clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager
+clang++ Pass3_dump.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang -fpass-plugin=./libPass.so c_examples/hello.c -O2
 ```
-4. Change Binary operations to substruction
+4. Dump Uses of Functions, BasicBlocks and Instructions
 ```
-clang++ Pass_change.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang++ Pass4_uses.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang -fpass-plugin=./libPass.so c_examples/hello.c
+```
+5. Change Binary operations to substruction
+```
+clang++ Pass5_change.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
 
 clang c_examples/calc.c
 ./a.out
 
-clang -Xclang -load -Xclang ./libPass.so c_examples/calc.c -emit-llvm -S -o calc.ll -flegacy-pass-manager
-clang -Xclang -load -Xclang ./libPass.so c_examples/calc.c -flegacy-pass-manager
+clang -fpass-plugin=./libPass.so c_examples/calc.c -emit-llvm -S -o calc.ll
+clang -fpass-plugin=./libPass.so c_examples/calc.c
 ./a.out
 ```
-5. Instrumentation for code profiling
+6. Instrumentation for code profiling
 ```
-clang++ Pass_cfg.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang++ Pass6_cfg.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
 
-clang -Xclang -load -Xclang ./libPass.so c_examples/calc.c -emit-llvm -S -o calc.ll -flegacy-pass-manager
-clang -Xclang -load -Xclang ./libPass.so c_examples/calc.c log.c -flegacy-pass-manager
+clang -fpass-plugin=./libPass.so c_examples/calc.c -emit-llvm -S -o calc.ll
+clang -fpass-plugin=./libPass.so c_examples/calc.c log.c
 ./a.out
 
-clang -Xclang -load -Xclang ./libPass.so c_examples/fact.c -emit-llvm -S -o calc.ll -flegacy-pass-manager
-clang -Xclang -load -Xclang ./libPass.so c_examples/fact.c log.c -flegacy-pass-manager
+clang -fpass-plugin=./libPass.so c_examples/fact.c -emit-llvm -S -o fact.ll
+clang -fpass-plugin=./libPass.so c_examples/fact.c log.c
 ./a.out 4
 ```
-6. Example of bad optimization Pass
+7. Example of bad optimization Pass
 ```
-clang++ Pass_opt.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
+clang++ Pass7_opt.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
 
 clang c_examples/exp1.c
 time ./a.out 1000
-clang -Xclang -load -Xclang ./libPass.so c_examples/exp1.c -flegacy-pass-manager
+clang -fpass-plugin=./libPass.so c_examples/exp1.c
 time ./a.out 1000
 
 clang c_examples/exp2.c
 time ./a.out 1000
-clang -Xclang -load -Xclang ./libPass.so c_examples/exp2.c -flegacy-pass-manager
+clang -fpass-plugin=./libPass.so c_examples/exp2.c
 time ./a.out 1000
 ```
-## Examples for IR Modules:
-1. IR reading
+## Example for IR Reader:
 ```
-clang++ -O3 IR_reader.cpp `llvm-config --cppflags --ldflags --libs` -o IR_reader
-./IR_reader hello.ll
-```
-2. Pass for Module dump
-```
-clang++ ModPass_dump.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
-clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager -O1 &> test.ll
-clang test.ll -o test
-./test
+clang++ -O3 IR_reader.cpp `llvm-config --cppflags --ldflags --libs`
+./a.out hello.ll
 ```
 
 ## Possible instructions classes:
