@@ -8,6 +8,8 @@ sudo apt install llvm
 clang++ Pass6_cfg.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
 clang -fpass-plugin=./libPass.so log.c ../SDL/sim.c ../SDL/app2.c ../SDL/start.c -lSDL2
 ```
+![Lissajous curve](https://github.com/user-attachments/assets/0fded2a6-a511-4505-8995-47a2670a1c8d)
+
 
 ## Examples for Functions processing:
 1. Pass registration
