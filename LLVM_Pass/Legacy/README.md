@@ -5,8 +5,9 @@ This is example of LLVM pass that collect static inforamtion about app IR and in
 ## Usage:
 ```
 sudo apt install llvm
-clang++ Pass.cpp -fPIC -shared -I`llvm-config --includedir` -o libPass.so
-clang sim.c app2.c -lSDL2 -fpass-plugin=libPass.so
+clang++ Pass.cpp -c -fPIC -I`llvm-config --includedir` -o Pass.o
+clang++ Pass.o -fPIC -shared -o libPass.so
+clang sim.c app2.c -lSDL2 -Xclang -load -Xclang ../LLVM_PASS/libPass.so -flegacy-pass-manager
 ```
 
 ## Examples for Functions processing:
