@@ -25,7 +25,7 @@ int simRand();
 
 ## Graphical app instrumentation:
 ```
-clang++ ../LLVM_Pass/Pass_cfg.cpp -c -fPIC -I`llvm-config --includedir` -o Pass.o
+clang++ ../LLVM_Pass/Pass_cfg.cpp -c -fPIC -I$(llvm-config --includedir` -o Pass.o
 clang++ Pass.o -fPIC -shared -o libPass.so
 clang app.c -c -Xclang -load -Xclang ./libPass.so -flegacy-pass-manager
 clang start.c sim.c app.o ../LLVM_Pass/log.c -lSDL2
@@ -34,13 +34,13 @@ clang start.c sim.c app.o ../LLVM_Pass/log.c -lSDL2
 ```
 ## Graphical app IR generations:
 ```
-clang++ `llvm-config --cppflags --ldflags --libs` sim.c IRGen/app_ir_gen.cpp -lSDL2
+clang++ $(llvm-config --cppflags --ldflags --libs) sim.c IRGen/app_ir_gen.cpp -lSDL2
 ./a.out
 
-clang++ `llvm-config --cppflags --ldflags --libs` sim.c IRGen/app_asm_IRgen_1.cpp -lSDL2
+clang++ $(llvm-config --cppflags --ldflags --libs) sim.c IRGen/app_asm_IRgen_1.cpp -lSDL2
 ./a.out IRGen/app.s
 
-clang++ `llvm-config --cppflags --ldflags --libs` sim.c IRGen/app_asm_IRgen_2.cpp -lSDL2
+clang++ $(llvm-config --cppflags --ldflags --libs) sim.c IRGen/app_asm_IRgen_2.cpp -lSDL2
 ./a.out IRGen/app.s
 ```
 

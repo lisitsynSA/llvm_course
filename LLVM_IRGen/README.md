@@ -3,7 +3,7 @@ This is example of LLVM IR generators: from simple "hello world" generator to bi
 
 ## Usage:
 ```
-clang++ `llvm-config --cppflags --ldflags --libs` main.cpp
+clang++ $(llvm-config --cppflags --ldflags --libs) main.cpp
 ./a.out <required arguments>
 ```
 
