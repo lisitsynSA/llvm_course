@@ -16,7 +16,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
       if (isFuncLogger(F.getName()) || F.isDeclaration()) {
-        return PreservedAnalyses::all();
+        continue;
       }
 
       for (auto &B : F) {
@@ -39,8 +39,8 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           builder.getInt8Ty()->getPointerTo()};
       FunctionType *funcStartLogFuncType =
           FunctionType::get(retType, funcStartParamTypes, false);
-      FunctionCallee funcStartLogFunc = F.getParent()->getOrInsertFunction(
-          "funcStartLogger", funcStartLogFuncType);
+      FunctionCallee funcStartLogFunc =
+          M.getOrInsertFunction("funcStartLogger", funcStartLogFuncType);
 
       // Insert a call to funcStartLogger function in the function begin
       BasicBlock &entryBB = F.getEntryBlock();
@@ -56,15 +56,15 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       FunctionType *callLogFuncType =
           FunctionType::get(retType, callParamTypes, false);
       FunctionCallee callLogFunc =
-          F.getParent()->getOrInsertFunction("callLogger", callLogFuncType);
+          M.getOrInsertFunction("callLogger", callLogFuncType);
 
       // Prepare funcEndLogger function
       ArrayRef<Type *> funcEndParamTypes = {builder.getInt8Ty()->getPointerTo(),
                                             Type::getInt64Ty(Ctx)};
       FunctionType *funcEndLogFuncType =
           FunctionType::get(retType, funcEndParamTypes, false);
-      FunctionCallee funcEndLogFunc = F.getParent()->getOrInsertFunction(
-          "funcEndLogger", funcEndLogFuncType);
+      FunctionCallee funcEndLogFunc =
+          M.getOrInsertFunction("funcEndLogger", funcEndLogFuncType);
 
       // Prepare binOptLogger function
       ArrayRef<Type *> binOptParamTypes = {Type::getInt32Ty(Ctx),
@@ -76,7 +76,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       FunctionType *binOptLogFuncType =
           FunctionType::get(retType, binOptParamTypes, false);
       FunctionCallee binOptLogFunc =
-          F.getParent()->getOrInsertFunction("binOptLogger", binOptLogFuncType);
+          M.getOrInsertFunction("binOptLogger", binOptLogFuncType);
 
       // Insert loggers for call, binOpt and ret instructions
       for (auto &B : F) {

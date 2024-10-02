@@ -12,12 +12,9 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
       if (F.isDeclaration()) {
-        return PreservedAnalyses::all();
+        continue;
       }
       F.print(outs());
-      // Prepare builder for IR modification
-      LLVMContext &Ctx = F.getContext();
-      IRBuilder<> builder(Ctx);
 
       for (auto &B : F) {
         for (auto &I : B) {
@@ -51,10 +48,6 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
     PB.registerPipelineStartEPCallback([&](ModulePassManager &MPM, auto) {
-      MPM.addPass(MyModPass{});
-      return true;
-    });
-    PB.registerOptimizerLastEPCallback([&](ModulePassManager &MPM, auto) {
       MPM.addPass(MyModPass{});
       return true;
     });

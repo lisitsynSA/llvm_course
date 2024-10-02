@@ -12,7 +12,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
       if (F.isDeclaration()) {
-        return PreservedAnalyses::all();
+        continue;
       }
 
       F.print(outs());
