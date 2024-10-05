@@ -10,7 +10,10 @@ clang start.c sim.c app.c -lSDL2
 ```
 Run with your LLVM Pass:
 ```
+# Old Pass Manager
 clang start.c sim.c app.c -lSDL2 -Xclang -load -Xclang ../LLVM_PASS/libPass.so -flegacy-pass-manager
+# New Pass Manager
+clang start.c sim.c app.c -lSDL2 -fpass-plugin=../LLVM_PASS/libPass.so
 ```
 
 ## Graphical Interface:
@@ -25,9 +28,9 @@ int simRand();
 
 ## Graphical app instrumentation:
 ```
-clang++ ../LLVM_Pass/Pass_cfg.cpp -c -fPIC -I$(llvm-config --includedir` -o Pass.o
+clang++ ../LLVM_Pass/Pass_cfg.cpp -c -fPIC -I$(llvm-config --includedir) -o Pass.o
 clang++ Pass.o -fPIC -shared -o libPass.so
-clang app.c -c -Xclang -load -Xclang ./libPass.so -flegacy-pass-manager
+clang app.c -c -fpass-plugin=../LLVM_PASS/libPass.so
 clang start.c sim.c app.o ../LLVM_Pass/log.c -lSDL2
 ./a.out
 

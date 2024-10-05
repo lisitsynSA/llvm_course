@@ -5,7 +5,7 @@ This is example of LLVM pass that collect static inforamtion about app IR and in
 ## Usage:
 ```
 sudo apt install llvm
-clang++ Pass.cpp -c -fPIC -I$(llvm-config --includedir` -o Pass.o
+clang++ Pass.cpp -c -fPIC -I$(llvm-config --includedir) -o Pass.o
 clang++ Pass.o -fPIC -shared -o libPass.so
 clang sim.c app2.c -lSDL2 -Xclang -load -Xclang ../LLVM_PASS/libPass.so -flegacy-pass-manager
 ```
@@ -13,22 +13,22 @@ clang sim.c app2.c -lSDL2 -Xclang -load -Xclang ../LLVM_PASS/libPass.so -flegacy
 ## Examples for Functions processing:
 1. Print Functions name
 ```
-clang++ Pass_start.cpp -fPIC -shared -I$(llvm-config --includedir` -o libPass.so
+clang++ Pass_start.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager
 ```
 2. Dump Functions, BasicBlocks and Instructions
 ```
-clang++ Pass_dump.cpp -fPIC -shared -I$(llvm-config --includedir` -o libPass.so
+clang++ Pass_dump.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager
 ```
 3. Dump Uses of Functions, BasicBlocks and Instructions
 ```
-clang++ Pass_uses.cpp -fPIC -shared -I$(llvm-config --includedir` -o libPass.so
+clang++ Pass_uses.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager
 ```
 4. Change Binary operations to substruction
 ```
-clang++ Pass_change.cpp -fPIC -shared -I$(llvm-config --includedir` -o libPass.so
+clang++ Pass_change.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 
 clang c_examples/calc.c
 ./a.out
@@ -39,7 +39,7 @@ clang -Xclang -load -Xclang ./libPass.so c_examples/calc.c -flegacy-pass-manager
 ```
 5. Instrumentation for code profiling
 ```
-clang++ Pass_cfg.cpp -fPIC -shared -I$(llvm-config --includedir` -o libPass.so
+clang++ Pass_cfg.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 
 clang -Xclang -load -Xclang ./libPass.so c_examples/calc.c -emit-llvm -S -o calc.ll -flegacy-pass-manager
 clang -Xclang -load -Xclang ./libPass.so c_examples/calc.c log.c -flegacy-pass-manager
@@ -51,7 +51,7 @@ clang -Xclang -load -Xclang ./libPass.so c_examples/fact.c log.c -flegacy-pass-m
 ```
 6. Example of bad optimization Pass
 ```
-clang++ Pass_opt.cpp -fPIC -shared -I$(llvm-config --includedir` -o libPass.so
+clang++ Pass_opt.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 
 clang c_examples/exp1.c
 time ./a.out 1000
@@ -71,7 +71,7 @@ clang++ -O3 IR_reader.cpp $(llvm-config --cppflags --ldflags --libs) -o IR_reade
 ```
 2. Pass for Module dump
 ```
-clang++ ModPass_dump.cpp -fPIC -shared -I$(llvm-config --includedir` -o libPass.so
+clang++ ModPass_dump.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager -O1 &> test.ll
 clang test.ll -o test
 ./test
