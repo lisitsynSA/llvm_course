@@ -5,7 +5,7 @@ using namespace llvm;
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     outs() << "[Module] " << M.getName() << "\n";
-    for (auto &G : M.getGlobalList()) {
+    for (auto &G : M.globals()) {
       outs() << "[Global Variable] " << G.getName() << "\n";
       G.print(outs());
       outs() << "\n";

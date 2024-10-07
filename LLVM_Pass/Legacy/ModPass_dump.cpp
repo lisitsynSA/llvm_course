@@ -13,7 +13,7 @@ struct MyPass : public ModulePass {
   virtual bool runOnModule(Module &M) {
     // M.print(outs(), nullptr);
 
-    for (auto &G : M.getGlobalList()) {
+    for (auto &G : M.globals()) {
       // outs() << "Global Variable: ";
       G.print(outs());
       outs() << "\n";
