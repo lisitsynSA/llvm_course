@@ -7,6 +7,8 @@
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
+void func() { outs() << "Hello from \'external\' function:)\n"; }
+
 int main() {
   LLVMContext context;
   // ; ModuleID = 'top'
@@ -23,7 +25,7 @@ int main() {
   BasicBlock *entry = BasicBlock::Create(context, "entrypoint", mainFunc);
   builder.SetInsertPoint(entry);
 
-  // @0 = private unnamed_addr constant [13 x i8] c"hello world!\00", align 1
+  // @0 = private unnamed_addr constant [14 x i8] c"hello world!\0A\00", align 1
   Value *helloWorld = builder.CreateGlobalStringPtr("hello world!");
 
   // declare i32 @puts(i8*)
@@ -35,6 +37,13 @@ int main() {
   // %0 = call i32 @puts(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @0,
   // i32 0, i32 0))
   builder.CreateCall(putsFunc, helloWorld);
+  // declare void @func(void)
+  Function *ExtFunc = Function::Create(
+      FunctionType::get(builder.getVoidTy(),
+                        ArrayRef<Type *>(builder.getVoidTy()), false),
+      Function::ExternalLinkage, "func", module);
+  // call void @func()
+  builder.CreateCall(ExtFunc);
   // ret i32 0
   builder.CreateRet(builder.getInt32(0));
 
@@ -47,6 +56,12 @@ int main() {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
+  ee->InstallLazyFunctionCreator([&](const std::string &fnName) -> void * {
+    if (fnName == "func") {
+      return reinterpret_cast<void *>(func);
+    }
+    return nullptr;
+  });
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);

@@ -126,8 +126,8 @@ int main() {
   // Dump LLVM IR
   module->print(outs(), nullptr);
 
-  // Interpreter of LLVM IR
-  outs() << "Running code...\n";
+  // LLVM IR Interpreter
+  outs() << "[EE] Run\n";
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
 
@@ -147,7 +147,7 @@ int main() {
 
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(appFunc, noargs);
-  outs() << "Code was run.\n";
+  outs() << "[EE] Result: " << v.IntVal << "\n";
 
   simExit();
   return EXIT_SUCCESS;

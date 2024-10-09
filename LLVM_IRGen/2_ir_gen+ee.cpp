@@ -4,7 +4,6 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
 int main() {
@@ -24,11 +23,11 @@ int main() {
   builder.SetInsertPoint(entryBB);
   builder.CreateRetVoid();
 
-  outs() << "#[LLVM IR]:\n";
+  outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
 
-  // Interpreter of LLVM IR
-  outs() << "Running code...\n";
+  // LLVM IR Interpreter
+  outs() << "[EE] Run\n";
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
 
@@ -36,6 +35,6 @@ int main() {
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);
-  outs() << "Code was run: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << "\n";
   return 0;
 }

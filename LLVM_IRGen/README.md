@@ -7,10 +7,11 @@ clang++ $(llvm-config --cppflags --ldflags --libs) main.cpp
 ./a.out <required arguments>
 ```
 
-## List of examples:
+## List of IR Generator examples:
 1. Empty main function
 2. Empty main function and IR interpretation (ExecutionEngine)
 3. Main function generation with "hello world" printing.
+4. Main function generation with "hello world" printing + external function.
 4. LLVM IR generation for simple calculation:
 ```
 addi x4 x0 105
@@ -65,4 +66,10 @@ EXIT
 9. Expression parser with function support:
 ```
 10 * 7 - sqr(4)/2
+```
+
+## Example for IR Reader:
+```
+clang++ -O2 0_IR_reader.cpp $(llvm-config --cppflags --ldflags --libs)
+./a.out hello.ll out.ll
 ```

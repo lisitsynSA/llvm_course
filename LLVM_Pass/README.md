@@ -71,11 +71,6 @@ time ./a.out 1000
 clang -fpass-plugin=./libPass.so c_examples/exp2.c
 time ./a.out 1000
 ```
-## Example for IR Reader:
-```
-clang++ -O3 IR_reader.cpp $(llvm-config --cppflags --ldflags --libs)
-./a.out hello.ll
-```
 
 ## Possible instructions classes:
 https://llvm.org/doxygen/classllvm_1_1Instruction.html
