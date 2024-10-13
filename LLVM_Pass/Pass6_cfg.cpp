@@ -32,10 +32,12 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       LLVMContext &Ctx = F.getContext();
       IRBuilder<> builder(Ctx);
       Type *retType = Type::getVoidTy(Ctx);
+      Type *int8PtrTy = Type::getInt8PtrTy(Ctx);
+      Type *int32Ty = Type::getInt32Ty(Ctx);
+      Type *int64Ty = Type::getInt64Ty(Ctx);
 
       // Prepare funcStartLogger function
-      ArrayRef<Type *> funcStartParamTypes = {
-          builder.getInt8Ty()->getPointerTo()};
+      ArrayRef<Type *> funcStartParamTypes = {int8PtrTy};
       FunctionType *funcStartLogFuncType =
           FunctionType::get(retType, funcStartParamTypes, false);
       FunctionCallee funcStartLogFunc =
@@ -49,29 +51,22 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       builder.CreateCall(funcStartLogFunc, args);
 
       // Prepare callLogger function
-      ArrayRef<Type *> callParamTypes = {builder.getInt8Ty()->getPointerTo(),
-                                         builder.getInt8Ty()->getPointerTo(),
-                                         Type::getInt64Ty(Ctx)};
+      ArrayRef<Type *> callParamTypes = {int8PtrTy, int8PtrTy, int64Ty};
       FunctionType *callLogFuncType =
           FunctionType::get(retType, callParamTypes, false);
       FunctionCallee callLogFunc =
           M.getOrInsertFunction("callLogger", callLogFuncType);
 
       // Prepare funcEndLogger function
-      ArrayRef<Type *> funcEndParamTypes = {builder.getInt8Ty()->getPointerTo(),
-                                            Type::getInt64Ty(Ctx)};
+      ArrayRef<Type *> funcEndParamTypes = {int8PtrTy, int64Ty};
       FunctionType *funcEndLogFuncType =
           FunctionType::get(retType, funcEndParamTypes, false);
       FunctionCallee funcEndLogFunc =
           M.getOrInsertFunction("funcEndLogger", funcEndLogFuncType);
 
       // Prepare binOptLogger function
-      ArrayRef<Type *> binOptParamTypes = {Type::getInt32Ty(Ctx),
-                                           Type::getInt32Ty(Ctx),
-                                           Type::getInt32Ty(Ctx),
-                                           builder.getInt8Ty()->getPointerTo(),
-                                           builder.getInt8Ty()->getPointerTo(),
-                                           Type::getInt64Ty(Ctx)};
+      ArrayRef<Type *> binOptParamTypes = {int32Ty,   int32Ty,   int32Ty,
+                                           int8PtrTy, int8PtrTy, int64Ty};
       FunctionType *binOptLogFuncType =
           FunctionType::get(retType, binOptParamTypes, false);
       FunctionCallee binOptLogFunc =
@@ -80,8 +75,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       // Insert loggers for call, binOpt and ret instructions
       for (auto &B : F) {
         for (auto &I : B) {
-          Value *valueAddr =
-              ConstantInt::get(builder.getInt64Ty(), (int64_t)(&I));
+          Value *valueAddr = ConstantInt::get(int64Ty, (int64_t)(&I));
           if (auto *call = dyn_cast<CallInst>(&I)) {
             // Insert before call
             builder.SetInsertPoint(call);
