@@ -4,7 +4,7 @@ using namespace llvm;
 
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-    outs() << "\n[Module Pass]\n";
+    outs() << "\n[Module Pass] Module: " << M.getName() << "\n";
     for (auto &G : M.globals()) {
       outs() << "[Global Variable] " << G.getName() << "\n";
     }
@@ -17,7 +17,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 
 struct MyFuncPass : public PassInfoMixin<MyFuncPass> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM) {
-    outs() << "\n[Function Pass]\n";
+    outs() << "\n[Function Pass] Module: " << F.getParent()->getName() << "\n";
     outs() << "[Function] " << F.getName() << "\n";
     return PreservedAnalyses::all();
   };

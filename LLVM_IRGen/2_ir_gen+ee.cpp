@@ -14,14 +14,14 @@ int main() {
   IRBuilder<> builder(context);
 
   // declare void @main()
-  FunctionType *funcType = FunctionType::get(builder.getVoidTy(), false);
+  FunctionType *funcType = FunctionType::get(builder.getInt32Ty(), false);
   Function *mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
   // entry:
   BasicBlock *entryBB = BasicBlock::Create(context, "entry", mainFunc);
 
   builder.SetInsertPoint(entryBB);
-  builder.CreateRetVoid();
+  builder.CreateRet(builder.getInt32(42));
 
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
