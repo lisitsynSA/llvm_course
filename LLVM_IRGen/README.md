@@ -12,14 +12,15 @@ clang++ $(llvm-config --cppflags --ldflags --libs) main.cpp
 2. Empty main function and IR interpretation (ExecutionEngine)
 3. Main function generation with "hello world" printing.
 4. Main function generation with "hello world" printing + external function.
-4. LLVM IR generation for simple calculation:
+5. LLVM IR generation for simple calculation with external functions.
+5. LLVM IR generation for simple calculation with IR functions.
 ```
 addi x4 x0 105
 addi x1 x0 9
 add x0 x1 x4
 sort
 ```
-5. LLVM IR generation for calculation with branches:
+6. LLVM IR generation for calculation with branches:
 ```
 ENTRY
     read x2
