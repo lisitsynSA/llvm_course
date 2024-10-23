@@ -37,7 +37,7 @@ preEXIT
     sort
     b EXIT
 ```
-6. Simulator that work in 2 ways: calling instruction simulation functions and build IR from input application:
+7. Simulator that work in 2 ways: calling instruction simulation functions and build IR from input application:
 ```
 read x1
 addi x3 x3 1
@@ -47,7 +47,7 @@ bne x1 x2 3
 write x3
 exit
 ```
-7. Simulator extended with complex control flow:
+8. Simulator extended with complex control flow:
 ```
 ENTRY
     read x1
