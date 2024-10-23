@@ -42,9 +42,11 @@ int main(int argc, char *argv[]) {
   // source_filename = "top"
   Module *module = new Module("top", context);
   IRBuilder<> builder(context);
+  Type *voidType = Type::getVoidTy(context);
+  Type *int32Type = Type::getInt32Ty(context);
 
   //[32 x i32] regFile = {0, 0, 0, 0}
-  ArrayType *regFileType = ArrayType::get(builder.getInt32Ty(), REG_FILE_SIZE);
+  ArrayType *regFileType = ArrayType::get(int32Type, REG_FILE_SIZE);
   module->getOrInsertGlobal("regFile", regFileType);
   GlobalVariable *regFile = module->getNamedGlobal("regFile");
 
@@ -80,18 +82,15 @@ int main(int argc, char *argv[]) {
   input.close();
   input.open(argv[1]);
 
-  Type *voidType = Type::getVoidTy(context);
   // declare void @simPutPixel(i32 noundef, i32 noundef, i32 noundef)
-  ArrayRef<Type *> simPutPixelParamTypes = {Type::getInt32Ty(context),
-                                            Type::getInt32Ty(context),
-                                            Type::getInt32Ty(context)};
+  ArrayRef<Type *> simPutPixelParamTypes = {int32Type, int32Type, int32Type};
   FunctionType *simPutPixelType =
       FunctionType::get(voidType, simPutPixelParamTypes, false);
   FunctionCallee simPutPixelFunc =
       module->getOrInsertFunction("simPutPixel", simPutPixelType);
 
   // declare void @simFlush(...)
-  FunctionType *simFlushType = FunctionType::get(voidType, {voidType}, false);
+  FunctionType *simFlushType = FunctionType::get(voidType, false);
   FunctionCallee simFlushFunc =
       module->getOrInsertFunction("simFlush", simFlushType);
 
@@ -109,21 +108,18 @@ int main(int argc, char *argv[]) {
       input >> arg;
       outs() << "\tPUT_PIXEL " << arg;
       Value *arg1 = builder.CreateLoad(
-          builder.getInt32Ty(),
-          builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                     std::stoi(arg.substr(1))));
+          int32Type, builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                std::stoi(arg.substr(1))));
       input >> arg;
       outs() << " " << arg;
       Value *arg2 = builder.CreateLoad(
-          builder.getInt32Ty(),
-          builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                     std::stoi(arg.substr(1))));
+          int32Type, builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                std::stoi(arg.substr(1))));
       input >> arg;
       outs() << " " << arg << "\n";
       Value *arg3 = builder.CreateLoad(
-          builder.getInt32Ty(),
-          builder.CreateConstGEP2_32(regFileType, regFile, 0,
-                                     std::stoi(arg.substr(1))));
+          int32Type, builder.CreateConstGEP2_32(regFileType, regFile, 0,
+                                                std::stoi(arg.substr(1))));
       Value *args[] = {arg1, arg2, arg3};
       builder.CreateCall(simPutPixelFunc, args);
       continue;
@@ -150,8 +146,8 @@ int main(int argc, char *argv[]) {
       Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       Value *xor_arg1_arg2 =
-          builder.CreateXor(builder.CreateLoad(builder.getInt32Ty(), arg1_p),
-                            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
+          builder.CreateXor(builder.CreateLoad(int32Type, arg1_p),
+                            builder.CreateLoad(int32Type, arg2_p));
       builder.CreateStore(xor_arg1_arg2, res_p);
       continue;
     }
@@ -172,8 +168,8 @@ int main(int argc, char *argv[]) {
       Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       Value *mul_arg1_arg2 =
-          builder.CreateMul(builder.CreateLoad(builder.getInt32Ty(), arg1_p),
-                            builder.CreateLoad(builder.getInt32Ty(), arg2_p));
+          builder.CreateMul(builder.CreateLoad(int32Type, arg1_p),
+                            builder.CreateLoad(int32Type, arg2_p));
       builder.CreateStore(mul_arg1_arg2, res_p);
       continue;
     }
@@ -192,8 +188,8 @@ int main(int argc, char *argv[]) {
       outs() << " - " << arg << "\n";
       // arg2
       Value *arg2 = builder.getInt32(std::stoi(arg));
-      Value *sub_arg1_arg2 = builder.CreateSub(
-          builder.CreateLoad(builder.getInt32Ty(), arg1_p), arg2);
+      Value *sub_arg1_arg2 =
+          builder.CreateSub(builder.CreateLoad(int32Type, arg1_p), arg2);
       builder.CreateStore(sub_arg1_arg2, res_p);
       continue;
     }
@@ -209,9 +205,8 @@ int main(int argc, char *argv[]) {
       // arg1
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
-      Value *arg1 =
-          builder.CreateAdd(builder.CreateLoad(builder.getInt32Ty(), arg1_p),
-                            builder.getInt32(1));
+      Value *arg1 = builder.CreateAdd(builder.CreateLoad(int32Type, arg1_p),
+                                      builder.getInt32(1));
       builder.CreateStore(arg1, arg1_p);
       input >> arg;
       outs() << " != " << arg << "\n";
@@ -227,13 +222,14 @@ int main(int argc, char *argv[]) {
       // reg1
       Value *reg_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                 std::stoi(arg.substr(1)));
+      Value *reg_i1 = builder.CreateTrunc(builder.CreateLoad(int32Type, reg_p),
+                                          builder.getInt1Ty());
       input >> arg;
       outs() << ") then BB:" << arg;
       input >> name;
       outs() << " else BB:" << name << "\n";
       outs() << "BB " << name << "\n";
-      builder.CreateCondBr(builder.CreateLoad(builder.getInt32Ty(), reg_p),
-                           BBMap[arg], BBMap[name]);
+      builder.CreateCondBr(reg_i1, BBMap[arg], BBMap[name]);
       builder.SetInsertPoint(BBMap[name]);
       continue;
     }
@@ -248,6 +244,8 @@ int main(int argc, char *argv[]) {
 
   outs() << "\n#[LLVM IR]:\n";
   module->print(outs(), nullptr);
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*mainFunc, &outs());
 
   outs() << "\n#[Running code]\n";
   InitializeNativeTarget();

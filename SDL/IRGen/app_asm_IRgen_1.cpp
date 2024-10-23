@@ -46,9 +46,7 @@ void do_INC_NEi(int arg1, int arg2, int arg3) {
   REG_FILE[arg1] = REG_FILE[arg2] != arg3;
 }
 
-void do_FLUSH(){
-  simFlush();
-}
+void do_FLUSH() { simFlush(); }
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -107,7 +105,7 @@ int main(int argc, char *argv[]) {
 
   // Funcions types
   Type *voidType = Type::getVoidTy(context);
-  FunctionType *voidFuncType = FunctionType::get(voidType, {voidType}, false);
+  FunctionType *voidFuncType = FunctionType::get(voidType, false);
   ArrayRef<Type *> int32x3Types = {Type::getInt32Ty(context),
                                    Type::getInt32Ty(context),
                                    Type::getInt32Ty(context)};
@@ -237,13 +235,14 @@ int main(int argc, char *argv[]) {
       // reg1
       Value *reg_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                 std::stoi(arg.substr(1)));
+      Value *reg_i1 = builder.CreateTrunc(
+          builder.CreateLoad(builder.getInt32Ty(), reg_p), builder.getInt1Ty());
       input >> arg;
       outs() << ") then BB:" << arg;
       input >> name;
       outs() << " else BB:" << name << "\n";
       outs() << "BB " << name << "\n";
-      builder.CreateCondBr(builder.CreateLoad(builder.getInt32Ty(), reg_p),
-                           BBMap[arg], BBMap[name]);
+      builder.CreateCondBr(reg_i1, BBMap[arg], BBMap[name]);
       builder.SetInsertPoint(BBMap[name]);
       continue;
     }
@@ -258,6 +257,8 @@ int main(int argc, char *argv[]) {
 
   outs() << "\n#[LLVM IR]:\n";
   module->print(outs(), nullptr);
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*mainFunc, &outs());
 
   outs() << "\n#[Running code]\n";
   InitializeNativeTarget();

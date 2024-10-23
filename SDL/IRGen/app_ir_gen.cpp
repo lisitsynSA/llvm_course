@@ -5,6 +5,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
@@ -16,7 +17,7 @@ int main() {
   Module *module = new Module("app.c", context);
   IRBuilder<> builder(context);
 
-  // declare void @simPutPixel(i32 noundef, i32 noundef, i32 noundef)
+  // declare void @simPutPixel(i32, i32, i32)
   // local_unnamed_addr #1
   Type *voidType = Type::getVoidTy(context);
   ArrayRef<Type *> simPutPixelParamTypes = {Type::getInt32Ty(context),
@@ -27,13 +28,13 @@ int main() {
   FunctionCallee simPutPixelFunc =
       module->getOrInsertFunction("simPutPixel", simPutPixelType);
 
-  // declare void @simFlush(...) local_unnamed_addr #1
-  FunctionType *simFlushType = FunctionType::get(voidType, {voidType}, false);
+  // declare void @simFlush()
+  FunctionType *simFlushType = FunctionType::get(voidType, false);
   FunctionCallee simFlushFunc =
       module->getOrInsertFunction("simFlush", simFlushType);
 
-  // define dso_local void @app() local_unnamed_addr #0 {
-  FunctionType *appFuncType = FunctionType::get(builder.getInt32Ty(), false);
+  // define void @app() {
+  FunctionType *appFuncType = FunctionType::get(voidType, false);
   Function *appFunc =
       Function::Create(appFuncType, Function::ExternalLinkage, "app", module);
 
@@ -74,7 +75,7 @@ int main() {
 
   // 7:                                                ; preds = %10
   builder.SetInsertPoint(BB7);
-  // tail call void (...) @simFlush() #2
+  // call void @simFlush()
   builder.CreateCall(simFlushFunc);
   // %8 = add nuw nsw i32 %2, 1
   Value *val8 = builder.CreateAdd(val2, builder.getInt32(1), "", true, true);
@@ -100,8 +101,7 @@ int main() {
   Value *val15 = builder.CreateMul(val6, val14, "", true, true);
   // %16 = add nsw i32 %15, -16777216
   Value *val16 = builder.CreateNSWAdd(val15, builder.getInt32(-16777216));
-  // tail call void @simPutPixel(i32 noundef %14, i32 noundef %5, i32 noundef
-  // %16) #2
+  // call void @simPutPixel(i32 %14, i32 %5, i32 %16)
   Value *args[] = {val14, val5, val16};
   builder.CreateCall(simPutPixelFunc, args);
   // %17 = add nuw nsw i32 %14, 1
@@ -125,6 +125,8 @@ int main() {
 
   // Dump LLVM IR
   module->print(outs(), nullptr);
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*appFunc, &outs());
 
   // LLVM IR Interpreter
   outs() << "[EE] Run\n";
