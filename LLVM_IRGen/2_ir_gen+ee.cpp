@@ -26,8 +26,9 @@ int main() {
 
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "[VERIFICATION]\n";
-  verifyFunction(*mainFunc, &outs());
+  outs() << "\n";
+  bool verif = verifyFunction(*mainFunc, &outs());
+  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
   // LLVM IR Interpreter
   outs() << "[EE] Run\n";

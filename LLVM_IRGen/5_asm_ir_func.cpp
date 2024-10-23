@@ -122,8 +122,9 @@ int main(int argc, char **argv) {
   // Dump LLVM IR
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "[VERIFICATION]\n";
-  verifyFunction(*mainFunc, &outs());
+  outs() << "\n";
+  bool verif = verifyFunction(*mainFunc, &outs());
+  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
   dumpRegFile();
 

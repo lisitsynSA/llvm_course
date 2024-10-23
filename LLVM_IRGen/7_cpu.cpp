@@ -627,8 +627,9 @@ int main(int argc, char *argv[]) {
 
   outs() << "[LLVM IR] DUMP\n";
   module->print(outs(), nullptr);
-  outs() << "[VERIFICATION]\n";
-  verifyFunction(*mainFunc, &outs());
+  outs() << "\n";
+  bool verif = verifyFunction(*mainFunc, &outs());
+  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
   outs() << "[LLVM IR] END\n";
   for (int i = 0; i < REG_FILE_SIZE; i++) {
     cpu.REG_FILE[i] = 0;
