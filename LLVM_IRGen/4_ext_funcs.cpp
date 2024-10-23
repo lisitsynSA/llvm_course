@@ -3,6 +3,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
@@ -38,10 +39,9 @@ int main() {
   // i32 0, i32 0))
   builder.CreateCall(putsFunc, helloWorld);
   // declare void @func(void)
-  Function *ExtFunc = Function::Create(
-      FunctionType::get(builder.getVoidTy(),
-                        ArrayRef<Type *>(builder.getVoidTy()), false),
-      Function::ExternalLinkage, "func", module);
+  Function *ExtFunc =
+      Function::Create(FunctionType::get(builder.getVoidTy(), false),
+                       Function::ExternalLinkage, "func", module);
   // call void @func()
   builder.CreateCall(ExtFunc);
   // ret i32 0
@@ -49,6 +49,8 @@ int main() {
 
   // Dump LLVM IR
   module->print(outs(), nullptr);
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*mainFunc, &outs());
 
   // LLVM IR Interpreter
   outs() << "[EE] Run\n";

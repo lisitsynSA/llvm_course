@@ -3,6 +3,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include <fstream>
@@ -44,9 +45,9 @@ int main(int argc, char **argv) {
   Type *int32Type = builder.getInt32Ty();
 
   // declare void @INSTR_sort(void)
-  Function *CalleeINSTR_sort = Function::Create(
-      FunctionType::get(voidType, ArrayRef<Type *>(voidType), false),
-      Function::ExternalLinkage, "INSTR_sort", module);
+  Function *CalleeINSTR_sort =
+      Function::Create(FunctionType::get(voidType, false),
+                       Function::ExternalLinkage, "INSTR_sort", module);
 
   //[8 x i32] regFile = {0, 0, 0, 0}
   ArrayType *regFileType = ArrayType::get(int32Type, REG_FILE_SIZE);
@@ -121,6 +122,8 @@ int main(int argc, char **argv) {
   // Dump LLVM IR
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*mainFunc, &outs());
 
   dumpRegFile();
 

@@ -8,6 +8,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -379,7 +380,7 @@ int main(int argc, char *argv[]) {
   Instructions.push_back(
       new Instr(InsnId_t::EXIT, do_exit, "[RUNTIME ERROR] Segmentation fault"));
   // Read instruction from file
-  outs() << "#[FILE] BEGIN\n";
+  outs() << "[FILE] BEGIN\n";
   while (input >> name) {
     outs() << name;
     // 0 registers
@@ -528,10 +529,10 @@ int main(int argc, char *argv[]) {
     Instructions.clear();
     return 1;
   }
-  outs() << "#[FILE] END\n";
+  outs() << "[FILE] END\n";
 
   // App simulation
-  outs() << "\n#[EXEC] BEGIN\n";
+  outs() << "\n[EXEC] BEGIN\n";
   CPU cpu;
   for (int i = 0; i < REG_FILE_SIZE; i++) {
     cpu.REG_FILE[i] = 0;
@@ -544,7 +545,7 @@ int main(int argc, char *argv[]) {
     Instructions[cpu.PC]->m_INSTR(&cpu, Instructions[cpu.PC]);
     cpu.PC = cpu.NEXT_PC;
   }
-  outs() << "#[EXEC] END\n";
+  outs() << "[EXEC] END\n";
 
   // Dump registers after simulation
   for (int i = 0; i < REG_FILE_SIZE; i++) {
@@ -552,7 +553,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Build IR for application
-  outs() << "#[LLVM IR] BEGIN\n";
+  outs() << "[LLVM IR] BEGIN\n";
   LLVMContext context;
   // ; ModuleID = 'top'
   // source_filename = "top"
@@ -560,7 +561,7 @@ int main(int argc, char *argv[]) {
   IRBuilder<> builder(context);
 
   // declare void @main()
-  FunctionType *funcType = FunctionType::get(builder.getVoidTy(), false);
+  FunctionType *funcType = FunctionType::get(builder.getInt32Ty(), false);
   Function *mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
   // entry:
@@ -569,10 +570,9 @@ int main(int argc, char *argv[]) {
   builder.SetInsertPoint(entryBB);
 
   // createCalleeFunctions(builder, module);
-  FunctionType *CalleType = FunctionType::get(
+  FunctionType *CalleeType = FunctionType::get(
       builder.getVoidTy(),
-      ArrayRef<Type *>({builder.getInt8PtrTy(), builder.getInt8PtrTy()}),
-      false);
+      ArrayRef<Type *>({builder.getInt64Ty(), builder.getInt64Ty()}), false);
 
   // Get poointer to CPU for function args
   Value *cpu_p = builder.getInt64((uint64_t)&cpu);
@@ -619,21 +619,23 @@ int main(int argc, char *argv[]) {
     Value *instr_p = builder.getInt64((uint64_t)Instructions[PC]);
     // Call simulation function for other instructions
     builder.CreateCall(module->getOrInsertFunction(
-                           "do_" + Instructions[PC]->m_name, CalleType),
+                           "do_" + Instructions[PC]->m_name, CalleeType),
                        ArrayRef<Value *>({cpu_p, instr_p}));
   }
   // ret i32 0
   builder.CreateRet(builder.getInt32(0));
 
-  outs() << "#[LLVM IR] DUMP\n";
+  outs() << "[LLVM IR] DUMP\n";
   module->print(outs(), nullptr);
-  outs() << "#[LLVM IR] END\n";
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*mainFunc, &outs());
+  outs() << "[LLVM IR] END\n";
   for (int i = 0; i < REG_FILE_SIZE; i++) {
     cpu.REG_FILE[i] = 0;
   }
 
   // App simulation with execution engine
-  outs() << "#[LLVM EE] RUN\n";
+  outs() << "[LLVM EE] RUN\n";
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
 
@@ -646,7 +648,7 @@ int main(int argc, char *argv[]) {
   cpu.RUN = 1;
   cpu.PC = 1;
   ee->runFunction(mainFunc, noargs);
-  outs() << "#[LLVM EE] END\n";
+  outs() << "[LLVM EE] END\n";
 
   // Registers dump after simulation with EE
   for (int i = 0; i < REG_FILE_SIZE; i++) {

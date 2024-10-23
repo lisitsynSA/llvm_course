@@ -3,6 +3,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 using namespace llvm;
 
@@ -14,7 +15,7 @@ int main() {
   IRBuilder<> builder(context);
 
   // declare void @main()
-  FunctionType *funcType = FunctionType::get(builder.getInt32Ty(), false);
+  FunctionType *funcType = FunctionType::get(builder.getVoidTy(), false);
   Function *mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
   // entry:
@@ -25,6 +26,8 @@ int main() {
 
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*mainFunc, &outs());
 
   // LLVM IR Interpreter
   outs() << "[EE] Run\n";

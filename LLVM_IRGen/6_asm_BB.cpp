@@ -57,9 +57,9 @@ int main(int argc, char *argv[]) {
   Type *int32Type = builder.getInt32Ty();
 
   // declare void @INSTR_sort(void)
-  Function *CalleeINSTR_sort = Function::Create(
-      FunctionType::get(voidType, ArrayRef<Type *>(voidType), false),
-      Function::ExternalLinkage, "INSTR_sort", module);
+  Function *CalleeINSTR_sort =
+      Function::Create(FunctionType::get(voidType, false),
+                       Function::ExternalLinkage, "INSTR_sort", module);
   // declare void @INSTR_dump(i32)
   Function *CalleeINSTR_dump = Function::Create(
       FunctionType::get(voidType, ArrayRef<Type *>{int32Type}, false),
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   GlobalVariable *regFile = module->getNamedGlobal("regFile");
 
   // declare void @main()
-  FunctionType *funcType = FunctionType::get(voidType, false);
+  FunctionType *funcType = FunctionType::get(int32Type, false);
   Function *mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   std::string arg;
   std::unordered_map<std::string, BasicBlock *> BBMap;
 
-  outs() << "\n#[FILE]:\nBBs:";
+  outs() << "\n[FILE]:\nBBs:";
 
   while (input >> name) {
     if (!name.compare("add") || !name.compare("addi") || !name.compare("mul") ||
@@ -269,7 +269,8 @@ int main(int argc, char *argv[]) {
   // Dump LLVM IR
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  verifyFunction(*mainFunc);
+  outs() << "[VERIFICATION]\n";
+  verifyFunction(*mainFunc, &outs());
 
   // Interpreter of LLVM IR
   outs() << "[EE] Run\n";
