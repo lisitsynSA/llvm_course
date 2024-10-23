@@ -1,3 +1,4 @@
+#include "llvm/IR/Verifier.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 using namespace llvm;
@@ -72,7 +73,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
                 }
                 ValInst->moveBefore(&*LoadBB->getFirstInsertionPt());
 
-                Store->removeFromParent();
+                Store->eraseFromParent();
                 for (auto &U : Load->uses()) {
                   Instruction *UseInst = cast<Instruction>(U.getUser());
                   outs() << "\t Load Users: ";
@@ -87,12 +88,15 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
                   UseInst->print(outs(), true);
                   outs() << "\n";
                 }
-                Load->removeFromParent();
+                Load->eraseFromParent();
               }
             }
           }
         }
       }
+      outs() << "\n";
+      bool verif = verifyFunction(F, &outs());
+      outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
     }
     outs() << "\n";
     return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();

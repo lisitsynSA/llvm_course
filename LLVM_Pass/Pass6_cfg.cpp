@@ -1,4 +1,5 @@
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 using namespace llvm;
@@ -25,7 +26,6 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           I.print(outs(), true);
           outs() << "\n";
         }
-        outs() << "\n";
       }
 
       // Prepare builder for IR modification
@@ -114,6 +114,9 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           }
         }
       }
+      outs() << "\n";
+      bool verif = verifyFunction(F, &outs());
+      outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
     }
     outs() << "\n";
     return PreservedAnalyses::none();
