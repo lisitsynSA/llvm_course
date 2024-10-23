@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     // Interpreter of LLVM IR
     outs() << "Running code...\n";
 	ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-    ee->InstallLazyFunctionCreator([&](const std::string &fnName) -> void * {
+    ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
         if (fnName == "simFlush") {
             return reinterpret_cast<void *>(simFlush);
         }

@@ -46,7 +46,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
-    PB.registerPipelineStartEPCallback([&](ModulePassManager &MPM, auto) {
+    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
       MPM.addPass(MyModPass{});
       return true;
     });

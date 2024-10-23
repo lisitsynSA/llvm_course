@@ -132,7 +132,7 @@ int main() {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([&](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
     if (fnName == "simPutPixel") {
       return reinterpret_cast<void *>(simPutPixel);
     }

@@ -5,12 +5,12 @@ using namespace llvm;
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
     // clang hello.c -fpass-plugin=./libPass.so
-    PB.registerPipelineStartEPCallback([&](ModulePassManager &MPM, auto) {
+    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerPipelineStartEPCallback\n";
       return true;
     });
-    PB.registerOptimizerLastEPCallback([&](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerOptimizerLastEPCallback\n";
       return true;
