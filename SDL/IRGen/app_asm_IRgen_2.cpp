@@ -244,8 +244,9 @@ int main(int argc, char *argv[]) {
 
   outs() << "\n#[LLVM IR]:\n";
   module->print(outs(), nullptr);
-  outs() << "[VERIFICATION]\n";
-  verifyFunction(*mainFunc, &outs());
+  outs() << "\n";
+  bool verif = verifyFunction(*mainFunc, &outs());
+  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
   outs() << "\n#[Running code]\n";
   InitializeNativeTarget();
