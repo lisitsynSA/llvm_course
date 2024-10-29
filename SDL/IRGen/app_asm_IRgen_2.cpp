@@ -23,11 +23,10 @@ using namespace llvm;
 //    EXIT
 
 const int REG_FILE_SIZE = 8;
-uint32_t REG_FILE[REG_FILE_SIZE];
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
-    outs() << "[ERROR] Need 1 argument: file with RISC-V assembler\n";
+    outs() << "[ERROR] Need 1 argument: file with assembler code\n";
     return 1;
   }
   std::ifstream input;
@@ -47,11 +46,12 @@ int main(int argc, char *argv[]) {
 
   //[32 x i32] regFile = {0, 0, 0, 0}
   ArrayType *regFileType = ArrayType::get(int32Type, REG_FILE_SIZE);
-  module->getOrInsertGlobal("regFile", regFileType);
-  GlobalVariable *regFile = module->getNamedGlobal("regFile");
+  GlobalVariable *regFile = new GlobalVariable(
+      *module, regFileType, false, GlobalValue::PrivateLinkage, 0, "regFile");
+  regFile->setInitializer(ConstantAggregateZero::get(regFileType));
 
   // declare void @main()
-  FunctionType *funcType = FunctionType::get(builder.getVoidTy(), false);
+  FunctionType *funcType = FunctionType::get(voidType, false);
   Function *mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
 
@@ -263,7 +263,6 @@ int main(int argc, char *argv[]) {
     return nullptr;
   });
 
-  ee->addGlobalMapping(regFile, (void *)REG_FILE);
   ee->finalizeObject();
 
   simInit();

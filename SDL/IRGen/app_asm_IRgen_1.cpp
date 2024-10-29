@@ -50,7 +50,7 @@ void do_FLUSH() { simFlush(); }
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
-    outs() << "[ERROR] Need 1 argument: file with RISC-V assembler\n";
+    outs() << "[ERROR] Need 1 argument: file with assembler code\n";
     return 1;
   }
   std::ifstream input;
