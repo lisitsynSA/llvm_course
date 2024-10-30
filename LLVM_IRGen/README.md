@@ -1,7 +1,13 @@
 # LLVM IR Generators examples
 This is example of LLVM IR generators: from simple "hello world" generator to binary lifter and mathematical expressions frontend. Need to install `llvm-dev` package for build examples.
 
-## Usage:
+## Example for IR Reader:
+```
+clang++ -O2 0_IR_reader.cpp $(llvm-config --cppflags --ldflags --libs)
+./a.out hello.ll out.ll
+```
+
+## Usage for IR Generators:
 ```
 clang++ $(llvm-config --cppflags --ldflags --libs) main.cpp
 ./a.out <required arguments>
@@ -60,17 +66,11 @@ EXIT
     write x3
     exit
 ```
-8. Simple expressions parser, that build LLVM IR for calculation:
+9. Simple expressions parser, that build LLVM IR for calculation:
 ```
 10 * 7 - 20 
 ```
 9. Expression parser with function support:
 ```
 10 * 7 - sqr(4)/2
-```
-
-## Example for IR Reader:
-```
-clang++ -O2 0_IR_reader.cpp $(llvm-config --cppflags --ldflags --libs)
-./a.out hello.ll out.ll
 ```
