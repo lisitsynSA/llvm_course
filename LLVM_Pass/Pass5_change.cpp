@@ -2,12 +2,14 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
+#include <list>
 using namespace llvm;
 
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     outs() << "[Module] " << M.getName() << "\n";
     bool changed = false;
+    std::list<Instruction *> RemoveInstrs;
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
@@ -36,6 +38,9 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
               User *user = U.getUser(); // A User is anything with operands.
               user->setOperand(U.getOperandNo(), sub);
             }
+            // 2 variants for removing (only RemoveInstrs works):
+            // I.eraseFromParent();
+            // RemoveInstrs.push_back(&I);
             changed = true;
             outs() << "\n";
             bool verif = verifyFunction(F, &outs());
@@ -43,6 +48,9 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           }
         }
       }
+    }
+    for (auto I : RemoveInstrs) {
+      I->eraseFromParent();
     }
     return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   };
