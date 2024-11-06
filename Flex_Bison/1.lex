@@ -13,6 +13,9 @@ int unmin = 0;
 [1-9][0-9]*     { int opnd = atoi(yytext);
                   if (unmin) opnd = -opnd; unmin=0;
                   switch(op) {
+                    default : 
+                      printf("Unexpected operator in line %d\n", yylineno);
+                      exit(1);
                     case '+': res += opnd; break;
                     case '-': res -= opnd; break;
                     case '*': res *= opnd; break;
@@ -41,4 +44,3 @@ int unmin = 0;
 [ \t\r\n]       ; // whitespace
 .               { printf("Syntax error in line %d\n", yylineno); exit(1); }
 %%
-

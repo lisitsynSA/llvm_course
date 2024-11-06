@@ -27,3 +27,7 @@ TERM:    NUM
 
 %%
 
+int main(int argc, char **argv)
+{
+  yyparse();
+}

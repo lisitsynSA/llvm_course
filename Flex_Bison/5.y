@@ -4,6 +4,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 using namespace llvm;
 
 #define YYSTYPE Value*
@@ -36,8 +37,12 @@ int main(int argc, char **argv)
 
     yyparse();
 
-    outs() << "#[LLVM IR]:\n";
+    outs() << "[LLVM IR]:\n";
     module->print(outs(), nullptr);
+    outs() << "\n";
+    bool verif = verifyFunction(*mainFunc, &outs());
+    outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+
     return 0;
 }
 %}

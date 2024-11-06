@@ -4,6 +4,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/Support/TargetSelect.h"
@@ -46,11 +47,14 @@ int main(int argc, char **argv)
 
     yyparse();
 
-    outs() << "#[LLVM IR]:\n";
+    outs() << "[LLVM IR]:\n";
     module->print(outs(), nullptr);
+    outs() << "\n";
+    bool verif = verifyFunction(*mainFunc, &outs());
+    outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
     // Interpreter of LLVM IR
-    outs() << "Running code...\n";
+    outs() << "[EE] Run\n";
 	ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
     for (auto& value : IdentifierMap) {
         ee->addGlobalMapping(value.second, new int(0));
@@ -58,7 +62,7 @@ int main(int argc, char **argv)
     ee->finalizeObject();
 	std::vector<GenericValue> noargs;
 	GenericValue res = ee->runFunction(mainFunc, noargs);
-	outs() << "Code was run. Result = " << res.IntVal << "\n";
+    outs() << "[EE] Result: " << res.IntVal << "\n";
     return 0;
 }
 %}

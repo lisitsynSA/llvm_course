@@ -31,8 +31,7 @@ DIGIT:    '0' { $$=0; } | '1' { $$=1; } | '2' { $$=2; } | '3' { $$=3; }
 
 %%
 
-/*int main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   yyparse();
-}*/
-
+}

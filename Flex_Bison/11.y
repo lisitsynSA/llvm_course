@@ -4,6 +4,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/Support/TargetSelect.h"
@@ -66,17 +67,20 @@ int main(int argc, char **argv)
         module->getOrInsertFunction("simPutPixel", simPutPixelType);
 
     // declare void @simFlush(...)
-    FunctionType *simFlushType = FunctionType::get(voidType, {voidType}, false);
+    FunctionType *simFlushType = FunctionType::get(voidType, false);
     simFlushFunc =
         module->getOrInsertFunction("simFlush", simFlushType);
 
     yyparse();
 
-    outs() << "#[LLVM IR]:\n";
+    outs() << "[LLVM IR]:\n";
     module->print(outs(), nullptr);
+    outs() << "\n";
+    bool verif = verifyModule(*module, &outs());
+    outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
     // Interpreter of LLVM IR
-    outs() << "Running code...\n";
+    outs() << "[EE] Run\n";
 	ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
     ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
         if (fnName == "simFlush") {
@@ -110,7 +114,7 @@ int main(int argc, char **argv)
         return -1;
     }
 	ee->runFunction(mainFunc, noargs);
-	outs() << "Code was run.\n";
+    outs() << "[EE] Done\n";
 
     for (auto& value : ValueMap) {
         outs() << value.first << " = " <<  value.second.realVal << "\n";

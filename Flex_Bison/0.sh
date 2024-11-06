@@ -1,4 +1,5 @@
 flex 0.lex
-clang lex.yy.c -lfl -o lex0
+clang lex.yy.c || exit 1
+rm lex.yy.c
 printf "Hello ,\nworld!\n"
-printf "Hello ,\nworld!\n" | ./lex0
+printf "Hello ,\nworld!\n" | ./a.out

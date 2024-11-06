@@ -4,6 +4,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/Support/TargetSelect.h"
@@ -51,12 +52,16 @@ int main(int argc, char **argv)
         module->getOrInsertFunction("llvm.sim.putpixel", simPutPixelType);
 
     // declare void @llvm.sim.flush()
-    FunctionType *simFlushType = FunctionType::get(voidType, {}, false);
+    FunctionType *simFlushType = FunctionType::get(voidType, false);
     simFlushFunc =
         module->getOrInsertFunction("llvm.sim.flush", simFlushType);
 
     yyparse();
 
+    if (verifyModule(*module, &outs())) {
+        outs() << "[VERIFICATION] FAIL\n";
+        return 1;
+    }
     module->print(outs(), nullptr);
     return 0;
 }
