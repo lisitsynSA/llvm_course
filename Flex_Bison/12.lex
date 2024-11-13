@@ -14,13 +14,13 @@ extern "C" int yylex();
                   yylval = strdup(yytext);
                   return IntLiteral;
                 }
-[f][u][n][c]    { return FunctionBegin; }
-[e][n][d]       { return FunctionEnd; }
-[c][a][l][l]    { return CallFunction; }
-[i][f]          { return IfToken; }
-[g][o][t][o]    { return GotoToken; }
-[P][U][T]       { return PutToken; }
-[F][L][U][S][H] { return FlushToken; }
+"func"          { return FunctionBegin; }
+"end"           { return FunctionEnd; }
+"call"          { return CallFunction; }
+"if"            { return IfToken; }
+"goto"          { return GotoToken; }
+"PUT"           { return PutToken; }
+"FLUSH"         { return FlushToken; }
 [A-Za-z_]+      { // identifier or array
                   yylval = strdup(yytext);
                   return Identifier;

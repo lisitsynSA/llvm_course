@@ -15,7 +15,7 @@ extern "C" int yylex();
                   yylval = strdup(yytext);
                   return IntLiteral;
                 }
-[f][u][n][c]    { printf("FunctionBegin\n"); return FunctionBegin; }
+"func"          { printf("FunctionBegin\n"); return FunctionBegin; }
 [e][n][d]       { printf("FunctionEnd\n"); return FunctionEnd; }
 [A-Za-z_]+      { // identifier or array
                   printf("Identifier %s\n", yytext);
