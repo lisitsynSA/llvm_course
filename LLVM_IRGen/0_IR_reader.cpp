@@ -1,6 +1,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/SourceMgr.h"
+#include <memory>
+#include <system_error>
 using namespace llvm;
 
 int main(int argc, char **argv) {
@@ -18,10 +20,10 @@ int main(int argc, char **argv) {
     return 1;
   }
   for (auto &G : Mod->globals()) {
-    outs() << "[Global Variable] " << G.getName() << "\n";
+    outs() << "[Global Variable] " << G.getName() << '\n';
   }
   for (auto &F : *Mod) {
-    outs() << "[Function] " << F.getName() << "\n";
+    outs() << "[Function] " << F.getName() << '\n';
   }
   if (argc == 3) {
     std::error_code EC;

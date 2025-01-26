@@ -22,7 +22,7 @@ void drawLine(int x, int y, int v_x, int v_y) {
   }
 }
 
-void app() {
+void app(void) {
   int x = (simRand() % SIM_X_SIZE) / 10;
   int y = (simRand() % SIM_Y_SIZE) / 10;
   int v_x = simRand() % 10;

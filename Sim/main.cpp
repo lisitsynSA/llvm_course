@@ -3,6 +3,7 @@
 #include "include/extIR.h"
 #include "include/fullIR.h"
 #include "llvm/Support/raw_ostream.h"
+#include <string>
 using namespace llvm;
 
 // Function to check if a string ends with another string
@@ -25,11 +26,11 @@ int main(int argc, char *argv[]) {
   std::string ErrorMsg;
   if (endsWith(argv[1], ".o")) {
     if (Bin.readBin(argv[1], ErrorMsg)) {
-      outs() << "\n[BIN READ ERROR] " << ErrorMsg << "\n";
+      outs() << "\n[BIN READ ERROR] " << ErrorMsg << '\n';
       return 1;
     }
   } else if (Bin.readFile(argv[1], ErrorMsg)) {
-    outs() << "\n[ASM READ ERROR] " << ErrorMsg << "\n";
+    outs() << "\n[ASM READ ERROR] " << ErrorMsg << '\n';
     return 1;
   }
   outs() << "\n[BasicBlocks]\n" << Bin.writeBBs();
@@ -41,7 +42,7 @@ int main(int argc, char *argv[]) {
   case 1:
     // Simulation
     if (Cpu.Execute(Bin, ErrorMsg)) {
-      outs() << "\n[CPU RUN ERROR] " << ErrorMsg << "\n";
+      outs() << "\n[CPU RUN ERROR] " << ErrorMsg << '\n';
       return 1;
     }
     break;

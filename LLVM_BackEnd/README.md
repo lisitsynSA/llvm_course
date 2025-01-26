@@ -63,7 +63,7 @@ SimGenRegisterInfo::getFrameLowering(const MachineFunction &MF) {
 + SimImfo.h
 >ERROR: void llvm::LLVMTargetMachine::initAsmInfo(): Assertion `STI && "Unable to create subtarget info"' failed.
 #### [Sim] 4. Add empty Subtarget for Sim architecture:
-+ SimMCTargetDesc.cpp : createSimMCSubtargetInfo + SimSubtarget.h/.cpp + gen SimGenSubtargetInfo.inc 
++ SimMCTargetDesc.cpp : createSimMCSubtargetInfo + SimSubtarget.h/.cpp + gen SimGenSubtargetInfo.inc
 >ERROR: void llvm::LLVMTargetMachine::initAsmInfo(): Assertion `TmpAsmInfo && "MCAsmInfo not initialized. "
 #### [Sim] 5. Add SimMCAsmInfo for Sim architecture:
 + SimMCTargetDesc.cpp : createSimMCAsmInfo + SimMCAsmInfo.h/.cpp
@@ -203,7 +203,7 @@ Section Headers:
   [ 3] .note.GNU-stack   PROGBITS        00000000 00003c 000000 00      0   0  1
   [ 4] .symtab           SYMTAB          00000000 00003c 000030 10      1   2  4
 ```
-Check inctructions in object file:
+Check instructions in object file:
 ```
 hexedit test.o
 New position 0x34 (.text section address)

@@ -15,9 +15,9 @@ struct SkeletonPass : public FunctionPass {
   SkeletonPass() : FunctionPass(ID) {}
 
   virtual bool runOnFunction(Function &F) {
-    outs() << "In a function " << F.getName() << "\n";
+    outs() << "In a function " << F.getName() << '\n';
     F.print(outs());
-    outs() << "\n";
+    outs() << '\n';
 
     bool changed = false;
     for (auto &B : F) {
@@ -25,7 +25,7 @@ struct SkeletonPass : public FunctionPass {
         if (AllocaInst *Alloca = dyn_cast<AllocaInst>(&I)) {
           outs() << "\nAllocation: (BB " << &B << "):\n";
           Alloca->print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
           StoreInst *Store = nullptr;
           LoadInst *Load = nullptr;
 
@@ -81,7 +81,7 @@ struct SkeletonPass : public FunctionPass {
                 Instruction *UseInst = cast<Instruction>(U.getUser());
                 outs() << "\t Load Users: ";
                 UseInst->print(outs(), true);
-                outs() << "\n";
+                outs() << '\n';
                 for (int i = 0; i < UseInst->getNumOperands(); i++) {
                   if (UseInst->getOperand(i) == Load) {
                     UseInst->setOperand(i, Val);
@@ -89,7 +89,7 @@ struct SkeletonPass : public FunctionPass {
                 }
                 outs() << "\t Fixed Load Users: ";
                 UseInst->print(outs(), true);
-                outs() << "\n";
+                outs() << '\n';
               }
               Load->removeFromParent();
             }

@@ -5,6 +5,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
+#include <memory>
 using namespace llvm;
 
 int main() {
@@ -26,9 +27,9 @@ int main() {
 
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   // LLVM IR Interpreter
   outs() << "[EE] Run\n";
@@ -39,6 +40,6 @@ int main() {
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
   return 0;
 }

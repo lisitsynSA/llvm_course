@@ -4,11 +4,11 @@ using namespace llvm;
 
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-    outs() << "[Module] " << M.getName() << "\n";
+    outs() << "[Module] " << M.getName() << '\n';
     for (auto &G : M.globals()) {
-      outs() << "[Global Variable] " << G.getName() << "\n";
+      outs() << "[Global Variable] " << G.getName() << '\n';
       G.print(outs());
-      outs() << "\n";
+      outs() << '\n';
     }
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
@@ -22,23 +22,23 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
         for (auto &I : B) {
           outs() << "##[Instruction]\n";
           I.print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
         }
       }
-      outs() << "\n";
+      outs() << '\n';
     }
-    outs() << "\n";
+    outs() << '\n';
     return PreservedAnalyses::all();
   };
 };
 
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
-    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerPipelineStartEPCallback([](ModulePassManager &MPM, auto) {
       MPM.addPass(MyModPass{});
       return true;
     });
-    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM, auto) {
       MPM.addPass(MyModPass{});
       return true;
     });

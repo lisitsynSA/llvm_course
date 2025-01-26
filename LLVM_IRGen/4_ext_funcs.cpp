@@ -6,6 +6,8 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <memory>
+#include <string>
 using namespace llvm;
 
 void func() { outs() << "Hello from \'external\' function:)\n"; }
@@ -49,9 +51,9 @@ int main() {
 
   // Dump LLVM IR
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   // LLVM IR Interpreter
   outs() << "[EE] Run\n";
@@ -59,7 +61,7 @@ int main() {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "func") {
       return reinterpret_cast<void *>(func);
     }
@@ -68,7 +70,7 @@ int main() {
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   return 0;
 }

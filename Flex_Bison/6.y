@@ -15,7 +15,7 @@ extern "C" {
     int yyparse();
     int yylex();
     void yyerror(char *s) {
-        std::cerr << s << "\n";
+        std::cerr << s << '\n';
     }
     int yywrap(void){return 1;}
 }
@@ -26,7 +26,7 @@ int readVal() {
     std::cout << "Enter a number: ";
     int res = 0;
     std::cin >> res;
-    return res; 
+    return res;
 }
 
 int main(int argc, char **argv)
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     builder = new IRBuilder<> (context);
 
     // declare void @main()
-    FunctionType *funcType = 
+    FunctionType *funcType =
         FunctionType::get(builder->getInt32Ty(), false);
     Function *mainFunc =
         Function::Create(funcType, Function::ExternalLinkage, "main", module);
@@ -49,16 +49,16 @@ int main(int argc, char **argv)
     BasicBlock *entryBB = BasicBlock::Create(context, "entry", mainFunc);
 
     builder->SetInsertPoint(entryBB);
-    
+
     readFunc = Function::Create(funcType, Function::ExternalLinkage, "readVal", module);
 
     yyparse();
 
     outs() << "[LLVM IR]:\n";
     module->print(outs(), nullptr);
-    outs() << "\n";
+    outs() << '\n';
     bool verif = verifyFunction(*mainFunc, &outs());
-    outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+    outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
     // Interpreter of LLVM IR
     outs() << "[EE] Run\n";
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     ee->finalizeObject();
 	std::vector<GenericValue> noargs;
 	GenericValue res = ee->runFunction(mainFunc, noargs);
-    outs() << "[EE] Result: " << res.IntVal << "\n";
+    outs() << "[EE] Result: " << res.IntVal << '\n';
 
     return 0;
 }

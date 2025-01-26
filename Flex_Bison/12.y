@@ -15,7 +15,7 @@ extern "C" {
     int yyparse();
     int yylex();
     void yyerror(char *s) {
-        std::cerr << s << "\n";
+        std::cerr << s << '\n';
     }
     int yywrap(void){return 1;}
 }
@@ -116,7 +116,7 @@ RoutineDeclaration : FunctionBegin Identifier   {
                             // declare void @Identifier()
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
-                                FunctionType *funcType = 
+                                FunctionType *funcType =
                                                         FunctionType::get(builder->getVoidTy(), false);
                                 func = Function::Create(funcType, Function::ExternalLinkage, (char*)$2, module);
                             }
@@ -125,7 +125,7 @@ RoutineDeclaration : FunctionBegin Identifier   {
                             BasicBlock *entryBB = BasicBlock::Create(context, "entry", curFunc);
                             builder->SetInsertPoint(entryBB);
                             entryBuilder->SetInsertPoint(entryBB);
-                        } Statements FunctionEnd { 
+                        } Statements FunctionEnd {
                             builder->CreateRetVoid();
                         }
 
@@ -150,7 +150,7 @@ Assignment: Value '=' Expression ';' { builder->CreateStore($3, $1); }
 RoutineCall: CallFunction Identifier ';' {
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
-                                FunctionType *funcType = 
+                                FunctionType *funcType =
                                                         FunctionType::get(builder->getVoidTy(), false);
                                 func = Function::Create(funcType, Function::ExternalLinkage, (char*)$2, module);
                             }
@@ -218,7 +218,7 @@ Value:      Identifier  {
                             if (ValueMap.find((char*)$1) == ValueMap.end()) {
                                 entryBuilder->SetInsertPoint(entryBuilder->GetInsertBlock(), --entryBuilder->GetInsertPoint());
                                 ValueMap.insert({(char*)$1, entryBuilder->CreateAlloca(entryBuilder->getInt32Ty())});
-                            }                            
+                            }
                             $$ = builder->CreateConstGEP1_32(builder->getInt32Ty(), ValueMap[(char*)$1], 0);
                         }
 

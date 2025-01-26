@@ -13,7 +13,7 @@ int unmin = 0;
 [1-9][0-9]*     { int opnd = atoi(yytext);
                   if (unmin) opnd = -opnd; unmin=0;
                   switch(op) {
-                    default : 
+                    default :
                       printf("Unexpected operator in line %d\n", yylineno);
                       exit(1);
                     case '+': res += opnd; break;

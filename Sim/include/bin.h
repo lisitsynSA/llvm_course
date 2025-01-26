@@ -2,6 +2,7 @@
 #define BIN_H
 #include "instr.h"
 #include <cstdint>
+#include <iosfwd>
 #include <map>
 #include <string>
 #include <vector>

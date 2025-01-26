@@ -11,8 +11,12 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
-#include <any>
-#include <iostream>
+#include <cstddef>
+#include <fstream>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 using namespace llvm;
 
 struct TreeLLVMWalker : public NodeLangVisitor {
@@ -117,14 +121,12 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitFuncDecl(NodeLangParser::FuncDeclContext *ctx) override {
     // funcDecl: ID '(' ID* ')' node+;
     std::string name = ctx->ID()[0]->getText();
-    outs() << "visitFuncDecl: " << name << "\n";
-    vars.push_back({});
+    outs() << "visitFuncDecl: " << name << '\n';
+    vars.emplace_back();
 
     // (i32 %0, i32 %1, i32 %2)
-    std::vector<Type *> funcParamTypes;
-    for (int arg = 1; arg < ctx->ID().size(); arg++) {
-      funcParamTypes.push_back(int32Type);
-    }
+    std::vector<Type *> funcParamTypes(ctx->ID().size() - 1, int32Type);
+
     // define i32 @color(i32 %0, i32 %1, i32 %2)
     FunctionType *funcType =
         FunctionType::get(int32Type, funcParamTypes, false);
@@ -176,7 +178,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitLoop(NodeLangParser::NodeContext *ctx) {
     outs() << "visitLoop\n";
     // node: ... | '{' LOOP it begin end node* '}';
-    vars.push_back({});
+    vars.emplace_back();
     if (ctx->node().size() < 3) {
       outs() << "[Error] Too few arguments for LOOP\n";
       return nullptr;
@@ -229,20 +231,21 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitFuncCall(std::string &name,
                               NodeLangParser::NodeContext *ctx) {
     // node: ... | '{' FuncID node* '}'
-    outs() << "visitFuncCall: " << name << "\n";
+    outs() << "visitFuncCall: " << name << '\n';
     // i32 @color(i32 %0, i32 %1, i32 %2)
     Function *func = module->getFunction(name);
     if (!func) {
-      outs() << "[Error] Unknown Function name: " << name << "\n";
+      outs() << "[Error] Unknown Function name: " << name << '\n';
       return nullptr;
     }
     int argSize = ctx->node().size();
     if (argSize != func->arg_size()) {
-      outs() << "[Error] Wrong arguments number for " << name << "\n";
+      outs() << "[Error] Wrong arguments number for " << name << '\n';
       return nullptr;
     }
     // (i32 %13, i32 %6, i32 %1)
     std::vector<Value *> args;
+    args.reserve(argSize);
     for (int i = 0; i < argSize; i++) {
       args.push_back(visitNode(ctx->node()[i]));
     }
@@ -253,7 +256,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitVarDecl(NodeLangParser::VarDeclContext *ctx) override {
     // varDecl: ID expr;
     std::string name = ctx->ID()->getText();
-    outs() << "visitVarDecl: " << name << "\n";
+    outs() << "visitVarDecl: " << name << '\n';
     return registerVar(name, visitExpr(ctx->expr()).as<Value *>());
   }
 
@@ -261,12 +264,12 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     outs() << "visitExpr: ";
     // ID
     if (ctx->ID()) {
-      outs() << ctx->ID()->getText() << "\n";
+      outs() << ctx->ID()->getText() << '\n';
       return searchVar(ctx->ID()->getText());
     }
     // INT
     if (ctx->INT()) {
-      outs() << ctx->INT()->getText() << "\n";
+      outs() << ctx->INT()->getText() << '\n';
       return (Value *)builder->getInt32(std::stoi(ctx->INT()->getText()));
     }
     // '-' expr
@@ -281,7 +284,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     }
     // ( '*' | '/') expr expr
     // ( '+' | '-') expr expr
-    outs() << ctx->children[0]->getText() << "\n";
+    outs() << ctx->children[0]->getText() << '\n';
     Value *lhs = visit(ctx->children[1]).as<Value *>();
     Value *rhs = visit(ctx->children[2]).as<Value *>();
     switch (ctx->children[0]->getText().at(0)) {
@@ -294,19 +297,18 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     case '-':
       return builder->CreateSub(lhs, rhs);
     default:
-      break;
+      return nullptr;
     }
-    return nullptr;
   }
 
   Value *registerVar(const std::string &name, Value *val) {
-    outs() << "registerVar: " << name << "\n";
+    outs() << "registerVar: " << name << '\n';
     vars.back()[name] = val;
     return val;
   }
 
   Value *searchVar(const std::string &name) {
-    outs() << "searchVar: " << name << "\n";
+    outs() << "searchVar: " << name << '\n';
     for (auto it = vars.rbegin(); it != vars.rend(); ++it) {
       if (auto find = it->find(name); find != it->end()) {
         return find->second;
@@ -315,10 +317,10 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     // Conflict resolving: node: (expr) <-> (ID)
     Function *func = module->getFunction(name);
     if (!func || func->arg_size() > 0) {
-      outs() << "[Error] Can't find variable: " << name << "\n";
+      outs() << "[Error] Can't find variable: " << name << '\n';
       return nullptr;
     }
-    outs() << "Change to FuncCall: " << name << "\n";
+    outs() << "Change to FuncCall: " << name << '\n';
     return (Value *)builder->CreateCall(func);
   }
 };
@@ -347,7 +349,7 @@ int main(int argc, const char *argv[]) {
   NodeLangParser parser(&tokens);
 
   // Display the parse tree
-  // outs() << parser.program()->toStringTree() << "\n";
+  // outs() << parser.program()->toStringTree() << '\n';
   // return 0;
 
   LLVMContext context;
@@ -359,9 +361,9 @@ int main(int argc, const char *argv[]) {
 
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyModule(*module, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   Function *appFunc = module->getFunction("app");
   if (appFunc == nullptr) {
@@ -375,11 +377,10 @@ int main(int argc, const char *argv[]) {
     InitializeNativeTarget();
     InitializeNativeTargetAsmPrinter();
 
-    ExecutionEngine *ee =
-        EngineBuilder(std::unique_ptr<Module>(module)).create();
-    ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
-      if (fnName == "PUT_PIXEL") {
-        return reinterpret_cast<void *>(simPutPixel);
+  ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
+    if (fnName == "PUT_PIXEL") {
+      return reinterpret_cast<void *>(simPutPixel);
       }
       if (fnName == "FLUSH") {
         return reinterpret_cast<void *>(simFlush);

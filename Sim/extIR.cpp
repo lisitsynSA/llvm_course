@@ -5,6 +5,9 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <memory>
+#include <unordered_map>
+#include <string>
 
 using namespace llvm;
 
@@ -23,19 +26,19 @@ void ExtIR::buildIR(Binary &Bin) {
   FunctionType *funcType = FunctionType::get(voidType, false);
   mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
-  // Funcions types
+  // Functions types
   FunctionType *voidFuncType = FunctionType::get(voidType, false);
   ArrayRef<Type *> int32x3Types = {int32Type, int32Type, int32Type};
   FunctionType *int32x3FuncType =
       FunctionType::get(voidType, int32x3Types, false);
 
   // Functions
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  FunctionCallee Callee##_Name =                                               \
-      module->getOrInsertFunction("do_" #_Name, int32x3FuncType);
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  FunctionCallee Callee##Name_ =                                               \
+      module->getOrInsertFunction("do_" #Name_, int32x3FuncType);
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
 
   std::unordered_map<uint32_t, BasicBlock *> BBMap;
   for (auto &BB : Bin.BBName2PC) {
@@ -52,13 +55,13 @@ void ExtIR::buildIR(Binary &Bin) {
     switch (I.Op) {
     default:
       break;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    builder.CreateCall(Callee##_Name, args);                                   \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    builder.CreateCall(Callee##Name_, args);                                   \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     PC++;
     auto BB = BBMap.find(PC);
@@ -93,11 +96,11 @@ void ExtIR::buildIR(Binary &Bin) {
 void ExtIR::dumpIR() {
   outs() << "\n[LLVM IR]:\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
 }
 bool ExtIR::verifyIR() {
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
   return verif;
 }
 
@@ -106,13 +109,13 @@ void ExtIR::executeIR(CPU &Cpu) {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  if (fnName == "do_" #_Name)                                                  \
-    return reinterpret_cast<void *>(CPU::do_##_Name);
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  if (fnName == "do_" #Name_)                                                  \
+    return reinterpret_cast<void *>(CPU::do_##Name_);
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     return nullptr;
   });
 

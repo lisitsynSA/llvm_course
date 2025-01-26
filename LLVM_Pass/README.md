@@ -1,5 +1,5 @@
 # LLVM Pass example
-This is example of LLVM pass that collect static inforamtion about app IR and insert instrumentation for collecting dynamic information.
+This is example of LLVM pass that collect static information about app IR and insert instrumentation for collecting dynamic information.
 
 
 ## Usage:
@@ -21,7 +21,7 @@ opt hello.ll -load-pass-plugin ./libPass.so -passes="function(mem2reg,sroa,myFun
 > For Mac arm64 (arm64-apple-darwin) add `-undefined dynamic_lookup` to the Pass compilation line (llvm version should be > 15).
 2. Print Functions name
 ```
-clang++ Pass2_names.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so 
+clang++ Pass2_names.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -fpass-plugin=./libPass.so c_examples/hello.c -O2
 ```
 3. Dump Functions, BasicBlocks and Instructions
@@ -34,7 +34,7 @@ clang -fpass-plugin=./libPass.so c_examples/hello.c -O2
 clang++ Pass4_uses.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -fpass-plugin=./libPass.so c_examples/hello.c
 ```
-5. Change Binary operations to substruction
+5. Change Binary operations to subtraction
 ```
 clang++ Pass5_change.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 

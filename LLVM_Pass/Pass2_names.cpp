@@ -4,12 +4,12 @@ using namespace llvm;
 
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-    outs() << "\n[Module Pass] Module: " << M.getName() << "\n";
+    outs() << "\n[Module Pass] Module: " << M.getName() << '\n';
     for (auto &G : M.globals()) {
-      outs() << "[Global Variable] " << G.getName() << "\n";
+      outs() << "[Global Variable] " << G.getName() << '\n';
     }
     for (auto &F : M) {
-      outs() << "[Function] " << F.getName() << "\n";
+      outs() << "[Function] " << F.getName() << '\n';
     }
     return PreservedAnalyses::all();
   };
@@ -17,8 +17,8 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 
 struct MyFuncPass : public PassInfoMixin<MyFuncPass> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM) {
-    outs() << "\n[Function Pass] Module: " << F.getParent()->getName() << "\n";
-    outs() << "[Function] " << F.getName() << "\n";
+    outs() << "\n[Function Pass] Module: " << F.getParent()->getName() << '\n';
+    outs() << "[Function] " << F.getName() << '\n';
     return PreservedAnalyses::all();
   };
   static bool isRequired() { return true; }
@@ -27,13 +27,13 @@ struct MyFuncPass : public PassInfoMixin<MyFuncPass> {
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
     // clang hello.c -fpass-plugin=./libPass.so -O1 (w/o isRequired)
-    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerPipelineStartEPCallback([](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerPipelineStartEPCallback\n";
       MPM.addPass(MyModPass{});
       return true;
     });
-    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerOptimizerLastEPCallback\n";
       MPM.addPass(createModuleToFunctionPassAdaptor(MyFuncPass{}));

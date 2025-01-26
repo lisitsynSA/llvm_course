@@ -1,6 +1,6 @@
 # ANTLR + LLVM Examples
 
-## Prerequsites
+## Prerequisites
 ```
 sudo apt install antlr4
 sudo apt install libantlr4-runtime-dev

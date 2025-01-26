@@ -1,5 +1,5 @@
 # LLVM Pass example
-This is example of LLVM pass that collect static inforamtion about app IR and insert instrumentation for collecting dynamic information.
+This is example of LLVM pass that collect static information about app IR and insert instrumentation for collecting dynamic information.
 
 
 ## Usage:
@@ -26,7 +26,7 @@ clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-mana
 clang++ Pass_uses.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -Xclang -load -Xclang ./libPass.so ./c_examples/hello.c -flegacy-pass-manager
 ```
-4. Change Binary operations to substruction
+4. Change Binary operations to subtraction
 ```
 clang++ Pass_change.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 

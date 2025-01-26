@@ -20,7 +20,7 @@ void FullIR::buildIR(Binary &Bin) {
   FunctionType *funcType = FunctionType::get(voidType, false);
   mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "app", module);
-  // Funcions types
+  // Functions types
   FunctionType *voidFuncType = FunctionType::get(voidType, false);
   ArrayRef<Type *> int32x3Types = {int32Type, int32Type, int32Type};
   FunctionType *int32x3FuncType =
@@ -81,7 +81,7 @@ void FullIR::executeIR(CPU &Cpu) {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "simFlush") {
       return reinterpret_cast<void *>(simFlush);
     }
