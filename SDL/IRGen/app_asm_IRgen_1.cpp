@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "do_XOR") {
       return reinterpret_cast<void *>(do_XOR);
     }

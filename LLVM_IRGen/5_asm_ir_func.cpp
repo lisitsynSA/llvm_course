@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
   ee->addGlobalMapping(regFile, (void *)REG_FILE);
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "INSTR_sort") {
       return reinterpret_cast<void *>(INSTR_sort);
     }

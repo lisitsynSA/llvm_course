@@ -27,13 +27,13 @@ struct MyFuncPass : public PassInfoMixin<MyFuncPass> {
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
     // clang hello.c -fpass-plugin=./libPass.so -O1 (w/o isRequired)
-    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerPipelineStartEPCallback([](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerPipelineStartEPCallback\n";
       MPM.addPass(MyModPass{});
       return true;
     });
-    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerOptimizerLastEPCallback\n";
       MPM.addPass(createModuleToFunctionPassAdaptor(MyFuncPass{}));

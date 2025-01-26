@@ -73,7 +73,7 @@ void FullIR::executeIR(CPU &Cpu) {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "simFlush") {
       return reinterpret_cast<void *>(simFlush);
     }
