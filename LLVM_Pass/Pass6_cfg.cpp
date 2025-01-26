@@ -116,7 +116,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       }
       outs() << '\n';
       bool verif = verifyFunction(F, &outs());
-      outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+      outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
     }
     outs() << '\n';
     return PreservedAnalyses::none();

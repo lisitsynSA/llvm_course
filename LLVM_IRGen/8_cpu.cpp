@@ -744,7 +744,7 @@ int main(int argc, char *argv[]) {
   module->print(outs(), nullptr);
   outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
   for (int i = 0; i < REG_FILE_SIZE; i++) {
     cpu.REG_FILE[i] = 0;
   }

@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     module->print(outs(), nullptr);
     outs() << '\n';
     bool verif = verifyModule(*module, &outs());
-    outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+    outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
     // Interpreter of LLVM IR
     outs() << "[EE] Run\n";

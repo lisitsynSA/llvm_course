@@ -306,7 +306,7 @@ int main(int argc, const char *argv[]) {
   module->print(outs(), nullptr);
   outs() << '\n';
   bool verif = verifyModule(*module, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   Function *appFunc = module->getFunction("app");
   if (appFunc == nullptr) {

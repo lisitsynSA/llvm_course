@@ -90,7 +90,7 @@ void ExtIR::dumpIR() {
 }
 bool ExtIR::verifyIR() {
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
   return verif;
 }
 
