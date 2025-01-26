@@ -17,7 +17,7 @@ namespace {
       for (auto &U : F.uses()) {
         User *user = U.getUser();
         user->print(outs(), true);
-        outs() << "\n";
+        outs() << '\n';
       }
 
       for (auto &B : F) {
@@ -27,7 +27,7 @@ namespace {
         for (auto &U : B.uses()) {
           User *user = U.getUser();
           user->print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
         }
 
         for (auto &I : B) {
@@ -37,13 +37,13 @@ namespace {
           for (auto &U : I.uses()) {
             User *user = U.getUser();
             user->print(outs(), true);
-            outs() << "\n";
+            outs() << '\n';
           }
           outs() << "Opernads: \n";
           for (auto &U : I.operands()) {
             Value *use = U.get();
             use->print(outs(), true);
-            outs() << "\n";
+            outs() << '\n';
           }
         }
       }

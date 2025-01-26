@@ -15,7 +15,7 @@ uint32_t REG_FILE[REG_FILE_SIZE] = {};
 void dumpRegFile() {
   outs() << "[REG FILE]:\n";
   for (int i = 0; i < REG_FILE_SIZE; i++) {
-    outs() << "[" << i << "] " << REG_FILE[i] << "\n";
+    outs() << "[" << i << "] " << REG_FILE[i] << '\n';
   }
 }
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
   std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    outs() << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << '\n';
     return 1;
   }
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
       Value *reg2 = builder.getInt32(std::stoi(arg.substr(1)));
       // reg3
       input >> arg;
-      outs() << " + " << arg << "\n";
+      outs() << " + " << arg << '\n';
       Value *reg3 = builder.getInt32(std::stoi(arg.substr(1)));
 
       ArrayRef<Value *> args = {reg1, reg2, reg3};
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
       Value *reg2 = builder.getInt32(std::stoi(arg.substr(1)));
       // imm3
       input >> arg;
-      outs() << " + " << arg << "\n";
+      outs() << " + " << arg << '\n';
       Value *imm3 = builder.getInt32(std::stoi(arg));
 
       ArrayRef<Value *> args = {reg1, reg2, imm3};
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
   // Dump LLVM IR
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
   outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   dumpRegFile();
   return 0;

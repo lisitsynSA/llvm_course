@@ -336,7 +336,7 @@ void print_node(tree_node_t *current) {
   print_node(current->link[0]);
   printf("%*s", current->level * 3, " ");
   print_info(current->info);
-  printf("\n");
+  putc('\n', stdout);
   print_node(current->link[1]);
 }
 
@@ -355,11 +355,11 @@ void print_info(info_t *info) {
 void fprint_tree(tree_t *tree) {
   File = fopen("expression_check.txt", "w");
   fprint_prenode(tree->root);
-  fprintf(File, "\n");
+  putc('\n', File);
   fprint_innode(tree->root);
-  fprintf(File, "\n");
+  putc('\n', File);
   fprint_posnode(tree->root);
-  fprintf(File, "\n");
+  putc('\n', File);
   fclose(File);
 
   File = fopen("expr.s", "w");

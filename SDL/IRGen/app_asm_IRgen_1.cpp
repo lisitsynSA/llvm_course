@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    outs() << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << '\n';
     return 1;
   }
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     outs() << " " << name;
     BBMap[name] = BasicBlock::Create(context, name, mainFunc);
   }
-  outs() << "\n";
+  outs() << '\n';
   input.close();
   input.open(argv[1]);
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       outs() << "\tEXIT\n";
       builder.CreateRetVoid();
       if (input >> name) {
-        outs() << "BB " << name << "\n";
+        outs() << "BB " << name << '\n';
         builder.SetInsertPoint(BBMap[name]);
       }
       continue;
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
       outs() << " " << arg;
       Value *arg2 = builder.getInt32(std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " " << arg << "\n";
+      outs() << " " << arg << '\n';
       Value *arg3 = builder.getInt32(std::stoi(arg.substr(1)));
       Value *args[] = {arg1, arg2, arg3};
       builder.CreateCall(do_PUT_PIXELFunc, args);
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
       // arg1
       Value *arg2 = builder.getInt32(std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " ^ " << arg << "\n";
+      outs() << " ^ " << arg << '\n';
       // arg2
       Value *arg3 = builder.getInt32(std::stoi(arg.substr(1)));
       Value *args[] = {arg1, arg2, arg3};
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
       // arg1
       Value *arg2 = builder.getInt32(std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " * " << arg << "\n";
+      outs() << " * " << arg << '\n';
       // arg2
       Value *arg3 = builder.getInt32(std::stoi(arg.substr(1)));
       Value *args[] = {arg1, arg2, arg3};
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
       // arg1
       Value *arg2 = builder.getInt32(std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " - " << arg << "\n";
+      outs() << " - " << arg << '\n';
       // arg2
       Value *arg3 = builder.getInt32(std::stoi(arg));
       Value *args[] = {arg1, arg2, arg3};
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
       // arg1
       Value *arg2 = builder.getInt32(std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " != " << arg << "\n";
+      outs() << " != " << arg << '\n';
       // arg2
       Value *arg3 = builder.getInt32(std::stoi(arg));
       Value *args[] = {arg1, arg2, arg3};
@@ -240,8 +240,8 @@ int main(int argc, char *argv[]) {
       input >> arg;
       outs() << ") then BB:" << arg;
       input >> name;
-      outs() << " else BB:" << name << "\n";
-      outs() << "BB " << name << "\n";
+      outs() << " else BB:" << name << '\n';
+      outs() << "BB " << name << '\n';
       builder.CreateCondBr(reg_i1, BBMap[arg], BBMap[name]);
       builder.SetInsertPoint(BBMap[name]);
       continue;
@@ -249,15 +249,15 @@ int main(int argc, char *argv[]) {
 
     if (builder.GetInsertBlock()) {
       builder.CreateBr(BBMap[name]);
-      outs() << "\tbranch to " << name << "\n";
+      outs() << "\tbranch to " << name << '\n';
     }
-    outs() << "BB " << name << "\n";
+    outs() << "BB " << name << '\n';
     builder.SetInsertPoint(BBMap[name]);
   }
 
   outs() << "\n#[LLVM IR]:\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
   outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 

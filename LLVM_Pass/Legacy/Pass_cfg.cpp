@@ -29,11 +29,11 @@ struct MyPass : public FunctionPass {
     for (auto &B : F) {
       for (auto &I : B) {
         // Dump Instructions
-        outs() << "Instruction: " << (uint64_t)(&I) << "\n";
+        outs() << "Instruction: " << (uint64_t)(&I) << '\n';
         I.print(outs(), true);
-        outs() << "\n";
+        outs() << '\n';
       }
-      outs() << "\n";
+      outs() << '\n';
     }
 
     // Prepare builder for IR modification

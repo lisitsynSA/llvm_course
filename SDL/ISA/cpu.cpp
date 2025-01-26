@@ -35,6 +35,6 @@ string CPU::dumpStatus() {
   for (uint32_t i = 0; i < RegSize; i++) {
     Stream << " x" << i << ":" << RegFile[i];
   }
-  Stream << " PC:" << PC << "\n";
+  Stream << " PC:" << PC << '\n';
   return Stream.str();
 }

@@ -16,12 +16,12 @@ struct MyPass : public ModulePass {
     for (auto &G : M.globals()) {
       // outs() << "Global Variable: ";
       G.print(outs());
-      outs() << "\n";
+      outs() << '\n';
     }
     for (auto &F : M) {
       // outs() << "Function: ";
       F.print(outs());
-      outs() << "\n";
+      outs() << '\n';
       /*for (auto &B : F) {
         outs() << "Basic block:\n";
         B.print(outs());
@@ -29,7 +29,7 @@ struct MyPass : public ModulePass {
         for (auto &I : B) {
           outs() << "Instruction: \n";
           I.print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
         }
       }*/
     }

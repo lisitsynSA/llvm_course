@@ -42,7 +42,7 @@ bool Binary::searchBBs(ifstream &InputFile, string &ErrorMsg) {
 string Binary::writeBBs() {
   stringstream Stream;
   for (auto &it : BBName2PC) {
-    Stream << "  " << it.second << ": " << it.first << "\n";
+    Stream << "  " << it.second << ": " << it.first << '\n';
   }
   return Stream.str();
 }
@@ -80,18 +80,18 @@ string Binary::writeInstrs() {
   for (Instr &I : Instrs) {
     auto Label = PC2BBName.find(PC);
     if (Label != PC2BBName.end()) {
-      Stream << Label->second << "\n";
+      Stream << Label->second << '\n';
     }
     switch (I.Op) {
     default:
-      Stream << "\nWrong Opcode: " << I.Op << "\n";
+      Stream << "\nWrong Opcode: " << I.Op << '\n';
       break;
 #define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
              _IRGenExecute)                                                    \
   case (_Opcode):                                                              \
     Stream << "  " << #_Name;                                                  \
     _WriteArgs;                                                                \
-    Stream << "\n";                                                            \
+    Stream << '\n';                                                            \
     break;
 #include "include/ISA.h"
 #undef _ISA

@@ -5,7 +5,7 @@ using namespace llvm;
 
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-    outs() << "[Module] " << M.getName() << "\n";
+    outs() << "[Module] " << M.getName() << '\n';
     bool changed = false;
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
@@ -15,14 +15,14 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       }
 
       F.print(outs());
-      outs() << "\n";
+      outs() << '\n';
 
       for (auto &B : F) {
         for (auto &I : B) {
           if (AllocaInst *Alloca = dyn_cast<AllocaInst>(&I)) {
             outs() << "\nAllocation: (BB " << &B << "):\n";
             Alloca->print(outs(), true);
-            outs() << "\n";
+            outs() << '\n';
             StoreInst *Store = nullptr;
             LoadInst *Load = nullptr;
 
@@ -78,7 +78,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
                   Instruction *UseInst = cast<Instruction>(U.getUser());
                   outs() << "\t Load Users: ";
                   UseInst->print(outs(), true);
-                  outs() << "\n";
+                  outs() << '\n';
                   for (int i = 0; i < UseInst->getNumOperands(); i++) {
                     if (UseInst->getOperand(i) == Load) {
                       UseInst->setOperand(i, Val);
@@ -86,7 +86,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
                   }
                   outs() << "\t Fixed Load Users: ";
                   UseInst->print(outs(), true);
-                  outs() << "\n";
+                  outs() << '\n';
                 }
                 Load->eraseFromParent();
               }
@@ -94,11 +94,11 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           }
         }
       }
-      outs() << "\n";
+      outs() << '\n';
       bool verif = verifyFunction(F, &outs());
       outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
     }
-    outs() << "\n";
+    outs() << '\n';
     return changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   };
 };

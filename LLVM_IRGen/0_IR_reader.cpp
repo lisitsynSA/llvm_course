@@ -18,10 +18,10 @@ int main(int argc, char **argv) {
     return 1;
   }
   for (auto &G : Mod->globals()) {
-    outs() << "[Global Variable] " << G.getName() << "\n";
+    outs() << "[Global Variable] " << G.getName() << '\n';
   }
   for (auto &F : *Mod) {
-    outs() << "[Function] " << F.getName() << "\n";
+    outs() << "[Function] " << F.getName() << '\n';
   }
   if (argc == 3) {
     std::error_code EC;

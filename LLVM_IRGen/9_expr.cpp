@@ -269,7 +269,7 @@ void print_node(tree_node_t *current) {
   print_node(current->link[0]);
   printf("%*s", current->level * 3, " ");
   print_info(current->info);
-  printf("\n");
+  putc('\n', stdout);
   print_node(current->link[1]);
 }
 

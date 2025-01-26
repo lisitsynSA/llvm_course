@@ -7,7 +7,7 @@ using namespace llvm;
 
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-    outs() << "[Module] " << M.getName() << "\n";
+    outs() << "[Module] " << M.getName() << '\n';
     bool changed = false;
     std::list<Instruction *> RemoveInstrs;
     for (auto &F : M) {
@@ -23,7 +23,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           if (auto *op = dyn_cast<BinaryOperator>(&I)) {
             outs() << "Modified instruction:\n";
             I.print(outs(), true);
-            outs() << "\n";
+            outs() << '\n';
             // Insert at the point where the instruction `op` appears.
             IRBuilder<> builder(op);
 
@@ -42,7 +42,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
             // I.eraseFromParent();
             // RemoveInstrs.push_back(&I);
             changed = true;
-            outs() << "\n";
+            outs() << '\n';
             bool verif = verifyFunction(F, &outs());
             outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
           }

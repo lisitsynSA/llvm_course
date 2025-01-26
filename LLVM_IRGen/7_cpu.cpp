@@ -110,7 +110,7 @@ public:
         RegId_t rs1, RegId_t rs2, RegVal_t imm)
       : m_ID(ID), m_INSTR(do_INSTR), m_name(name), m_rs1(rs1), m_rs2(rs2),
         m_imm(imm) {}
-  void dump() { outs() << m_name << "\n"; }
+  void dump() { outs() << m_name << '\n'; }
 };
 
 //////////////////////////////
@@ -274,7 +274,7 @@ void do_read(CPU *cpu, Instr *instr) {
 void do_write(CPU *cpu, Instr *instr) {
   instr->dump();
   outs() << "[x" << (uint32_t)instr->m_rs1
-         << "] = " << cpu->REG_FILE[instr->m_rs1] << "\n";
+         << "] = " << cpu->REG_FILE[instr->m_rs1] << '\n';
 }
 
 void *lazyFunctionCreator(const std::string &fnName) {
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
   std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    outs() << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << '\n';
     return 1;
   }
 
@@ -386,32 +386,32 @@ int main(int argc, char *argv[]) {
     // 0 registers
     if (!name.compare("exit")) {
       Instructions.push_back(new Instr(InsnId_t::EXIT, do_exit, name));
-      outs() << "\n";
+      outs() << '\n';
       continue;
     }
     if (!name.compare("ret")) {
       Instructions.push_back(new Instr(InsnId_t::RET, do_ret, name));
-      outs() << "\n";
+      outs() << '\n';
       continue;
     }
     if (!name.compare("add_s")) {
       Instructions.push_back(new Instr(InsnId_t::ADD_S, do_add_s, name));
-      outs() << "\n";
+      outs() << '\n';
       continue;
     }
     if (!name.compare("sub_s")) {
       Instructions.push_back(new Instr(InsnId_t::SUB_S, do_sub_s, name));
-      outs() << "\n";
+      outs() << '\n';
       continue;
     }
     if (!name.compare("mul_s")) {
       Instructions.push_back(new Instr(InsnId_t::MUL_S, do_mul_s, name));
-      outs() << "\n";
+      outs() << '\n';
       continue;
     }
     if (!name.compare("div_s")) {
       Instructions.push_back(new Instr(InsnId_t::DIV_S, do_div_s, name));
-      outs() << "\n";
+      outs() << '\n';
       continue;
     }
 
@@ -419,7 +419,7 @@ int main(int argc, char *argv[]) {
     if (!name.compare("add") || !name.compare("sub") || !name.compare("mul") ||
         !name.compare("div")) {
       input >> arg1 >> arg2 >> arg3;
-      outs() << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
+      outs() << " " << arg1 << " " << arg2 << " " << arg3 << '\n';
       RegId_t rs1 = stoi(arg1.substr(1));
       RegId_t rs2 = stoi(arg2.substr(1));
       RegId_t rs3 = stoi(arg3.substr(1));
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
     if (!name.compare("read") || !name.compare("write") ||
         !name.compare("neg") || !name.compare("pop")) {
       input >> arg1;
-      outs() << " " << arg1 << "\n";
+      outs() << " " << arg1 << '\n';
       RegId_t rs1 = stoi(arg1.substr(1));
       if (!name.compare("read")) {
         Instructions.push_back(new Instr(InsnId_t::READ, do_read, name, rs1));
@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
     // 1 imm
     if (!name.compare("b") || !name.compare("bl") || !name.compare("push")) {
       input >> arg1;
-      outs() << " " << arg1 << "\n";
+      outs() << " " << arg1 << '\n';
       RegVal_t imm = stoi(arg1);
       if (!name.compare("b")) {
         Instructions.push_back(new Instr(InsnId_t::B, do_b, name, imm));
@@ -486,7 +486,7 @@ int main(int argc, char *argv[]) {
         !name.compare("beq") || !name.compare("bne") || !name.compare("bge") ||
         !name.compare("blt")) {
       input >> arg1 >> arg2 >> arg3;
-      outs() << " " << arg1 << " " << arg2 << " " << arg3 << "\n";
+      outs() << " " << arg1 << " " << arg2 << " " << arg3 << '\n';
       RegId_t rs1 = stoi(arg1.substr(1));
       RegId_t rs2 = stoi(arg2.substr(1));
       RegVal_t imm = stoi(arg3);
@@ -525,7 +525,7 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    outs() << "[ERROR] Unknown instruction: " << name << "\n";
+    outs() << "[ERROR] Unknown instruction: " << name << '\n';
     Instructions.clear();
     return 1;
   }
@@ -549,7 +549,7 @@ int main(int argc, char *argv[]) {
 
   // Dump registers after simulation
   for (int i = 0; i < REG_FILE_SIZE; i++) {
-    outs() << "[" << i << "] " << cpu.REG_FILE[i] << "\n";
+    outs() << "[" << i << "] " << cpu.REG_FILE[i] << '\n';
   }
 
   // Build IR for application
@@ -627,7 +627,7 @@ int main(int argc, char *argv[]) {
 
   outs() << "[LLVM IR] DUMP\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
   outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
   outs() << "[LLVM IR] END\n";
@@ -653,7 +653,7 @@ int main(int argc, char *argv[]) {
 
   // Registers dump after simulation with EE
   for (int i = 0; i < REG_FILE_SIZE; i++) {
-    outs() << "[" << i << "] " << cpu.REG_FILE[i] << "\n";
+    outs() << "[" << i << "] " << cpu.REG_FILE[i] << '\n';
   }
 
   Instructions.clear();

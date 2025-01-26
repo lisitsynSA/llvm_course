@@ -23,7 +23,7 @@ namespace {
         for (auto &I : B) {
           outs() << "Instruction: \n";
           I.print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
         }
       }
 

@@ -64,7 +64,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitFuncDecl(NodeLangParser::FuncDeclContext *ctx) override {
     // funcDecl: ID '(' ID* ')' node+;
     std::string name = ctx->ID()[0]->getText();
-    outs() << "visitFuncDecl: " << name << "\n";
+    outs() << "visitFuncDecl: " << name << '\n';
     vars.push_back({});
 
     // (i32 %0, i32 %1, i32 %2)
@@ -176,16 +176,16 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitFuncCall(std::string &name,
                               NodeLangParser::NodeContext *ctx) {
     // node: ... | '{' FuncID node* '}'
-    outs() << "visitFuncCall: " << name << "\n";
+    outs() << "visitFuncCall: " << name << '\n';
     // i32 @color(i32 %0, i32 %1, i32 %2)
     Function *func = module->getFunction(name);
     if (!func) {
-      outs() << "[Error] Unknown Function name: " << name << "\n";
+      outs() << "[Error] Unknown Function name: " << name << '\n';
       return nullptr;
     }
     int argSize = ctx->node().size();
     if (argSize != func->arg_size()) {
-      outs() << "[Error] Wrong arguments number for " << name << "\n";
+      outs() << "[Error] Wrong arguments number for " << name << '\n';
       return nullptr;
     }
     // (i32 %13, i32 %6, i32 %1)
@@ -200,7 +200,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitVarDecl(NodeLangParser::VarDeclContext *ctx) override {
     // varDecl: ID expr;
     std::string name = ctx->ID()->getText();
-    outs() << "visitVarDecl: " << name << "\n";
+    outs() << "visitVarDecl: " << name << '\n';
     return registerVar(name, visitExpr(ctx->expr()).as<Value *>());
   }
 
@@ -208,12 +208,12 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     outs() << "visitExpr: ";
     // ID
     if (ctx->ID()) {
-      outs() << ctx->ID()->getText() << "\n";
+      outs() << ctx->ID()->getText() << '\n';
       return searchVar(ctx->ID()->getText());
     }
     // INT
     if (ctx->INT()) {
-      outs() << ctx->INT()->getText() << "\n";
+      outs() << ctx->INT()->getText() << '\n';
       return (Value *)builder->getInt32(std::stoi(ctx->INT()->getText()));
     }
     // '-' expr
@@ -228,7 +228,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     }
     // ( '*' | '/') expr expr
     // ( '+' | '-') expr expr
-    outs() << ctx->children[0]->getText() << "\n";
+    outs() << ctx->children[0]->getText() << '\n';
     Value *lhs = visit(ctx->children[1]).as<Value *>();
     Value *rhs = visit(ctx->children[2]).as<Value *>();
     switch (ctx->children[0]->getText().at(0)) {
@@ -247,13 +247,13 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   }
 
   Value *registerVar(const std::string &name, Value *val) {
-    outs() << "registerVar: " << name << "\n";
+    outs() << "registerVar: " << name << '\n';
     vars.back()[name] = val;
     return val;
   }
 
   Value *searchVar(const std::string &name) {
-    outs() << "searchVar: " << name << "\n";
+    outs() << "searchVar: " << name << '\n';
     for (auto it = vars.rbegin(); it != vars.rend(); ++it) {
       if (auto find = it->find(name); find != it->end()) {
         return find->second;
@@ -262,10 +262,10 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     // Conflict resolving: node: (expr) <-> (ID)
     Function *func = module->getFunction(name);
     if (!func || func->arg_size() > 0) {
-      outs() << "[Error] Can't find variable: " << name << "\n";
+      outs() << "[Error] Can't find variable: " << name << '\n';
       return nullptr;
     }
-    outs() << "Change to FuncCall: " << name << "\n";
+    outs() << "Change to FuncCall: " << name << '\n';
     return (Value *)builder->CreateCall(func);
   }
 };
@@ -292,7 +292,7 @@ int main(int argc, const char *argv[]) {
   NodeLangParser parser(&tokens);
 
   // Display the parse tree
-  // outs() << parser.program()->toStringTree() << "\n";
+  // outs() << parser.program()->toStringTree() << '\n';
   // return 0;
 
   LLVMContext context;
@@ -304,7 +304,7 @@ int main(int argc, const char *argv[]) {
 
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyModule(*module, &outs());
   outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
@@ -335,7 +335,7 @@ int main(int argc, const char *argv[]) {
 
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(appFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   simExit();
 

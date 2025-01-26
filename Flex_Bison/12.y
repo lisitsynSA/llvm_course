@@ -15,7 +15,7 @@ extern "C" {
     int yyparse();
     int yylex();
     void yyerror(char *s) {
-        std::cerr << s << "\n";
+        std::cerr << s << '\n';
     }
     int yywrap(void){return 1;}
 }

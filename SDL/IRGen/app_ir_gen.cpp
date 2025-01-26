@@ -125,7 +125,7 @@ int main() {
 
   // Dump LLVM IR
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*appFunc, &outs());
   outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
@@ -150,7 +150,7 @@ int main() {
 
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(appFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   simExit();
   return EXIT_SUCCESS;

@@ -11,7 +11,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
            name == "funcStartLogger" || name == "funcEndLogger";
   }
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-    outs() << "[Module] " << M.getName() << "\n";
+    outs() << "[Module] " << M.getName() << '\n';
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
@@ -22,9 +22,9 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       for (auto &B : F) {
         for (auto &I : B) {
           // Dump Instructions
-          outs() << "Instruction: " << (uint64_t)(&I) << "\n";
+          outs() << "Instruction: " << (uint64_t)(&I) << '\n';
           I.print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
         }
       }
 
@@ -114,11 +114,11 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           }
         }
       }
-      outs() << "\n";
+      outs() << '\n';
       bool verif = verifyFunction(F, &outs());
       outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
     }
-    outs() << "\n";
+    outs() << '\n';
     return PreservedAnalyses::none();
   };
 };

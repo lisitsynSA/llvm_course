@@ -4,7 +4,7 @@ using namespace llvm;
 
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-    outs() << "[Module] " << M.getName() << "\n";
+    outs() << "[Module] " << M.getName() << '\n';
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
@@ -13,7 +13,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       for (auto &U : F.uses()) {
         User *user = U.getUser();
         user->print(outs(), true);
-        outs() << "\n";
+        outs() << '\n';
       }
 
       for (auto &B : F) {
@@ -23,7 +23,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
         for (auto &U : B.uses()) {
           User *user = U.getUser();
           user->print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
         }
 
         for (auto &I : B) {
@@ -33,19 +33,19 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           for (auto &U : I.uses()) {
             User *user = U.getUser();
             user->print(outs(), true);
-            outs() << "\n";
+            outs() << '\n';
           }
           outs() << "##[Opernads]\n";
           for (auto &U : I.operands()) {
             Value *use = U.get();
             use->print(outs(), true);
-            outs() << "\n";
+            outs() << '\n';
           }
         }
       }
-      outs() << "\n";
+      outs() << '\n';
     }
-    outs() << "\n";
+    outs() << '\n';
     return PreservedAnalyses::all();
   };
 };

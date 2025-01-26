@@ -17,14 +17,14 @@ uint32_t REG_FILE[REG_FILE_SIZE];
 void dumpRegFile() {
   outs() << "[REG FILE]:\n";
   for (int i = 0; i < REG_FILE_SIZE; i++) {
-    outs() << "[" << i << "] " << REG_FILE[i] << "\n";
+    outs() << "[" << i << "] " << REG_FILE[i] << '\n';
   }
 }
 
 void INSTR_sort() { std::sort(REG_FILE, REG_FILE + REG_FILE_SIZE); }
 
 void INSTR_dump(uint32_t reg) {
-  outs() << "[" << reg << "] = " << REG_FILE[reg] << "\n";
+  outs() << "[" << reg << "] = " << REG_FILE[reg] << '\n';
 }
 
 void INSTR_read(uint32_t reg) {
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    outs() << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << '\n';
     return 1;
   }
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     outs() << " " << name;
     BBMap[name] = BasicBlock::Create(context, name, mainFunc);
   }
-  outs() << "\n";
+  outs() << '\n';
   input.close();
   input.open(argv[1]);
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
     if (!name.compare("dump")) {
       input >> arg;
-      outs() << "\tdump x" << arg << "\n";
+      outs() << "\tdump x" << arg << '\n';
       Value *reg1 = builder.getInt32(std::stoi(arg.substr(1)));
       ArrayRef<Value *> args = {reg1};
       builder.CreateCall(CalleeINSTR_dump, args);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 
     if (!name.compare("read")) {
       input >> arg;
-      outs() << "\tread x" << arg << "\n";
+      outs() << "\tread x" << arg << '\n';
       Value *reg1 = builder.getInt32(std::stoi(arg.substr(1)));
       ArrayRef<Value *> args = {reg1};
       builder.CreateCall(CalleeINSTR_read, args);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " + " << arg << "\n";
+      outs() << " + " << arg << '\n';
       // arg2
       Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " + " << arg << "\n";
+      outs() << " + " << arg << '\n';
       // arg2
       Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *add_arg1_arg2 =
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " * " << arg << "\n";
+      outs() << " * " << arg << '\n';
       // arg2
       Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " * " << arg << "\n";
+      outs() << " * " << arg << '\n';
       // arg2
       Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *add_arg1_arg2 =
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
       outs() << "\texit\n";
       builder.CreateRet(builder.getInt32(0));
       if (input >> name) {
-        outs() << "BB " << name << "\n";
+        outs() << "BB " << name << '\n';
         builder.SetInsertPoint(BBMap[name]);
       }
       continue;
@@ -238,8 +238,8 @@ int main(int argc, char *argv[]) {
       input >> arg;
       outs() << " ) then BB:" << arg;
       input >> name;
-      outs() << " else BB:" << name << "\n";
-      outs() << "BB " << name << "\n";
+      outs() << " else BB:" << name << '\n';
+      outs() << "BB " << name << '\n';
 
       Value *cond = builder.CreateICmpNE(builder.CreateLoad(int32Type, reg1_p),
                                          builder.CreateLoad(int32Type, reg2_p));
@@ -250,15 +250,15 @@ int main(int argc, char *argv[]) {
     if (!name.compare("b")) {
       // name
       input >> arg;
-      outs() << "\tb BB:" << arg << "\n";
+      outs() << "\tb BB:" << arg << '\n';
       builder.CreateBr(BBMap[arg]);
       if (input >> name) {
-        outs() << "BB " << name << "\n";
+        outs() << "BB " << name << '\n';
         builder.SetInsertPoint(BBMap[name]);
       }
       continue;
     }
-    outs() << "BB " << name << "\n";
+    outs() << "BB " << name << '\n';
 
     if (builder.GetInsertBlock()) {
       builder.CreateBr(BBMap[name]);
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   // Dump LLVM IR
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
   outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   dumpRegFile();
   return 0;

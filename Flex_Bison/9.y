@@ -15,7 +15,7 @@ extern "C" {
     int yyparse();
     int yylex();
     void yyerror(char *s) {
-        std::cerr << s << "\n";
+        std::cerr << s << '\n';
     }
     int yywrap(void){return 1;}
 }
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
     outs() << "[LLVM IR]:\n";
     module->print(outs(), nullptr);
-    outs() << "\n";
+    outs() << '\n';
     bool verif = verifyModule(*module, &outs());
     outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
@@ -83,14 +83,14 @@ int main(int argc, char **argv)
     outs() << "[EE] Done\n";
 
     for (auto& value : ValueMap) {
-        outs() << value.first << " = " <<  value.second.realVal << "\n";
+        outs() << value.first << " = " <<  value.second.realVal << '\n';
     }
     for (auto& array : ArrayMap) {
         outs() << array.first << "[" << array.second.size << "] =";
         for (int i = 0; i < array.second.size; i++) {
             outs() << " " << array.second.realVal[i];
         }
-        outs() << "\n";
+        outs() << '\n';
         delete array.second.realVal;
     }
     return 0;

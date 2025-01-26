@@ -86,7 +86,7 @@ void ExtIR::buildIR(Binary &Bin) {
 void ExtIR::dumpIR() {
   outs() << "\n[LLVM IR]:\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
 }
 bool ExtIR::verifyIR() {
   bool verif = verifyFunction(*mainFunc, &outs());

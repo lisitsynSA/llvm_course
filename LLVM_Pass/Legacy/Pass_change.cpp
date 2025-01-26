@@ -27,7 +27,7 @@ struct MyPass : public FunctionPass {
         if (auto *op = dyn_cast<BinaryOperator>(&I)) {
           outs() << "Modified instruction:\n";
           I.print(outs(), true);
-          outs() << "\n";
+          outs() << '\n';
           // Insert at the point where the instruction `op` appears.
           IRBuilder<> builder(op);
 

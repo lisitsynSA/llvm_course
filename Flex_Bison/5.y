@@ -12,7 +12,7 @@ extern "C" {
     int yyparse();
     int yylex();
     void yyerror(char *s) {
-        std::cerr << s << "\n";
+        std::cerr << s << '\n';
     }
     int yywrap(void){return 1;}
 }
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
     outs() << "[LLVM IR]:\n";
     module->print(outs(), nullptr);
-    outs() << "\n";
+    outs() << '\n';
     bool verif = verifyFunction(*mainFunc, &outs());
     outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 

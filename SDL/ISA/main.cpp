@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   Binary Bin;
   std::string ErrorMsg;
   if (Bin.readFile(argv[1], ErrorMsg)) {
-    outs() << "\n[ASM READ ERROR] " << ErrorMsg << "\n";
+    outs() << "\n[ASM READ ERROR] " << ErrorMsg << '\n';
     return 1;
   }
   outs() << "\n[BasicBlocks]\n" << Bin.writeBBs();
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   case 1:
     // Simulation
     if (Cpu.Execute(Bin, ErrorMsg)) {
-      outs() << "\n[CPU RUN ERROR] " << ErrorMsg << "\n";
+      outs() << "\n[CPU RUN ERROR] " << ErrorMsg << '\n';
       return 1;
     }
     break;
