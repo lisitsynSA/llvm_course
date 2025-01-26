@@ -118,9 +118,7 @@ Value:      Identifier  {
                             module->getOrInsertGlobal((char*)$1, arrayType);
                             ArrayMap.insert({(char*)$1, module->getNamedGlobal((char*)$1)});
                           }
-                          std::vector<Value *> gepArgs;
-                          gepArgs.push_back(builder->getInt32(0));
-                          gepArgs.push_back($3);
+                          std::vector<Value *> gepArgs{builder->getInt32(0), $3};
                           $$ = builder->CreateLoad(builder->getInt32Ty(), builder->CreateGEP(arrayType, ArrayMap[(char*)$1], gepArgs));
                         }
 

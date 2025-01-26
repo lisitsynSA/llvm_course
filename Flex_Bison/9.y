@@ -183,9 +183,7 @@ Value:      Identifier  {
                         }
             | Identifier '[' Expression ']' {
                             ArrayType *arrayType = ArrayType::get(builder->getInt32Ty(), ArrayMap[(char*)$1].size);
-                            std::vector<Value *> gepArgs;
-                            gepArgs.push_back(builder->getInt32(0));
-                            gepArgs.push_back($3);
+                            std::vector<Value *> gepArgs{builder->getInt32(0), $3};
                             $$ = builder->CreateGEP(arrayType, ArrayMap[(char*)$1].irVal, gepArgs);
                         }
 

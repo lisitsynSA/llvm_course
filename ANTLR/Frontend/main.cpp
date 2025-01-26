@@ -12,6 +12,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include <any>
+#include <cstddef>
 #include <iostream>
 using namespace llvm;
 
@@ -65,13 +66,11 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     // funcDecl: ID '(' ID* ')' node+;
     std::string name = ctx->ID()[0]->getText();
     outs() << "visitFuncDecl: " << name << '\n';
-    vars.push_back({});
+    vars.emplace_back();
 
     // (i32 %0, i32 %1, i32 %2)
-    std::vector<Type *> funcParamTypes;
-    for (int arg = 1; arg < ctx->ID().size(); arg++) {
-      funcParamTypes.push_back(int32Type);
-    }
+    std::vector<Type *> funcParamTypes(ctx->ID().size() - 1, int32Type);
+
     // define i32 @color(i32 %0, i32 %1, i32 %2)
     FunctionType *funcType =
         FunctionType::get(int32Type, funcParamTypes, false);
@@ -123,7 +122,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
   antlrcpp::Any visitLoop(NodeLangParser::NodeContext *ctx) {
     outs() << "visitLoop\n";
     // node: ... | '{' LOOP it begin end node* '}';
-    vars.push_back({});
+    vars.emplace_back();
     if (ctx->node().size() < 3) {
       outs() << "[Error] Too few arguments for LOOP\n";
       return nullptr;
@@ -190,6 +189,7 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     }
     // (i32 %13, i32 %6, i32 %1)
     std::vector<Value *> args;
+    args.reserve(argSize);
     for (int i = 0; i < argSize; i++) {
       args.push_back(visitNode(ctx->node()[i]));
     }
@@ -241,9 +241,8 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     case '-':
       return builder->CreateSub(lhs, rhs);
     default:
-      break;
+      return nullptr;
     }
-    return nullptr;
   }
 
   Value *registerVar(const std::string &name, Value *val) {
