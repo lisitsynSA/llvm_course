@@ -6,12 +6,12 @@ map<string, uint32_t> Instr::Str2Op;
 map<uint32_t, string> Instr::Op2Str;
 
 void Instr::prepareDicts() {
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  Str2Op[#_Name] = _Opcode;                                                    \
-  Op2Str[_Opcode] = #_Name;
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  Str2Op[#Name_] = Opcode_;                                                    \
+  Op2Str[Opcode_] = #Name_;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
 }
 
 uint32_t Instr::getOpcode(string &InstrName) {

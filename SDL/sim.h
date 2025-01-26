@@ -1,7 +1,7 @@
 #define SIM_X_SIZE 512
 #define SIM_Y_SIZE 256
 
-#ifndef __sim__
+#ifndef _sim_
 void simFlush(void);
 void simPutPixel(int x, int y, int argb);
 int simRand(void);

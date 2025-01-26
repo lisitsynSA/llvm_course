@@ -30,12 +30,12 @@ void ExtIR::buildIR(Binary &Bin) {
       FunctionType::get(voidType, int32x3Types, false);
 
   // Functions
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  FunctionCallee Callee##_Name =                                               \
-      module->getOrInsertFunction("do_" #_Name, int32x3FuncType);
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  FunctionCallee Callee##Name_ =                                               \
+      module->getOrInsertFunction("do_" #Name_, int32x3FuncType);
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
 
   std::unordered_map<uint32_t, BasicBlock *> BBMap;
   for (auto &BB : Bin.BBName2PC) {
@@ -52,13 +52,13 @@ void ExtIR::buildIR(Binary &Bin) {
     switch (I.Op) {
     default:
       break;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    builder.CreateCall(Callee##_Name, args);                                   \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    builder.CreateCall(Callee##Name_, args);                                   \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     PC++;
     if (I.Op == Instr::BR_COND) {
@@ -100,12 +100,12 @@ void ExtIR::executeIR(CPU &Cpu) {
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
   ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  if (fnName == "do_" #_Name)                                                  \
-    return reinterpret_cast<void *>(CPU::do_##_Name);
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  if (fnName == "do_" #Name_)                                                  \
+    return reinterpret_cast<void *>(CPU::do_##Name_);
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     return nullptr;
   });
 

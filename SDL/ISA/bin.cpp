@@ -26,13 +26,13 @@ bool Binary::searchBBs(ifstream &InputFile, string &ErrorMsg) {
       }
       PC2BBName[PC] = Name;
       continue;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    _SkipArgs;                                                                 \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    SkipArgs_;                                                                 \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     PC++;
   }
@@ -61,13 +61,13 @@ bool Binary::readInstrs(ifstream &InputFile, string &ErrorMsg) {
         continue;
       ErrorMsg = string("Wrong Opcode for " + Name);
       return true;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    _ReadArgs;                                                                 \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    ReadArgs_;                                                                 \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     Instrs.push_back(I);
   }
@@ -86,15 +86,15 @@ string Binary::writeInstrs() {
     default:
       Stream << "\nWrong Opcode: " << I.Op << '\n';
       break;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    Stream << "  " << #_Name;                                                  \
-    _WriteArgs;                                                                \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    Stream << "  " << #Name_;                                                  \
+    WriteArgs_;                                                                \
     Stream << '\n';                                                            \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     PC++;
   }
