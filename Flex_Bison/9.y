@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 Parse: Program {YYACCEPT;}
 
 Program: RoutineDeclaration {}
-         | VariableDeclaration {} 
+         | VariableDeclaration {}
          | Program VariableDeclaration {}
          | Program RoutineDeclaration {}
 
@@ -134,14 +134,14 @@ VariableDeclaration : Identifier '=' IntLiteral ';' {
 RoutineDeclaration : FunctionBegin Identifier   {
                             printf("FunctionBegin Identifier ...\n");
                             // declare void @Identifier()
-                            FunctionType *funcType = 
+                            FunctionType *funcType =
                                 FunctionType::get(builder->getVoidTy(), false);
                             Function *func =
                                 Function::Create(funcType, Function::ExternalLinkage, (char*)$2, module);
                             // entry:
                             BasicBlock *entryBB = BasicBlock::Create(context, "entry", func);
                             builder->SetInsertPoint(entryBB);
-                    } Statements FunctionEnd { 
+                    } Statements FunctionEnd {
                             printf("... Statements FunctionEnd\n");
                             builder->CreateRetVoid();
                     }

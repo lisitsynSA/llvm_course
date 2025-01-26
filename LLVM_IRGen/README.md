@@ -68,7 +68,7 @@ EXIT
 ```
 9. Simple expressions parser, that build LLVM IR for calculation:
 ```
-10 * 7 - 20 
+10 * 7 - 20
 ```
 9. Expression parser with function support:
 ```

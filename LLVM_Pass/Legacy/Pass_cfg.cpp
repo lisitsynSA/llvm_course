@@ -84,7 +84,7 @@ struct MyPass : public FunctionPass {
         FunctionType::get(retType, binOptParamTypes, false);
     FunctionCallee binOptLogFunc =
         F.getParent()->getOrInsertFunction("binOptLogger", binOptLogFuncType);
-    
+
     // Insert loggers for call, binOpt and ret instructions
     for (auto &B : F) {
       for (auto &I : B) {

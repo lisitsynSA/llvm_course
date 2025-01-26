@@ -26,7 +26,7 @@ int readVal() {
     std::cout << "Enter a number: ";
     int res = 0;
     std::cin >> res;
-    return res; 
+    return res;
 }
 
 int main(int argc, char **argv)
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     builder = new IRBuilder<> (context);
 
     // declare void @main()
-    FunctionType *funcType = 
+    FunctionType *funcType =
         FunctionType::get(builder->getInt32Ty(), false);
     Function *mainFunc =
         Function::Create(funcType, Function::ExternalLinkage, "main", module);
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     BasicBlock *entryBB = BasicBlock::Create(context, "entry", mainFunc);
 
     builder->SetInsertPoint(entryBB);
-    
+
     readFunc = Function::Create(funcType, Function::ExternalLinkage, "readVal", module);
 
     yyparse();

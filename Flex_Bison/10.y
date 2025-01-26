@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 Parse: Program {YYACCEPT;}
 
 Program: RoutineDeclaration {}
-         | VariableDeclaration {} 
+         | VariableDeclaration {}
          | Program VariableDeclaration {}
          | Program RoutineDeclaration {}
 
@@ -142,7 +142,7 @@ RoutineDeclaration : FunctionBegin Identifier   {
                             // declare void @Identifier()
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
-                                FunctionType *funcType = 
+                                FunctionType *funcType =
                                                         FunctionType::get(builder->getVoidTy(), false);
                                 func = Function::Create(funcType, Function::ExternalLinkage, (char*)$2, module);
                             }
@@ -150,7 +150,7 @@ RoutineDeclaration : FunctionBegin Identifier   {
                             // entry:
                             BasicBlock *entryBB = BasicBlock::Create(context, "entry", curFunc);
                             builder->SetInsertPoint(entryBB);
-                        } Statements FunctionEnd { 
+                        } Statements FunctionEnd {
                             printf("... Statements FunctionEnd\n");
                             builder->CreateRetVoid();
                         }
@@ -167,7 +167,7 @@ Assignment: Value '=' Expression ';' { printf("Value '=' Expression ';'\n"); bui
 RoutineCall: CallFunction Identifier ';' {
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
-                                FunctionType *funcType = 
+                                FunctionType *funcType =
                                                         FunctionType::get(builder->getVoidTy(), false);
                                 func = Function::Create(funcType, Function::ExternalLinkage, (char*)$2, module);
                             }

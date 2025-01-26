@@ -21,7 +21,7 @@ opt hello.ll -load-pass-plugin ./libPass.so -passes="function(mem2reg,sroa,myFun
 > For Mac arm64 (arm64-apple-darwin) add `-undefined dynamic_lookup` to the Pass compilation line (llvm version should be > 15).
 2. Print Functions name
 ```
-clang++ Pass2_names.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so 
+clang++ Pass2_names.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
 clang -fpass-plugin=./libPass.so c_examples/hello.c -O2
 ```
 3. Dump Functions, BasicBlocks and Instructions

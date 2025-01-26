@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     builder = new IRBuilder<> (context);
 
     // declare void @main()
-    FunctionType *funcType = 
+    FunctionType *funcType =
         FunctionType::get(builder->getInt32Ty(), false);
     Function *mainFunc =
         Function::Create(funcType, Function::ExternalLinkage, "main", module);
