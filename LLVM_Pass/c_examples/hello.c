@@ -8,7 +8,7 @@ void func(int x) {
   }
 }
 
-int main() {
+int main(void) {
   func(1);
   return 0;
 }
