@@ -157,11 +157,11 @@ int main(int argc, const char *argv[]) {
   // return 0;
 
   // Associate a visitor with the Expr context
-  //TreeWalker walker;
-  //TreeDumpWalker walker;
-  //int res = walker.visitExpr(parser.expr()).as<int>();
-  //outs() << "Visitor output: " << res << '\n';
-  //return 0;
+  // TreeWalker walker;
+  // TreeDumpWalker walker;
+  // int res = walker.visitExpr(parser.expr()).as<int>();
+  // outs() << "Visitor output: " << res << '\n';
+  // return 0;
 
   LLVMContext context;
   Module *module = new Module("top", context);

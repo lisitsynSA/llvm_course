@@ -58,16 +58,16 @@ struct MyPass : public FunctionPass {
 
     // Prepare callLogger function
     ArrayRef<Type *> callParamTypes = {builder.getInt8Ty()->getPointerTo(),
-                                          builder.getInt8Ty()->getPointerTo(),
-                                          Type::getInt64Ty(Ctx)};
+                                       builder.getInt8Ty()->getPointerTo(),
+                                       Type::getInt64Ty(Ctx)};
     FunctionType *callLogFuncType =
         FunctionType::get(retType, callParamTypes, false);
     FunctionCallee callLogFunc =
         F.getParent()->getOrInsertFunction("callLogger", callLogFuncType);
 
     // Prepare funcEndLogger function
-    ArrayRef<Type *> funcEndParamTypes = {
-        builder.getInt8Ty()->getPointerTo(), Type::getInt64Ty(Ctx)};
+    ArrayRef<Type *> funcEndParamTypes = {builder.getInt8Ty()->getPointerTo(),
+                                          Type::getInt64Ty(Ctx)};
     FunctionType *funcEndLogFuncType =
         FunctionType::get(retType, funcEndParamTypes, false);
     FunctionCallee funcEndLogFunc =
@@ -75,11 +75,11 @@ struct MyPass : public FunctionPass {
 
     // Prepare binOptLogger function
     ArrayRef<Type *> binOptParamTypes = {Type::getInt32Ty(Ctx),
-                                            Type::getInt32Ty(Ctx),
-                                            Type::getInt32Ty(Ctx),
-                                            builder.getInt8Ty()->getPointerTo(),
-                                            builder.getInt8Ty()->getPointerTo(),
-                                            Type::getInt64Ty(Ctx)};
+                                         Type::getInt32Ty(Ctx),
+                                         Type::getInt32Ty(Ctx),
+                                         builder.getInt8Ty()->getPointerTo(),
+                                         builder.getInt8Ty()->getPointerTo(),
+                                         Type::getInt64Ty(Ctx)};
     FunctionType *binOptLogFuncType =
         FunctionType::get(retType, binOptParamTypes, false);
     FunctionCallee binOptLogFunc =
@@ -138,9 +138,8 @@ char MyPass::ID = 0;
 // Automatically enable the pass.
 // http://adriansampson.net/blog/clangpass.html
 static void registerMyPass(const PassManagerBuilder &,
-                                 legacy::PassManagerBase &PM) {
+                           legacy::PassManagerBase &PM) {
   PM.add(new MyPass());
 }
 static RegisterStandardPasses
-    RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
-                   registerMyPass);
+    RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible, registerMyPass);
