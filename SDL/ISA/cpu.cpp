@@ -1,10 +1,9 @@
 #include "include/cpu.h"
 #include <sstream>
-using namespace std;
 
 CPU *CPU::C;
 
-bool CPU::Execute(Binary &Bin, string &ErrorMsg) {
+bool CPU::Execute(Binary &Bin, std::string &ErrorMsg) {
   PC = 0;
   Run = 1;
   setCPU(this);
@@ -14,7 +13,7 @@ bool CPU::Execute(Binary &Bin, string &ErrorMsg) {
     NextPC = PC + 1;
     switch (I.Op) {
     default:
-      ErrorMsg = string("Wrong Opcode: " + to_string(Bin.Instrs[PC].Op));
+      ErrorMsg = std::string("Wrong Opcode: " + std::to_string(Bin.Instrs[PC].Op));
       return true;
 #define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
              IRGenExecute_)                                                    \
@@ -30,8 +29,8 @@ bool CPU::Execute(Binary &Bin, string &ErrorMsg) {
   return false;
 }
 
-string CPU::dumpStatus() {
-  stringstream Stream;
+std::string CPU::dumpStatus() {
+  std::stringstream Stream;
   for (uint32_t i = 0; i < RegSize; i++) {
     Stream << " x" << i << ":" << RegFile[i];
   }

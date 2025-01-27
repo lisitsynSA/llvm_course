@@ -1,8 +1,7 @@
 #include "include/instr.h"
-using namespace std;
 
-map<string, uint32_t> Instr::Str2Op;
-map<uint32_t, string> Instr::Op2Str;
+std::map<std::string, uint32_t> Instr::Str2Op;
+std::map<uint32_t, std::string> Instr::Op2Str;
 
 void Instr::prepareDicts() {
 #define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
@@ -13,7 +12,7 @@ void Instr::prepareDicts() {
 #undef ISA_
 }
 
-uint32_t Instr::getOpcode(string &InstrName) {
+uint32_t Instr::getOpcode(std::string &InstrName) {
   auto InstrRec = Str2Op.find(InstrName);
   if (InstrRec == Str2Op.end())
     return 0;
