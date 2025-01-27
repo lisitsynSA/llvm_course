@@ -6,6 +6,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <memory>
 using namespace llvm;
 
 int main() {

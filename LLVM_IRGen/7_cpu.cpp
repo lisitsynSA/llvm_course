@@ -1,7 +1,10 @@
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <stack>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"

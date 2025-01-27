@@ -1,6 +1,7 @@
 #include "../SDL/sim.h"
 
 #include <iostream>
+#include <string>
 #include "elfio/elfio.hpp"
 
 using namespace ELFIO;

@@ -1,6 +1,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/SourceMgr.h"
+#include <memory>
+#include <system_error>
 using namespace llvm;
 
 int main(int argc, char **argv) {

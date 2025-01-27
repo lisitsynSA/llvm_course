@@ -5,6 +5,9 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <memory>
+#include <unordered_map>
+#include <string>
 
 using namespace llvm;
 

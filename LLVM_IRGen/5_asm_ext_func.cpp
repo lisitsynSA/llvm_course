@@ -6,7 +6,10 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <algorithm>
 #include <fstream>
+#include <memory>
+#include <string>
 using namespace llvm;
 
 const int REG_FILE_SIZE = 8;
