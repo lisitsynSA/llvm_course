@@ -8,8 +8,8 @@
 // IRGenExecute = args -> IR [IRBuilder builder, regFileType regFile, Instr I,
 //                            map BBMap, uint32_t PC, GraphicalFuncs]
 
-// _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,
-// _IRGenExecute)
+// ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,
+// IRGenExecute_)
 
 // SkipArgs
 #define SKIP_3ARGS                                                             \
@@ -58,25 +58,25 @@
 #define WRITE_REG_LABEL                                                        \
   { WRITE_REG(R1) WRITE_LABEL }
 
-// _IRGenExecute
+// IRGenExecute_
 #define GEP2_32(Arg) builder.CreateConstGEP2_32(regFileType, regFile, 0, Arg)
 #define LOAD_REG(Arg) builder.CreateLoad(int32Type, GEP2_32(Arg))
 #define GEN_IMM(Arg) builder.getInt32(Arg)
 
-// _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,
-// _IRGenExecute)
+// ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,
+// IRGenExecute_)
 
 //    EXIT (NO ARGS)
-_ISA(
+ISA_(
     0x1, EXIT, {}, {}, {}, { C->Run = 0; }, { builder.CreateRetVoid(); })
 
 //    FLUSH (NO ARGS)
-_ISA(
+ISA_(
     0x2, FLUSH, {}, {}, {}, { simFlush(); },
     { builder.CreateCall(simFlushFunc); })
 
 //    XOR x1 x1 x1 (3REGS)
-_ISA(
+ISA_(
     0x3, XOR, SKIP_3ARGS, READ_3REGS, WRITE_3REGS,
     { C->RegFile[R1] = C->RegFile[R2] ^ C->RegFile[R3Imm]; },
     {
@@ -85,7 +85,7 @@ _ISA(
     })
 
 //    MUL x3 x2 x1 (3REGS)
-_ISA(
+ISA_(
     0x4, MUL, SKIP_3ARGS, READ_3REGS, WRITE_3REGS,
     { C->RegFile[R1] = C->RegFile[R2] * C->RegFile[R3Imm]; },
     {
@@ -94,7 +94,7 @@ _ISA(
     })
 
 //    SUBi x6 x6 16777216 (2REGS_IMM)
-_ISA(
+ISA_(
     0x5, SUBi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
     { C->RegFile[R1] = C->RegFile[R2] - R3Imm; },
     {
@@ -103,7 +103,7 @@ _ISA(
     })
 
 //    PUT_PIXEL x5 x2 x6 (3REGS)
-_ISA(
+ISA_(
     0x6, PUT_PIXEL, SKIP_3ARGS, READ_3REGS, WRITE_3REGS,
     { simPutPixel(C->RegFile[R1], C->RegFile[R2], C->RegFile[R3Imm]); },
     {
@@ -112,7 +112,7 @@ _ISA(
     })
 
 //    INC_NEi x4 x5 512 (2REGS_IMM)
-_ISA(
+ISA_(
     0x7, INC_NEi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
     { C->RegFile[R1] = ++C->RegFile[R2] != R3Imm; },
     {
@@ -125,7 +125,7 @@ _ISA(
     })
 
 //    BR_COND x4 label_13 (REG_IMM)
-_ISA(
+ISA_(
     0x8, BR_COND, SKIP_2ARGS, READ_REG_LABEL, WRITE_REG_LABEL,
     {
       if (C->RegFile[R1]) {

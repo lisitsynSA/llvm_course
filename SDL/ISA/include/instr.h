@@ -6,11 +6,11 @@
 
 struct Instr {
   enum {
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  _Name = _Opcode,
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  Name_ = Opcode_,
 #include "ISA.h"
-#undef _ISA
+#undef ISA_
   };
   uint32_t Op;
   uint32_t R1;

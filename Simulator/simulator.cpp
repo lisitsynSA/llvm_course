@@ -1,6 +1,7 @@
 #include "../SDL/sim.h"
 
 #include <iostream>
+#include <string>
 #include "elfio/elfio.hpp"
 
 using namespace ELFIO;
@@ -82,7 +83,7 @@ int main( int argc, char** argv )
             printf("[%04x] ", PC);
             switch (op) {
                 default:
-                    printf("[ERROR] PC %04x: Incorect opcode %02x\n", PC, op);
+                    printf("[ERROR] PC %04x: Incorrect opcode %02x\n", PC, op);
                     RUN = 0;
                     break;
                 case 0xAA:

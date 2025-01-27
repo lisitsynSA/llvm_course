@@ -7,8 +7,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
-#include <any>
 #include <iostream>
+#include <string>
 using namespace llvm;
 
 struct TreeLLVMWalker : public ExpressionVisitor {
@@ -55,7 +55,7 @@ struct TreeDumpWalker : public ExpressionVisitor {
     // INT
     if (ctx->INT()) {
       res = std::stoi(ctx->INT()->getText());
-      outs() << Tab << res << "\n";
+      outs() << Tab << res << '\n';
     }
     // '-' expr
     if (ctx->children.size() == 2) {
@@ -71,7 +71,7 @@ struct TreeDumpWalker : public ExpressionVisitor {
         // expr ( '*' | '/') expr
         // expr ( '+' | '-') expr
         int lhs = visit(ctx->children[0]).as<int>();
-        outs() << Tab << ctx->children[1]->getText() << "\n";
+        outs() << Tab << ctx->children[1]->getText() << '\n';
         int rhs = visit(ctx->children[2]).as<int>();
         switch (ctx->children[1]->getText().at(0)) {
         case '*':
@@ -153,15 +153,15 @@ int main(int argc, const char *argv[]) {
   ExpressionParser parser(&tokens);
 
   // Display the parse tree
-  // outs() << parser.expr()->toStringTree() << "\n";
+  // outs() << parser.expr()->toStringTree() << '\n';
   // return 0;
 
   // Associate a visitor with the Expr context
-  //TreeWalker walker;
-  //TreeDumpWalker walker;
-  //int res = walker.visitExpr(parser.expr()).as<int>();
-  //outs() << "Visitor output: " << res << "\n";
-  //return 0;
+  // TreeWalker walker;
+  // TreeDumpWalker walker;
+  // int res = walker.visitExpr(parser.expr()).as<int>();
+  // outs() << "Visitor output: " << res << '\n';
+  // return 0;
 
   LLVMContext context;
   Module *module = new Module("top", context);
@@ -180,9 +180,9 @@ int main(int argc, const char *argv[]) {
 
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   return 0;
 }

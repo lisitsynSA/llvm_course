@@ -1,4 +1,4 @@
-void app() {
-    simPutPixel(5, 5, 0xFFFFFFFF);
-    simFlush();
+void app(void) {
+  simPutPixel(5, 5, 0xFFFFFFFF);
+  simFlush();
 }

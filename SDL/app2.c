@@ -19,7 +19,7 @@ int getAbsVelocity(int v1, int v2) {
   return (v1 + v2) & 0xFF;
 }
 
-void app() {
+void app(void) {
   int x = (simRand() % SIM_X_SIZE) / 10;
   int y = (simRand() % SIM_Y_SIZE) / 10;
   int v_x = simRand() % 10;
