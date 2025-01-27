@@ -119,7 +119,7 @@ Section Headers:
   [ 3] .note.GNU-stack   PROGBITS        00000000 00003c 000000 00      0   0  1
   [ 4] .symtab           SYMTAB          00000000 00003c 000030 10      1   2  4
 ```
-Check inctructions in object file:
+Check instructions in object file:
 ```
 hexedit test.o
 New position 0x34 (.text section address)

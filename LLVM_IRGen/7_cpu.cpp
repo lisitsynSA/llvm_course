@@ -577,7 +577,7 @@ int main(int argc, char *argv[]) {
       builder.getVoidTy(),
       ArrayRef<Type *>({builder.getInt64Ty(), builder.getInt64Ty()}), false);
 
-  // Get poointer to CPU for function args
+  // Get pointer to CPU for function args
   Value *cpu_p = builder.getInt64((uint64_t)&cpu);
   ArrayType *regFileType = ArrayType::get(builder.getInt32Ty(), REG_FILE_SIZE);
   module->getOrInsertGlobal("regFile", regFileType);
@@ -618,7 +618,7 @@ int main(int argc, char *argv[]) {
       continue;
     }
     */
-    // Get poointer to instruction for function args
+    // Get pointer to instruction for function args
     Value *instr_p = builder.getInt64((uint64_t)Instructions[PC]);
     // Call simulation function for other instructions
     builder.CreateCall(module->getOrInsertFunction(

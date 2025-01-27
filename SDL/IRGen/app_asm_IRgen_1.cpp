@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   input.close();
   input.open(argv[1]);
 
-  // Funcions types
+  // Functions types
   Type *voidType = Type::getVoidTy(context);
   FunctionType *voidFuncType = FunctionType::get(voidType, false);
   ArrayRef<Type *> int32x3Types = {Type::getInt32Ty(context),

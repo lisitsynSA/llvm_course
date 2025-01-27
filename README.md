@@ -6,7 +6,7 @@ Simple examples of graphical application with simple interface based on the SDL 
 IRGen: LLVM IR generation for graphical application. Asm2IR LLVM IR generator for graphical application.
 
 ## LLVM Pass
-Examples of LLVM passes that collect static application IR inforamtion, insert instrumentation for collecting dynamic information and dummy optimization passes.
+Examples of LLVM passes that collect static application IR information, insert instrumentation for collecting dynamic information and dummy optimization passes.
 
 ## LLVM IRGen
 LLVM IR generators examples:
@@ -17,7 +17,7 @@ Examples of parsers based on Flex and Bison:
 "hello world" => simple mathematical expressions => expressions with variables and arrays => simple programming language files => interpretation and LLVM IR building => simple FrontEnd.
 
 ## LLVM_Backend
-TableGen examples. Descriptions for simple steps for LLVM Backend implimentation for `sim` target.
+TableGen examples. Descriptions for simple steps for LLVM Backend implementation for `sim` target.
 Steps are placed in https://github.com/lisitsynSA/llvm-add-backend.
 
 ## Simulator

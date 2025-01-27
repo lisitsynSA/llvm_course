@@ -35,7 +35,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
             user->print(outs(), true);
             outs() << '\n';
           }
-          outs() << "##[Opernads]\n";
+          outs() << "##[Operands]\n";
           for (auto &U : I.operands()) {
             Value *use = U.get();
             use->print(outs(), true);

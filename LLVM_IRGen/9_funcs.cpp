@@ -90,7 +90,7 @@ void free_info(info_t *info);
 
 int main(int argc, const char *argv[]) {
   if (argc != 2) {
-    std::cout << "[ERROR] Need 1 argument: file with exspression\n";
+    std::cout << "[ERROR] Need 1 argument: file with expression\n";
     return 1;
   }
   File = fopen(argv[1], "r");

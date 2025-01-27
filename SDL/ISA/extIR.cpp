@@ -26,7 +26,7 @@ void ExtIR::buildIR(Binary &Bin) {
   FunctionType *funcType = FunctionType::get(voidType, false);
   mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
-  // Funcions types
+  // Functions types
   FunctionType *voidFuncType = FunctionType::get(voidType, false);
   ArrayRef<Type *> int32x3Types = {int32Type, int32Type, int32Type};
   FunctionType *int32x3FuncType =
