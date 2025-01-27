@@ -1,3 +1,6 @@
+#ifndef SIM_H
+#define SIM_H
+
 #define SIM_X_SIZE 512
 #define SIM_Y_SIZE 256
 
@@ -10,3 +13,5 @@ int simRand(void);
 extern void simInit(void);
 extern void app(void);
 extern void simExit(void);
+
+#endif // SIM_H
