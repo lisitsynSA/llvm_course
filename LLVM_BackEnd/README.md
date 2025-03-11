@@ -6,15 +6,16 @@ llvm-tblgen test_i.td
 llvm-tblgen test.td -print-enums -class=SimReg
 
 cd llvm-project
-./build/bin/llvm-tblgen llvm/lib/Target/X86/X86.td -print-enums -class Register -I llvm/include/
+./build/bin/llvm-tblgen llvm/lib/Target/X86/X86.td -print-enums -class Register -I llvm/include/ -I llvm/lib/Target/X86/
+./build/bin/llvm-tblgen llvm/lib/Target/X86/X86.td -gen-register-info -I llvm/include/ -I llvm/lib/Target/X86/
 ```
 
 # Build LLVM
 ```
-git checkout llvmorg-18.1.1
-mkdir build && cd build
-cmake -S ../llvm/ -B ./ -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_TARGETS_TO_BUILD=Sim
-ninja -j4
+git checkout llvmorg-20.1.0
+cmake -S llvm -B build -G Ninja -DLLVM_USE_LINKER=lld -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_TARGETS_TO_BUILD=X86 -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_EXAMPLES=OFF
+ninja -C build -j 8
+./build/bin/llc --version
 ```
 Sim target adding example: https://github.com/lisitsynSA/llvm-add-backend
 
