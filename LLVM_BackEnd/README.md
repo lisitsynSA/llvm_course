@@ -138,10 +138,11 @@ main:                                   ; @main
 ```
 build/bin/llc build/test.ll -march sim -debug -view-isel-dags
 ```
+![image](https://github.com/user-attachments/assets/dbde84db-faee-4fea-83e7-18be9d352f44)
 ```
 build/bin/llc build/test.ll -march sim -debug -view-sched-dags
 ```
-
+![image](https://github.com/user-attachments/assets/d0a4b2b8-a564-4f8c-8cce-37379c2006c3)
 
 ### 3) Generate simple BIN
 ```
