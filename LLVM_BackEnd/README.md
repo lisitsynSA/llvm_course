@@ -14,10 +14,11 @@ cd llvm-project
 ```
 git checkout llvmorg-20.1.0
 cmake -S llvm -B build -G Ninja -DLLVM_USE_LINKER=lld -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_TARGETS_TO_BUILD=X86 -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_EXAMPLES=OFF
-ninja -C build -j 8
+ninja -C build -j 8 llc
 ./build/bin/llc --version
+./build/bin/llc -help-hidden
 ```
-Sim target adding example: https://github.com/lisitsynSA/llvm-add-backend
+Sim target adding example: https://github.com/lisitsynSA/llvm-add-backend (sim_backend_20.1.0 branch)
 
 # Steps for custom FrontEnd
 ### 1) Registered
@@ -38,7 +39,7 @@ define dso_local i32 @main() {
 }
 ```
 ```
-.../llvm-project/build/bin/llc test.ll -march sim
+.../llvm-project/build/bin/llc test.ll -march sim -debug
 ```
 #### [Sim] 2. Add Register Info for Sim architecture:
 >ERROR: void llvm::TargetPassConfig::addPassesToHandleExceptions(): Assertion `MCAI && "No MCAsmInfo"' failed.
@@ -67,9 +68,65 @@ SimGenRegisterInfo::getFrameLowering(const MachineFunction &MF) {
 #### [Sim] 5. Add SimMCAsmInfo for Sim architecture:
 + SimMCTargetDesc.cpp : createSimMCAsmInfo + SimMCAsmInfo.h/.cpp
 >ERROR: llc: error: target does not support generation of this file type
-#### [Sim] 6. Add Sim info for Asm generation:
-+ Many actions that should be splitted to several commits
+
+#### [Sim] 6. Add empty SimPassConfig: + [Sim] 9. Add createSimISelDag
++ SimMCTargetDesc.cpp : SimPassConfig
+>ERROR: Assertion `InstPrinter' failed.
+
+#### [Sim] 7. Add empty SimInstPrinter
++ Sim/SimTargetMachine.cpp : createSimMCInstPrinter
++ Sim/SimInstPrinter.h
+>ERROR: llc: error: target does not support generation of this file type
+
+#### [Sim] 8. Add empty SimAsmPrinter
++ SimAsmPrinter.cpp
+>ERROR: Segmentation fault (compileModule(char**, llvm::LLVMContext&) in Target->getObjFileLowering())
+
+#### [Sim] 10. Add SimTargetMachine::getObjFileLowering
++ SimTargetMachine.cpp: TLOF
+>ERROR: Segmentation fault in Running pass 'Expand large div/rem' on function '@main'
+
+#### [Sim] 11. Update Subtarget and add SimTargetLowering
++ SimISelLowering.h : SimTargetLowering
+>ERROR: Segmentation fault in Running pass 'Sim DAG->DAG Pattern Instruction Selection' on function '@main' in STI->getFrameLowering()
+
+#### [Sim] 12. Add getFrameLowering to SimSubtarget
++ SimSubtarget.h : *getFrameLowering
+>ERROR: Not Implemented  UNREACHABLE executed at virtual SDValue LowerCall(...)
+
+#### [Sim] 13. Add Calling Convention, MachineFunction and Lowering Functions
++ SimCallingConv.td, SimMachineFunctionInfo.h + Big SimISelLowering.cpp Update
+>ERROR: Segmentation fault in Running pass 'Sim DAG->DAG Pattern Instruction Selection' on function '@main' in MF.getSubtarget().getRegisterInfo()
+
+#### [Sim] 14. Update SimRegisterInfo and add to SimSubtarget
++ SimRegisterInfo.cpp .h updates
++ SimSubtarget.h : + getRegisterInfo
+>ERROR: Creating constant: t1: i32 = Constant<12> Assertion `idx < size()' failed. TLI.getNumRegistersForCallingConv
+
+#### [Sim] 15. Extend SimTargetLowering with SimRegisterInfo
++ SimTargetLowering.cpp SimTargetLowering update
+>ERROR: Segmentation fault ISEL: Starting pattern match
+
+#### [Sim] 16. Add InstrInfo and TSInfo to SimSubtarget
++ SimSubtarget.h : + getInstrInfo, getSelectionDAGInfo
 Check instructions in asm file (test.s):
+```
+main:                                   ; @main
+; %bb.0:
+
+.Lfunc_end0:
+```
+#### [Sim] 17. Add full SimInstPrinter
++ MCTargetDesc/SimInstPrinter.cpp
+```
+main:                                   ; @main
+; %bb.0:
+	BR r0
+.Lfunc_end0:
+```
+
+#### [Sim] 18. Implement lowerSimMachineInstrToMCInst for AsmPrinter
++ SimMCInstLower.cpp
 ```
 main:                                   ; @main
 ; %bb.0:
@@ -77,6 +134,15 @@ main:                                   ; @main
 	BR r0
 .Lfunc_end0:
 ```
+#### Extra experiments:
+```
+build/bin/llc build/test.ll -march sim -debug -view-isel-dags
+```
+```
+build/bin/llc build/test.ll -march sim -debug -view-sched-dags
+```
+
+
 ### 3) Generate simple BIN
 ```
 .../llvm-project/build/bin/llc test.ll -march sim --filetype=obj
