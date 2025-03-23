@@ -150,11 +150,20 @@ build/bin/llc build/test.ll -march sim -debug -view-sched-dags
 .../llvm-project/build/bin/llvm-readobj test.o
 .../llvm-project/build/bin/llvm-readelf -a test.o
 ```
-#### [Sim] 7. Add Sim info for Obj generation:
 >ERROR: createMCCodeEmitter failed
+#### [Sim] 19. Add SimMCCodeEmitter
 + SimMCCodeEmitter.cpp
 >ERROR: createMCAsmBackend failed
-+ SimAsmBackend.cpp SimELFObjectWriter.cpp + add Sim in ELF.h/.cpp ELFObjectFile.h and ELFDumper.cpp
+#### [Sim] 20. Add SimAsmBackend
++ SimAsmBackend.cpp
+>ERROR: ELFSimAsmBackend::createObjectTargetWriter
+
+#### [Sim] 21. Add SimELFObjectWriter
++ SimELFObjectWriter.cpp + add Sim in ELF.h/.cpp ELFObjectFile.h and ELFDumper.cpp
+
+#### [Sim] 22. Update Sim Instruction info
++ Update SimInstrInfo.td SimInstrFormats.td
+
 #### llvm-readobj:
 ```
 File: test.o
