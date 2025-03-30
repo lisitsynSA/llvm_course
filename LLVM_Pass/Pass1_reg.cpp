@@ -5,12 +5,12 @@ using namespace llvm;
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
     // clang hello.c -fpass-plugin=./libPass.so
-    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerPipelineStartEPCallback([](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerPipelineStartEPCallback\n";
       return true;
     });
-    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM, auto) {
       outs() << "Add pass to ModulePassManager in "
                 "registerOptimizerLastEPCallback\n";
       return true;
@@ -18,7 +18,7 @@ PassPluginLibraryInfo getPassPluginInfo() {
     // opt hello.ll -load-pass-plugin ./libPass.so -passes myFuncPass -o a.out
     PB.registerPipelineParsingCallback(
         [](StringRef name, FunctionPassManager &FPM,
-           ArrayRef<PassBuilder::PipelineElement>) -> bool {
+           ArrayRef<PassBuilder::PipelineElement>) {
           if (name == "myFuncPass") {
             outs() << "Add pass to FunctionPassManager from "
                       "registerPipelineParsingCallback\n";
@@ -29,7 +29,7 @@ PassPluginLibraryInfo getPassPluginInfo() {
     // opt hello.ll -load-pass-plugin ./libPass.so -passes myModPass -o a.out
     PB.registerPipelineParsingCallback(
         [](StringRef name, ModulePassManager &MPM,
-           ArrayRef<PassBuilder::PipelineElement>) -> bool {
+           ArrayRef<PassBuilder::PipelineElement>) {
           if (name == "myModPass") {
             outs() << "Add pass to ModulePassManager from "
                       "registerPipelineParsingCallback\n";

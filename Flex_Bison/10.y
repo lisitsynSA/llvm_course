@@ -15,7 +15,7 @@ extern "C" {
     int yyparse();
     int yylex();
     void yyerror(char *s) {
-        std::cerr << s << "\n";
+        std::cerr << s << '\n';
     }
     int yywrap(void){return 1;}
 }
@@ -56,9 +56,9 @@ int main(int argc, char **argv)
 
     outs() << "[LLVM IR]:\n";
     module->print(outs(), nullptr);
-    outs() << "\n";
+    outs() << '\n';
     bool verif = verifyModule(*module, &outs());
-    outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+    outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
     // Interpreter of LLVM IR
     outs() << "[EE] Run\n";
@@ -86,14 +86,14 @@ int main(int argc, char **argv)
     outs() << "[EE] Done\n";
 
     for (auto& value : ValueMap) {
-        outs() << value.first << " = " <<  value.second.realVal << "\n";
+        outs() << value.first << " = " <<  value.second.realVal << '\n';
     }
     for (auto& array : ArrayMap) {
         outs() << array.first << "[" << array.second.size << "] =";
         for (int i = 0; i < array.second.size; i++) {
             outs() << " " << array.second.realVal[i];
         }
-        outs() << "\n";
+        outs() << '\n';
         delete array.second.realVal;
     }
     return 0;
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 Parse: Program {YYACCEPT;}
 
 Program: RoutineDeclaration {}
-         | VariableDeclaration {} 
+         | VariableDeclaration {}
          | Program VariableDeclaration {}
          | Program RoutineDeclaration {}
 
@@ -142,7 +142,7 @@ RoutineDeclaration : FunctionBegin Identifier   {
                             // declare void @Identifier()
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
-                                FunctionType *funcType = 
+                                FunctionType *funcType =
                                                         FunctionType::get(builder->getVoidTy(), false);
                                 func = Function::Create(funcType, Function::ExternalLinkage, (char*)$2, module);
                             }
@@ -150,7 +150,7 @@ RoutineDeclaration : FunctionBegin Identifier   {
                             // entry:
                             BasicBlock *entryBB = BasicBlock::Create(context, "entry", curFunc);
                             builder->SetInsertPoint(entryBB);
-                        } Statements FunctionEnd { 
+                        } Statements FunctionEnd {
                             printf("... Statements FunctionEnd\n");
                             builder->CreateRetVoid();
                         }
@@ -167,7 +167,7 @@ Assignment: Value '=' Expression ';' { printf("Value '=' Expression ';'\n"); bui
 RoutineCall: CallFunction Identifier ';' {
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
-                                FunctionType *funcType = 
+                                FunctionType *funcType =
                                                         FunctionType::get(builder->getVoidTy(), false);
                                 func = Function::Create(funcType, Function::ExternalLinkage, (char*)$2, module);
                             }
@@ -233,9 +233,7 @@ Value:      Identifier  {
                         }
             | Identifier '[' Expression ']' {
                             ArrayType *arrayType = ArrayType::get(builder->getInt32Ty(), ArrayMap[(char*)$1].size);
-                            std::vector<Value *> gepArgs;
-                            gepArgs.push_back(builder->getInt32(0));
-                            gepArgs.push_back($3);
+                            std::vector<Value *> gepArgs{builder->getInt32(0), $3};
                             $$ = builder->CreateGEP(arrayType, ArrayMap[(char*)$1].irVal, gepArgs);
                         }
 

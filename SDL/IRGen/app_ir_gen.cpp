@@ -125,9 +125,9 @@ int main() {
 
   // Dump LLVM IR
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*appFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   // LLVM IR Interpreter
   outs() << "[EE] Run\n";
@@ -135,7 +135,7 @@ int main() {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "simPutPixel") {
       return reinterpret_cast<void *>(simPutPixel);
     }
@@ -150,7 +150,7 @@ int main() {
 
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(appFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   simExit();
   return EXIT_SUCCESS;

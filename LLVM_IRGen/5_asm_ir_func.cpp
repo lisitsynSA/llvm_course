@@ -6,7 +6,10 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <algorithm>
 #include <fstream>
+#include <memory>
+#include <string>
 using namespace llvm;
 
 const int REG_FILE_SIZE = 8;
@@ -15,7 +18,7 @@ uint32_t REG_FILE[REG_FILE_SIZE] = {};
 void dumpRegFile() {
   outs() << "[REG FILE]:\n";
   for (int i = 0; i < REG_FILE_SIZE; i++) {
-    outs() << "[" << i << "] " << REG_FILE[i] << "\n";
+    outs() << "[" << i << "] " << REG_FILE[i] << '\n';
   }
 }
 
@@ -32,7 +35,7 @@ int main(int argc, char **argv) {
   std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    outs() << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << '\n';
     return 1;
   }
 
@@ -83,7 +86,7 @@ int main(int argc, char **argv) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " + " << arg << "\n";
+      outs() << " + " << arg << '\n';
       // arg2
       Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
@@ -105,7 +108,7 @@ int main(int argc, char **argv) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " + " << arg << "\n";
+      outs() << " + " << arg << '\n';
       // arg2
       Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *add_arg1_arg2 =
@@ -122,9 +125,9 @@ int main(int argc, char **argv) {
   // Dump LLVM IR
   outs() << "[LLVM IR]\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   dumpRegFile();
 
@@ -135,7 +138,7 @@ int main(int argc, char **argv) {
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
   ee->addGlobalMapping(regFile, (void *)REG_FILE);
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "INSTR_sort") {
       return reinterpret_cast<void *>(INSTR_sort);
     }
@@ -144,7 +147,7 @@ int main(int argc, char **argv) {
   ee->finalizeObject();
   ArrayRef<GenericValue> noargs;
   GenericValue v = ee->runFunction(mainFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   dumpRegFile();
   return 0;

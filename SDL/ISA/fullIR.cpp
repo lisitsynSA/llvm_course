@@ -5,6 +5,9 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <memory>
+#include <unordered_map>
+#include <string>
 
 using namespace llvm;
 
@@ -25,7 +28,7 @@ void FullIR::buildIR(Binary &Bin) {
   FunctionType *funcType = FunctionType::get(voidType, false);
   mainFunc =
       Function::Create(funcType, Function::ExternalLinkage, "main", module);
-  // Funcions types
+  // Functions types
   FunctionType *voidFuncType = FunctionType::get(voidType, false);
   ArrayRef<Type *> int32x3Types = {int32Type, int32Type, int32Type};
   FunctionType *int32x3FuncType =
@@ -51,13 +54,13 @@ void FullIR::buildIR(Binary &Bin) {
     switch (I.Op) {
     default:
       break;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    _IRGenExecute;                                                             \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    IRGenExecute_;                                                             \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     PC++;
     auto BB = BBMap.find(PC);
@@ -73,7 +76,7 @@ void FullIR::executeIR(CPU &Cpu) {
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "simFlush") {
       return reinterpret_cast<void *>(simFlush);
     }

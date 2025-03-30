@@ -11,7 +11,6 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
-#include <fstream>
 #include <iostream>
 #include <stack>
 
@@ -91,7 +90,7 @@ void free_info(info_t *info);
 
 int main(int argc, const char *argv[]) {
   if (argc != 2) {
-    std::cout << "[ERROR] Need 1 argument: file with exspression\n";
+    std::cout << "[ERROR] Need 1 argument: file with expression\n";
     return 1;
   }
   File = fopen(argv[1], "r");
@@ -336,7 +335,7 @@ void print_node(tree_node_t *current) {
   print_node(current->link[0]);
   printf("%*s", current->level * 3, " ");
   print_info(current->info);
-  printf("\n");
+  putc('\n', stdout);
   print_node(current->link[1]);
 }
 
@@ -355,11 +354,11 @@ void print_info(info_t *info) {
 void fprint_tree(tree_t *tree) {
   File = fopen("expression_check.txt", "w");
   fprint_prenode(tree->root);
-  fprintf(File, "\n");
+  putc('\n', File);
   fprint_innode(tree->root);
-  fprintf(File, "\n");
+  putc('\n', File);
   fprint_posnode(tree->root);
-  fprintf(File, "\n");
+  putc('\n', File);
   fclose(File);
 
   File = fopen("expr.s", "w");

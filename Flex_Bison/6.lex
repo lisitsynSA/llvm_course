@@ -12,7 +12,7 @@ extern llvm::IRBuilder<>* builder;
 %%
 
 [/][/].*\n      ; // comment
-[0-9]+          { 
+[0-9]+          {
                   yylval = builder->getInt32(atoi(yytext));
                   return NUM;
                 }

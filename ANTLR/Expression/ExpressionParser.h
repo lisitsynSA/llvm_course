@@ -12,7 +12,7 @@
 class  ExpressionParser : public antlr4::Parser {
 public:
   enum {
-    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, INT = 7, 
+    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, INT = 7,
     WS = 8
   };
 
@@ -30,7 +30,7 @@ public:
   virtual antlr4::dfa::Vocabulary& getVocabulary() const override;
 
 
-  class ExprContext; 
+  class ExprContext;
 
   class  ExprContext : public antlr4::ParserRuleContext {
   public:
@@ -44,7 +44,7 @@ public:
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+
   };
 
   ExprContext* expr();

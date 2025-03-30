@@ -79,7 +79,7 @@ void free_info(info_t *info);
 
 int main(int argc, const char *argv[]) {
   if (argc != 2) {
-    std::cout << "[ERROR] Need 1 argument: file with exspression\n";
+    std::cout << "[ERROR] Need 1 argument: file with expression\n";
     return 1;
   }
   File = fopen(argv[1], "r");
@@ -269,7 +269,7 @@ void print_node(tree_node_t *current) {
   print_node(current->link[0]);
   printf("%*s", current->level * 3, " ");
   print_info(current->info);
-  printf("\n");
+  putc('\n', stdout);
   print_node(current->link[1]);
 }
 

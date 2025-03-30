@@ -9,7 +9,7 @@ class Inst <int opc, string asmstr, dag pattern> {
     dag Pattern = pattern;
 }
 
-class Inst_A <int opc, string asmstr, dag op> : 
+class Inst_A <int opc, string asmstr, dag op> :
     Inst<opc, !strconcat(asmstr, " $dst, $src1, $src2"), (op GPR:$dst, GPR:$src1, GPR:$src2)>;
 
 def ADD : Inst_A <0b111, "add", (add)>;
@@ -20,4 +20,4 @@ def MADD : Inst <0b100000, "madd $src1, $src2, $src3",
 
 
 
-                 
+

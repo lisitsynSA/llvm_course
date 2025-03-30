@@ -12,12 +12,12 @@
 class  NodeLangParser : public antlr4::Parser {
 public:
   enum {
-    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
+    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7,
     ID = 8, INT = 9, WS = 10
   };
 
   enum {
-    RuleProgram = 0, RuleNodeDecl = 1, RuleFuncDecl = 2, RuleNode = 3, RuleVarDecl = 4, 
+    RuleProgram = 0, RuleNodeDecl = 1, RuleFuncDecl = 2, RuleNode = 3, RuleVarDecl = 4,
     RuleExpr = 5
   };
 
@@ -36,7 +36,7 @@ public:
   class FuncDeclContext;
   class NodeContext;
   class VarDeclContext;
-  class ExprContext; 
+  class ExprContext;
 
   class  ProgramContext : public antlr4::ParserRuleContext {
   public:
@@ -49,7 +49,7 @@ public:
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+
   };
 
   ProgramContext* program();
@@ -65,7 +65,7 @@ public:
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+
   };
 
   NodeDeclContext* nodeDecl();
@@ -83,7 +83,7 @@ public:
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+
   };
 
   FuncDeclContext* funcDecl();
@@ -102,7 +102,7 @@ public:
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+
   };
 
   NodeContext* node();
@@ -118,7 +118,7 @@ public:
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+
   };
 
   VarDeclContext* varDecl();
@@ -136,7 +136,7 @@ public:
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+
   };
 
   ExprContext* expr();

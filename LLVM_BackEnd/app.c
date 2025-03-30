@@ -1,6 +1,6 @@
 #include "../SDL/sim.h"
 
-void app() {
+void app(void) {
   for (int step = 0; step < 1000; ++step) {
     for (int y = 0; y < SIM_Y_SIZE; ++y)
       for (int x = 0; x < SIM_X_SIZE; ++x)

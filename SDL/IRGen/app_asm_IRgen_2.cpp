@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   std::ifstream input;
   input.open(argv[1]);
   if (!input.is_open()) {
-    outs() << "[ERROR] Can't open " << argv[1] << "\n";
+    outs() << "[ERROR] Can't open " << argv[1] << '\n';
     return 1;
   }
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     outs() << " " << name;
     BBMap[name] = BasicBlock::Create(context, name, mainFunc);
   }
-  outs() << "\n";
+  outs() << '\n';
   input.close();
   input.open(argv[1]);
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
       outs() << "\tEXIT\n";
       builder.CreateRetVoid();
       if (input >> name) {
-        outs() << "BB " << name << "\n";
+        outs() << "BB " << name << '\n';
         builder.SetInsertPoint(BBMap[name]);
       }
       continue;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
           int32Type, builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                 std::stoi(arg.substr(1))));
       input >> arg;
-      outs() << " " << arg << "\n";
+      outs() << " " << arg << '\n';
       Value *arg3 = builder.CreateLoad(
           int32Type, builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                 std::stoi(arg.substr(1))));
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " ^ " << arg << "\n";
+      outs() << " ^ " << arg << '\n';
       // arg2
       Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " * " << arg << "\n";
+      outs() << " * " << arg << '\n';
       // arg2
       Value *arg2_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
       Value *arg1_p = builder.CreateConstGEP2_32(regFileType, regFile, 0,
                                                  std::stoi(arg.substr(1)));
       input >> arg;
-      outs() << " - " << arg << "\n";
+      outs() << " - " << arg << '\n';
       // arg2
       Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *sub_arg1_arg2 =
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
                                       builder.getInt32(1));
       builder.CreateStore(arg1, arg1_p);
       input >> arg;
-      outs() << " != " << arg << "\n";
+      outs() << " != " << arg << '\n';
       // arg2
       Value *arg2 = builder.getInt32(std::stoi(arg));
       Value *cond = builder.CreateICmpNE(arg1, arg2);
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
       input >> arg;
       outs() << ") then BB:" << arg;
       input >> name;
-      outs() << " else BB:" << name << "\n";
-      outs() << "BB " << name << "\n";
+      outs() << " else BB:" << name << '\n';
+      outs() << "BB " << name << '\n';
       builder.CreateCondBr(reg_i1, BBMap[arg], BBMap[name]);
       builder.SetInsertPoint(BBMap[name]);
       continue;
@@ -236,24 +236,24 @@ int main(int argc, char *argv[]) {
 
     if (builder.GetInsertBlock()) {
       builder.CreateBr(BBMap[name]);
-      outs() << "\tbranch to " << name << "\n";
+      outs() << "\tbranch to " << name << '\n';
     }
-    outs() << "BB " << name << "\n";
+    outs() << "BB " << name << '\n';
     builder.SetInsertPoint(BBMap[name]);
   }
 
   outs() << "\n#[LLVM IR]:\n";
   module->print(outs(), nullptr);
-  outs() << "\n";
+  outs() << '\n';
   bool verif = verifyFunction(*mainFunc, &outs());
-  outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+  outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   outs() << "\n#[Running code]\n";
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
 
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+  ee->InstallLazyFunctionCreator([](const std::string &fnName) -> void * {
     if (fnName == "simFlush") {
       return reinterpret_cast<void *>(simFlush);
     }
