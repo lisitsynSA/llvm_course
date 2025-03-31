@@ -147,8 +147,6 @@ build/bin/llc build/test.ll -march sim -debug -view-sched-dags
 ### 3) Generate simple BIN
 ```
 .../llvm-project/build/bin/llc test.ll -march sim --filetype=obj
-.../llvm-project/build/bin/llvm-readobj test.o
-.../llvm-project/build/bin/llvm-readelf -a test.o
 ```
 >ERROR: createMCCodeEmitter failed
 #### [Sim] 19. Add SimMCCodeEmitter
@@ -166,6 +164,10 @@ build/bin/llc build/test.ll -march sim -debug -view-sched-dags
 
 #### llvm-readobj:
 ```
+ninja -C build -j 8 llvm-readobj
+.../llvm-project/build/bin/llvm-readobj test.o
+```
+```
 File: test.o
 Format: elf32-sim
 Arch: sim
@@ -173,6 +175,11 @@ AddressSize: 32bit
 LoadName: <Not found>
 ```
 #### llvm-readelf:
+
+```
+ninja -C build -j 8 llvm-readelf
+.../llvm-project/build/bin/llvm-readelf -a test.o
+```
 ```
 ELF Header:
   Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
@@ -204,19 +211,6 @@ New position 0x34 (.text section address)
 
 ```
 ### 4) Generate graphic ASM
-#### [Sim] 8. Add Sim clang support and intrinsics (flush and putpixel)
-```
-cmake .... -DLLVM_ENABLE_PROJECTS="clang" && ninja -j4
-.../llvm-project/build/bin/clang -emit-llvm -S ./graphic.c -target sim
-.../llvm-project/build/bin/llc graphic.ll -march sim
-```
-Check intrinsics in asm file (graphic.s):
-```
-void app() {
-    simPutPixel(5, 5, 0xFFFFFFFF);
-    simFlush();
-}
-```
 graphic.ll:
 ```
 define dso_local void @app() {
@@ -230,11 +224,13 @@ declare void @llvm.sim.putpixel(i32, i32, i32)
 
 declare void @llvm.sim.flush()
 ```
-
-### 5) Generate graphic BIN
 ```
-.../llvm-project/build/bin/llc graphic.ll -march sim --filetype=obj
+.../llvm-project/build/bin/llc graphic.ll -march sim --filetype=asm
 ```
+>ERROR: llvm::SimTargetLowering::LowerCall Assertion `getTargetMachine().shouldAssumeDSOLocal(GV)'
+#### [Sim] 23. Add Sim intrinsics support (flush and putpixel)
++ llvm/include/llvm/IR/IntrinsicsSim.td + update SimInstrInfo.td
+Check intrinsics in asm file (graphic.s):
 ```
 app:                                    ; @app
 ; %bb.0:                                ; %entry
@@ -245,6 +241,26 @@ app:                                    ; @app
 	BR r0
 .Lfunc_end0:
 ```
+Add intrisics to the custom FrontEnd:
+```
+// declare void @llvm.sim.putpixel(i32 noundef, i32 noundef, i32 noundef)
+ArrayRef<Type *> simPutPixelParamTypes = {Type::getInt32Ty(context),
+                                            Type::getInt32Ty(context),
+                                            Type::getInt32Ty(context)};
+FunctionType *simPutPixelType =
+    FunctionType::get(voidType, simPutPixelParamTypes, false);
+simPutPixelFunc =
+    module->getOrInsertFunction("llvm.sim.putpixel", simPutPixelType);
+
+// declare void @llvm.sim.flush()
+FunctionType *simFlushType = FunctionType::get(voidType, false);
+simFlushFunc =
+    module->getOrInsertFunction("llvm.sim.flush", simFlushType);
+```
+### 5) Generate graphic BIN
+```
+.../llvm-project/build/bin/llc graphic.ll -march sim --filetype=obj
+```
 Check intrinsics in object file:
 ```
 hexedit test.o
@@ -252,6 +268,43 @@ New position 0x34 (.text section address)
 ... FF FF 20 AA  05 00 40 AA  02 00 44 EE  00 00 00 FF  00 00 00 BB ...
 
 ```
+# Extra step for clang FrontEnd
+```
+void app() {
+    simPutPixel(5, 5, 0xFFFFFFFF);
+    simFlush();
+}
+```
+```
+cmake .... -DLLVM_ENABLE_PROJECTS="clang"
+ninja -C build -j 8 clang
+.../llvm-project/build/bin/clang -emit-llvm -S ./graphic.c -target sim
+.../llvm-project/build/bin/llc graphic.ll -march sim
+```
+>ERROR: unknown target triple 'sim'
+
+#### [Sim] 24. Register Sim target for Clang
++ clang/lib/Basic/Targets/Sim.cpp .h
+>ERROR: call to undeclared function simPutPixel / simFlush
+#### [Sim] 25. Add Sim ClangBuiltin support (flush and putpixel)
++ clang/include/clang/Basic/BuiltinsSim.def
+```
+; Function Attrs: noinline nounwind optnone
+define dso_local void @app() #0 {
+entry:
+  call void @llvm.sim.putpixel(i32 5, i32 5, i32 -1)
+  call void @llvm.sim.flush()
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.sim.putpixel(i32, i32, i32) #1
+
+; Function Attrs: nounwind
+declare void @llvm.sim.flush() #1
+```
+
+# Simple graphic application full support
 ### 6) Generate application ASM
 ```
 .../llvm-project/build/bin/clang ./app.c -target sim -emit-llvm -S -O2
@@ -275,29 +328,3 @@ New position 0x34 (.text section address)
 ... 0F 00 ED EE  0C 00 FF 30  01 00 EE 40  FD FF E9 71 ...
 ```
 
-# Steps for clang FrontEnd
-### 0) Add clang to build
-```
-cmake .... -DLLVM_ENABLE_PROJECTS="clang"
- ```
-### 1) Registered
-```
-.../llvm-project/build/bin/llc --version
-.../llvm-project/build/bin/clang -print-targets
-  ...
-  Registered Targets:
-    sim - Sim 32
-```
-### 2) Generate simple ASM
-```
-.../llvm-project/build/bin/llc test.ll -march sim
-.../llvm-project/build/bin/clang test.ll -target sim -S
-vim test.s
-```
-### 3) Generate simple BIN
-```
-.../llvm-project/build/bin/clang test.ll -target sim -c
-.../llvm-project/build/bin/llc test.ll -march sim --filetype=obj
-readelf -a test.o
-
-```
