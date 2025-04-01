@@ -263,7 +263,7 @@ simFlushFunc =
 ```
 Check intrinsics in object file:
 ```
-hexedit test.o
+hexedit graphic.o
 New position 0x34 (.text section address)
 ... FF FF 20 AA  05 00 40 AA  02 00 44 EE  00 00 00 FF  00 00 00 BB ...
 
@@ -278,8 +278,8 @@ void app() {
 ```
 cmake .... -DLLVM_ENABLE_PROJECTS="clang"
 ninja -C build -j 8 clang
-.../llvm-project/build/bin/clang -emit-llvm -S ./graphic.c -target sim
-.../llvm-project/build/bin/llc graphic.ll -march sim
+.../llvm-project/build/bin/clang -emit-llvm -S graphic.c -target sim
+.../llvm-project/build/bin/clang -c graphic.c -target sim
 ```
 >ERROR: unknown target triple 'sim'
 
