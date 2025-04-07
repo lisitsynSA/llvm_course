@@ -15,20 +15,24 @@
 #include <iostream>
 using namespace llvm;
 
+enum class Mode { INTERPRET, COMPILE };
 struct TreeLLVMWalker : public NodeLangVisitor {
   std::vector<std::map<std::string, Value *>> vars;
   Function *currFunc;
   LLVMContext *ctxLLVM;
   Module *module;
   IRBuilder<> *builder;
+  Mode mode;
   Type *int32Type;
-  TreeLLVMWalker(LLVMContext *ctxLLVM, IRBuilder<> *builder, Module *module)
-      : ctxLLVM(ctxLLVM), builder(builder), module(module) {
+  Type *voidType;
+  TreeLLVMWalker(LLVMContext *ctxLLVM, IRBuilder<> *builder, Module *module,
+                 Mode mode)
+      : ctxLLVM(ctxLLVM), builder(builder), module(module), mode(mode) {
     int32Type = Type::getInt32Ty(*ctxLLVM);
+    voidType = Type::getVoidTy(*ctxLLVM);
   }
 
-  antlrcpp::Any visitProgram(NodeLangParser::ProgramContext *ctx) override {
-    outs() << "visitProgram\n";
+  void regGraphicFuncs() {
     // declare i32 @PUT_PIXEL(i32, i32, i32)
     ArrayRef<Type *> simPutPixelParamTypes = {int32Type, int32Type, int32Type};
     FunctionType *simPutPixelType =
@@ -38,7 +42,56 @@ struct TreeLLVMWalker : public NodeLangVisitor {
     // declare i32 @FLUSH()
     FunctionType *simFlushType = FunctionType::get(int32Type, false);
     module->getOrInsertFunction("FLUSH", simFlushType);
+  }
 
+  void regGraphicFuncsIntr() {
+    // declare void @llvm.sim.putpixel(i32 noundef, i32 noundef, i32 noundef)
+    ArrayRef<Type *> simPutPixelParamTypes = {int32Type, int32Type, int32Type};
+    FunctionType *simPutPixelIntrType =
+        FunctionType::get(voidType, simPutPixelParamTypes, false);
+    FunctionCallee simPutPixelIntr =
+        module->getOrInsertFunction("llvm.sim.putpixel", simPutPixelIntrType);
+
+    // define i32 @PUT_PIXEL(i32 %0, i32 %1, i32 %2) {
+    FunctionType *simPutPixelType =
+        FunctionType::get(int32Type, simPutPixelParamTypes, false);
+    Function *simPutPixelFunc = Function::Create(
+        simPutPixelType, Function::ExternalLinkage, "PUT_PIXEL", module);
+    // entry:
+    builder->SetInsertPoint(
+        BasicBlock::Create(*ctxLLVM, "entry", simPutPixelFunc));
+    // call void @llvm.sim.putpixel(i32 %0, i32 %1, i32 %2)
+    builder->CreateCall(simPutPixelIntr,
+                        {simPutPixelFunc->getArg(0), simPutPixelFunc->getArg(1),
+                         simPutPixelFunc->getArg(2)});
+    // ret i32 0
+    builder->CreateRet(builder->getInt32(0));
+
+    // declare void @llvm.sim.flush()
+    FunctionType *simFlushIntrType = FunctionType::get(voidType, false);
+    FunctionCallee simFlushIntr =
+        module->getOrInsertFunction("llvm.sim.flush", simFlushIntrType);
+
+    // define i32 @FLUSH() {
+    FunctionType *simFlushType = FunctionType::get(int32Type, false);
+    Function *simFlushFunc = Function::Create(
+        simFlushType, Function::ExternalLinkage, "FLUSH", module);
+    // entry:
+    builder->SetInsertPoint(
+        BasicBlock::Create(*ctxLLVM, "entry", simFlushFunc));
+    // call void @llvm.sim.flush()
+    builder->CreateCall(simFlushIntr);
+    // ret i32 0
+    builder->CreateRet(builder->getInt32(0));
+  }
+
+  antlrcpp::Any visitProgram(NodeLangParser::ProgramContext *ctx) override {
+    outs() << "visitProgram\n";
+    if (mode == Mode::INTERPRET) {
+      regGraphicFuncs();
+    } else {
+      regGraphicFuncsIntr();
+    }
     vars.push_back(
         std::map<std::string, Value *>{{"Y_SIZE", builder->getInt32(256)},
                                        {"X_SIZE", builder->getInt32(512)}});
@@ -271,10 +324,13 @@ struct TreeLLVMWalker : public NodeLangVisitor {
 };
 
 int main(int argc, const char *argv[]) {
-  if (argc != 2) {
-    outs() << "[ERROR] Need 1 argument: file with NodeLang\n";
+  if (argc != 2 && argc != 3) {
+    outs() << "[ERROR] Need arguments: file with NodeLang and optional output "
+              "file for LLVM IR\n";
     return 1;
   }
+
+  Mode mode = (argc == 2) ? Mode::INTERPRET : Mode::COMPILE;
   // Open file
   std::ifstream stream;
   stream.open(argv[1]);
@@ -299,7 +355,7 @@ int main(int argc, const char *argv[]) {
   Module *module = new Module("top", context);
   IRBuilder<> builder(context);
 
-  TreeLLVMWalker walker(&context, &builder, module);
+  TreeLLVMWalker walker(&context, &builder, module, mode);
   walker.visitProgram(parser.program());
 
   outs() << "[LLVM IR]\n";
@@ -314,30 +370,41 @@ int main(int argc, const char *argv[]) {
     return -1;
   }
 
-  // LLVM IR Interpreter
-  outs() << "[EE] Run\n";
-  InitializeNativeTarget();
-  InitializeNativeTargetAsmPrinter();
-
-  ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-  ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
-    if (fnName == "PUT_PIXEL") {
-      return reinterpret_cast<void *>(simPutPixel);
+  if (mode == Mode::COMPILE) {
+    // Dump LLVM IR with intrinsics
+    outs() << "[OUTPUT] " << argv[2] << "\n";
+    std::error_code EC;
+    raw_fd_ostream OutputFile(argv[2], EC);
+    if (!EC) {
+      module->print(OutputFile, nullptr);
     }
-    if (fnName == "FLUSH") {
-      return reinterpret_cast<void *>(simFlush);
-    }
-    return nullptr;
-  });
-  ee->finalizeObject();
+  } else {
+    // LLVM IR Interpreter
+    outs() << "[EE] Run\n";
+    InitializeNativeTarget();
+    InitializeNativeTargetAsmPrinter();
 
-  simInit();
+    ExecutionEngine *ee =
+        EngineBuilder(std::unique_ptr<Module>(module)).create();
+    ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
+      if (fnName == "PUT_PIXEL") {
+        return reinterpret_cast<void *>(simPutPixel);
+      }
+      if (fnName == "FLUSH") {
+        return reinterpret_cast<void *>(simFlush);
+      }
+      return nullptr;
+    });
+    ee->finalizeObject();
 
-  ArrayRef<GenericValue> noargs;
-  GenericValue v = ee->runFunction(appFunc, noargs);
-  outs() << "[EE] Result: " << v.IntVal << "\n";
+    simInit();
 
-  simExit();
+    ArrayRef<GenericValue> noargs;
+    GenericValue v = ee->runFunction(appFunc, noargs);
+    outs() << "[EE] Result: " << v.IntVal << "\n";
+
+    simExit();
+  }
 
   return 0;
 }

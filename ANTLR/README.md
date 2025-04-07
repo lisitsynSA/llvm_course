@@ -13,6 +13,7 @@ sudo apt install libantlr4-runtime-dev
 cd Expression
 antlr4 -Dlanguage=Cpp Expression.g4 -visitor
 clang++ *.cpp -I /usr/include/antlr4-runtime/ -lantlr4-runtime  $(llvm-config --cppflags --ldflags --libs)
+./a.out expr.txt
 ```
 2) NodeLang
 ```
@@ -33,9 +34,23 @@ clang++ *.cpp -I /usr/include/antlr4-runtime/ -lantlr4-runtime  $(llvm-config --
 )
 ```
 ```
-cd Expression
-antlr4 -Dlanguage=Cpp Expression.g4 -visitor
+cd Frontend
+antlr4 -Dlanguage=Cpp NodeLang.g4 -visitor
 clang++ *.cpp -I /usr/include/antlr4-runtime/ -lantlr4-runtime  $(llvm-config --cppflags --ldflags --libs) ../../SDL/sim.c -lSDL2
+```
+Interpretation:
+```
+./a.out test.nl
+./a.out app.nl
+```
+Compilation:
+```
+./a.out test.nl test.ll
+opt test.ll -O2 -o test.opt.ll -S
+../../../llvm-add-backend/build/bin/llc test.opt.ll -march sim
+./a.out app.nl app.ll
+opt app.ll -O2 -o app.opt.ll -S
+../../../llvm-add-backend/build/bin/llc app.opt.ll -march sim
 ```
 
 ## Links
