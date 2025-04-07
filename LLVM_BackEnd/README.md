@@ -475,19 +475,40 @@ app:
 .LBB0_2:
 	BR r0
 ```
-Support custom FrontEnd output:
-#### [Sim] 33. Add instruction INC_NEi
+Support custom FlexBison FrontEnd output:
+```
+opt app.ll -O2 -o app.opt.ll -S
+```
+>ERROR: Cannot select: t26: ch = br_cc t22, setne:ch, t10, Constant:i32<512>, BasicBlock:ch<for.cond.cleanup7>
 + instruction INC_NEi
+Support custom ANTLR FrontEnd output:
+>ERROR: Cannot select: t8: i32 = mul t6, t7
++ instruction MUL
+#### [Sim] 33. Add instructions INC_NEi and MUL
++ instructions INC_NEi and MUL
 
 ### 7) Generate application BIN
 ```
 .../llvm-project/build/bin/llc app.ll -march sim --filetype=obj
 ```
 ```
+...
+          .LBB0_6:
 0B 00 A9 EE  PUTPIXEL r10 r9 r11
 00 02 CA 90  INC_EQi r12 r10 512
 04 00 BB 30  ADD r11 r11 r4
 00 00 C0 BC  BR_COND r12 .LBB0_5 <- Empty offset
 00 00 00 B0  B .LBB0_6           <- Empty offset
+          .LBB0_5:
+...
 ```
-
+#### [Sim] 34. Add fixup_Sim_PC16 for offsets updates
+```
+          .LBB0_6:
+0B 00 A9 EE  PUTPIXEL r10 r9 r11
+00 02 CA 90  INC_EQi r12 r10 512
+04 00 BB 30  ADD r11 r11 r4
+02 00 C0 BC  BR_COND r12 .LBB0_5 <- Offset: 2
+FC FF 00 B0  B .LBB0_6           <- Offset: -4
+          .LBB0_5:
+```
