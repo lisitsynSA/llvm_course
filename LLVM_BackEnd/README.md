@@ -307,24 +307,187 @@ declare void @llvm.sim.flush() #1
 # Simple graphic application full support
 ### 6) Generate application ASM
 ```
+void app() {
+  for (int step = 0; step < 1000; ++step) {
+    for (int y = 0; y < SIM_Y_SIZE; ++y)
+      for (int x = 0; x < SIM_X_SIZE; ++x)
+        simPutPixel(x, y, 0xFF000000 + x * y * step);
+    simFlush();
+  }
+}
+```
+LLVM IR for app with Sim ClangBuiltins:
+```
 .../llvm-project/build/bin/clang ./app.c -target sim -emit-llvm -S -O2
-.../llvm-project/build/bin/llc app.ll -march sim
 ```
->ERROR: LLVM ERROR: Cannot select: t5: ch = br t3
-#### [Sim] 9. Add all Sim instructions
+app.s generation:
 ```
+.../llvm-project/build/bin/llc app.ll -march sim -debug
+```
+>ERROR: Cannot select: t5: ch = br t3, BasicBlock:ch<for.cond5.preheader>
+#### [Sim] 26. Add branch instruction B and btarget16 operand
++ instruction B and btarget16
+>ERROR: Cannot select: t1: i32 = Constant<-16777216>
+#### [Sim] 27. Add instructions MOVHI and ORI for i32 lowering
++ lowering i32 and instructions MOVHI and ORI
+#### Offshoot for graphic.s
+```
+	MOVli r2 -1 <- incorrect
+	MOVli r4 5
+	PUTPIXEL r4 r4 r2
+	FLUSH
+	BR r0
+```
+```
+ISEL: Starting selection on root node: t3: i32 = Constant<-1>
+ISEL: Starting pattern match
+  Initial Opcode index to 55
+Creating constant: t8: i32 = TargetConstant<-1>
+  Morphed node: t3: i32 = MOVLI TargetConstant:i32<-1>
+ISEL: Match complete!
+```
+#### [Sim] 28. Fix i32 to simm16 lowering
+```
+ISEL: Starting selection on root node: t3: i32 = Constant<-1>
+ISEL: Starting pattern match
+  Initial Opcode index to 55
+  Skipped scope entry (due to false predicate) at index 58, continuing at 76
+Creating constant: t8: i32 = TargetConstant<-1>
+Creating constant: t9: i32 = TargetConstant<65535>
+Creating new machine node: t10: i32 = MOVHI TargetConstant:i32<65535>
+  Created node: t10: i32 = MOVHI TargetConstant:i32<65535>
+  Morphed node: t3: i32 = ORI t10, TargetConstant:i32<65535>
+ISEL: Match complete!
+```
+```
+  MOVhi r2 65535
+  ORi r2 r2 65535
+  MOVli r4 5
+  PUTPIXEL r4 r4 r2
+  FLUSH
+  BR r0
+```
+#### Return to app.s generation:
+>ERROR: LowerOperation not implemented for this target!
+Legalizing: t26: ch = br_cc t22, seteq:ch, t10, Constant:i32<512>, BasicBlock:ch<for.cond.cleanup7>
+#### [Sim] 29. Add instructions INC_EQi and BR_COND for br_cc lowering
++ instructions INC_EQi and BR_COND
+>ERROR: Cannot select: t15: i32 = add nsw t7, t14
+#### [Sim] 30. Add ADD instruction
++ instruction ADD
+>ERROR: Target didn't implement TargetInstrInfo::copyPhysReg!
+#### [Sim] 31. Add copyPhysReg method
++ copyPhysReg
+```
+app:
+	MOVli r2 0
+	MOVhi r4 65280
+	ORi r4 r4 0 <- Optimization candidate: i32 lowering
+	MOVli r9 1 <- Optimization candidate: Duplication of INC_EQi
+.LBB0_1:
+	MOVli r10 0
+	MOVli r11 0
+	B .LBB0_3
 .LBB0_3:
-	PUTPIXEL r14 r13 r15
-	ADD r15 r15 r12
-	ADDi r14 r14 1
-	B.NE r14 r9 .LBB0_3
+	MOVli r13 0
+	ORi r12 r4 0
+	B .LBB0_6
+.LBB0_6:
+	PUTPIXEL r13 r11 r12
+	ADD r12 r12 r10
+	ADD r14 r13 r9 <- Optimization candidate: Duplication of INC_EQi
+	INC_EQi r15 r13 512
+	ORi r13 r14 0 <- Optimization candidate: Duplication of INC_EQi
+	BR_COND r15 .LBB0_5
+	B .LBB0_6
+.LBB0_5:
+	ADD r10 r10 r2
+	ADD r12 r11 r9 <- Optimization candidate: Duplication of INC_EQi
+	INC_EQi r13 r11 256
+	ORi r11 r12 0 <- Optimization candidate: Duplication of INC_EQi
+	BR_COND r13 .LBB0_4
+	B .LBB0_3
+.LBB0_4:
+	ADD r10 r2 r9 <- Optimization candidate: Duplication of INC_EQi
+	FLUSH
+	INC_EQi r11 r2 1000
+	ORi r2 r10 0 <- Optimization candidate: Duplication of INC_EQi
+	BR_COND r11 .LBB0_2
+	B .LBB0_1
+.LBB0_2:
+	BR r0
 ```
+
+```
+t0: ch,glue = EntryToken
+t3: i32,ch = CopyFromReg t0, Register:i32 %7
+t7: i32,ch = CopyFromReg t0, Register:i32 %6
+t10: i32 = add nuw nsw t3, Constant:i32<1>
+      t12: ch = CopyToReg t0, Register:i32 %8, t10
+          t14: i32,ch = CopyFromReg t0, Register:i32 %1
+        t15: i32 = add nsw t7, t14
+      t17: ch = CopyToReg t0, Register:i32 %9, t15
+        t5: i32,ch = CopyFromReg t0, Register:i32 %2
+      t8: ch = llvm.sim.putpixel t0, TargetConstant:i32<11547>, t3, t5, t7
+    t22: ch = TokenFactor t12, t17, t8
+  t26: ch = br_cc t22, seteq:ch, t10, Constant:i32<512>, BasicBlock:ch<for.cond.cleanup7 0x560325b3b150>
+t25: ch = br t26, BasicBlock:ch<for.body8 0x560325b3b270>
+
+ISEL: Starting selection on root node: t26: ch = br_cc t22, seteq:ch, t10, Constant:i32<512>, BasicBlock:ch<for.cond.cleanup7 0x56215ba7c2e0>
+ISEL: Starting pattern match
+  Initial Opcode index to 4
+  OpcodeSwitch from 9 to 13
+Creating constant: t27: i32 = TargetConstant<512>
+Creating new machine node: t28: i32 = INC_EQi t3, TargetConstant:i32<512>
+  Created node: t28: i32 = INC_EQi t3, TargetConstant:i32<512>
+  Morphed node: t26: ch = BR_COND t28, BasicBlock:ch<for.cond.cleanup7 0x56215ba7c2e0>, t22
+ISEL: Match complete!
+```
+#### [Sim] 32. Optimize patterns and instructions
++ better i32 lowering, correct BR_CC lowering
+```
+app:
+	MOVli r2 0          == STEP = 0
+.LBB0_1:
+	MOVli r4 0          == COLOR_INC
+	MOVli r9 0          == Y = 0
+	B .LBB0_3
+.LBB0_3:
+	MOVli r10 0         == X = 0
+	MOVhi r11 65280     == COLOR = 0xFF000000
+	B .LBB0_6
+.LBB0_6:
+	PUTPIXEL r10 r9 r11 == PIXEL X Y COLOR
+	INC_EQi r12 r10 512 == (++X == 512)
+	ADD r11 r11 r4      == COLOR += COLOR_INC
+	BR_COND r12 .LBB0_5
+	B .LBB0_6
+.LBB0_5:
+	INC_EQi r10 r9 256 == (++Y == 256)
+	ADD r4 r4 r2       == COLOR_INC += STEP
+	BR_COND r10 .LBB0_4
+	B .LBB0_3
+.LBB0_4:
+	INC_EQi r4 r2 1000 == (++STEP == 1000)
+	FLUSH
+	BR_COND r4 .LBB0_2
+	B .LBB0_1
+.LBB0_2:
+	BR r0
+```
+Support custom FrontEnd output:
+#### [Sim] 33. Add instruction INC_NEi
++ instruction INC_NEi
 
 ### 7) Generate application BIN
 ```
 .../llvm-project/build/bin/llc app.ll -march sim --filetype=obj
 ```
 ```
-... 0F 00 ED EE  0C 00 FF 30  01 00 EE 40  FD FF E9 71 ...
+0B 00 A9 EE  PUTPIXEL r10 r9 r11
+00 02 CA 90  INC_EQi r12 r10 512
+04 00 BB 30  ADD r11 r11 r4
+00 00 C0 BC  BR_COND r12 .LBB0_5 <- Empty offset
+00 00 00 B0  B .LBB0_6           <- Empty offset
 ```
 
