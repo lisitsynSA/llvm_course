@@ -1,9 +1,5 @@
 func main
   step = 0;
-  y = 0;
-  x = 0;
-  goto loopStep;
-
   loopStep:
     y = 0;
     if step != 1000 | loopY | loopStep_end;

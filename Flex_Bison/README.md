@@ -13,4 +13,5 @@ Use N.sh script for run examples.
 9. Flex&Bison simple CFG lang file parsing + LLVM IR generation with variables and arrays + interpretation.
 10. Flex&Bison lang file parsing + LLVM IR generation with variables and arrays + interpretation.
 11. Flex&Bison lang file with graphic parsing + LLVM IR generation with variables and arrays + interpretation.
-12. Final FrontEnd: Flex&Bison lang file with graphic parsing + LLVM IR generation.
+12. Final FrontEnd: Flex&Bison lang file with graphic parsing + LLVM IR generation + interpretation.
+FrontEnd: Flex&Bison lang file with graphic parsing + LLVM IR generation with Sim intrisics

@@ -19,7 +19,6 @@ extern "C" {
     }
     int yywrap(void){return 1;}
 }
-#include "../SDL/sim.h"
 
 LLVMContext context;
 IRBuilder<>* builder;
@@ -45,19 +44,19 @@ int main(int argc, char **argv)
     entryBuilder = new IRBuilder<> (context);
 
     Type *voidType = Type::getVoidTy(context);
-    // declare void @simPutPixel(i32 noundef, i32 noundef, i32 noundef)
+    // declare void @llvm.sim.putpixel(i32 noundef, i32 noundef, i32 noundef)
     ArrayRef<Type *> simPutPixelParamTypes = {Type::getInt32Ty(context),
                                                 Type::getInt32Ty(context),
                                                 Type::getInt32Ty(context)};
     FunctionType *simPutPixelType =
         FunctionType::get(voidType, simPutPixelParamTypes, false);
     simPutPixelFunc =
-        module->getOrInsertFunction("simPutPixel", simPutPixelType);
+        module->getOrInsertFunction("llvm.sim.putpixel", simPutPixelType);
 
-    // declare void @simFlush(...)
+    // declare void @llvm.sim.flush()
     FunctionType *simFlushType = FunctionType::get(voidType, false);
     simFlushFunc =
-        module->getOrInsertFunction("simFlush", simFlushType);
+        module->getOrInsertFunction("llvm.sim.flush", simFlushType);
 
     yyparse();
 
@@ -66,31 +65,6 @@ int main(int argc, char **argv)
         outs() << "[VERIFICATION] FAIL\n";
         return 1;
     }
-
-    // Interpreter of LLVM IR
-    outs() << "[EE] Run\n";
-	ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-    ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
-        if (fnName == "simFlush") {
-            return reinterpret_cast<void *>(simFlush);
-        }
-        if (fnName == "simPutPixel") {
-            return reinterpret_cast<void *>(simPutPixel);
-        }
-        return nullptr;
-    });
-    ee->finalizeObject();
-
-    simInit();
-	std::vector<GenericValue> noargs;
-    Function *mainFunc = module->getFunction("main");
-    if (mainFunc == nullptr) {
-	    outs() << "Can't find main\n";
-        return -1;
-    }
-	ee->runFunction(mainFunc, noargs);
-    outs() << "[EE] Done\n";
-    simExit();
     return 0;
 }
 %}
