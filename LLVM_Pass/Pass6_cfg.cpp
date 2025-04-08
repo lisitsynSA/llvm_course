@@ -12,12 +12,16 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
   }
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     outs() << "[Module] " << M.getName() << "\n";
-    for (auto &F : M) {
+    for (Function &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
       if (isFuncLogger(F.getName()) || F.isDeclaration()) {
         continue;
       }
+
+      /*for (auto &A: F.getAttributes()) {
+        outs() << "Attr: " << Attribute::getNameFromAttrKind(A.getKindAsEnum()) << "\n";
+      }*/
 
       for (auto &B : F) {
         for (auto &I : B) {
@@ -101,7 +105,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
           }
           if (auto *op = dyn_cast<BinaryOperator>(&I)) {
             // Insert after op
-            builder.SetInsertPoint(op);
+            builder.SetInsertPoint(op); // TODO Optimize next getter
             builder.SetInsertPoint(&B, ++builder.GetInsertPoint());
 
             // Insert a call to binOptLogFunc function
@@ -117,6 +121,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       outs() << "\n";
       bool verif = verifyFunction(F, &outs());
       outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+      F.print(outs());
     }
     outs() << "\n";
     return PreservedAnalyses::none();
@@ -125,7 +130,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
-    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
       MPM.addPass(MyModPass{});
       return true;
     });

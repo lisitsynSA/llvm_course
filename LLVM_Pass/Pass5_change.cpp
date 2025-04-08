@@ -9,7 +9,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     outs() << "[Module] " << M.getName() << "\n";
     bool changed = false;
-    std::list<Instruction *> RemoveInstrs;
+    std::vector<Instruction *> RemoveInstrs;
     for (auto &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
@@ -20,6 +20,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 
       for (auto &B : F) {
         for (auto &I : B) {
+          // isBinaryOp()
           if (auto *op = dyn_cast<BinaryOperator>(&I)) {
             outs() << "Modified instruction:\n";
             I.print(outs(), true);
@@ -30,21 +31,30 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
             // Make a sub with the same operands as `op`.
             Value *lhs = op->getOperand(0);
             Value *rhs = op->getOperand(1);
-            Value *sub = builder.CreateSub(lhs, rhs);
-
-            // Everywhere the old instruction was used as an operand, use our
-            // new sub instruction instead.
-            for (auto &U : op->uses()) {
-              User *user = U.getUser(); // A User is anything with operands.
-              user->setOperand(U.getOperandNo(), sub);
+            Value *newOp = nullptr;
+            if (op->getOpcode() == Instruction::Add) {
+              newOp = builder.CreateSub(lhs, rhs);
+            } else if (op->getOpcode() == Instruction::Sub) {
+              newOp = builder.CreateAdd(lhs, rhs);
             }
-            // 2 variants for removing (only RemoveInstrs works):
-            // I.eraseFromParent();
-            // RemoveInstrs.push_back(&I);
-            changed = true;
-            outs() << "\n";
-            bool verif = verifyFunction(F, &outs());
-            outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+
+            if (newOp) {
+              // Everywhere the old instruction was used as an operand, use our
+              // new sub instruction instead.
+              for (auto &U : op->uses()) {
+                User *user = U.getUser(); // A User is anything with operands.
+                user->setOperand(U.getOperandNo(), newOp);
+              }
+              // 2 variants for removing (only RemoveInstrs works):
+              // I.eraseFromParent();
+              RemoveInstrs.push_back(&I);
+              changed = true;
+              newOp->print(outs(), true);
+              outs() << "\n";
+              outs() << "\n";
+              bool verif = verifyFunction(F, &outs());
+              outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
+            }
           }
         }
       }

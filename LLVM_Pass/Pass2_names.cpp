@@ -39,6 +39,30 @@ PassPluginLibraryInfo getPassPluginInfo() {
       MPM.addPass(createModuleToFunctionPassAdaptor(MyFuncPass{}));
       return true;
     });
+
+    PB.registerPipelineParsingCallback(
+        [](StringRef name, FunctionPassManager &FPM,
+           ArrayRef<PassBuilder::PipelineElement>) -> bool {
+          if (name == "myFuncPass") {
+            outs() << "Add pass to FunctionPassManager from "
+                      "registerPipelineParsingCallback\n";
+            FPM.addPass(MyFuncPass{});
+            return true;
+          }
+          return false;
+        });
+    // opt hello.ll -load-pass-plugin ./libPass.so -passes myModPass -o a.out
+    PB.registerPipelineParsingCallback(
+        [](StringRef name, ModulePassManager &MPM,
+           ArrayRef<PassBuilder::PipelineElement>) -> bool {
+          if (name == "myModPass") {
+            outs() << "Add pass to ModulePassManager from "
+                      "registerPipelineParsingCallback\n";
+            MPM.addPass(MyModPass{});
+            return true;
+          }
+          return false;
+        });
   };
 
   return {LLVM_PLUGIN_API_VERSION, "MyPlugin", "0.0.1", callback};

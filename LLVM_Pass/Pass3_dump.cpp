@@ -10,16 +10,16 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       G.print(outs());
       outs() << "\n";
     }
-    for (auto &F : M) {
+    for (Function &F : M) {
       outs() << "[Function] " << F.getName() << " (arg_size: " << F.arg_size()
              << ")\n";
       F.print(outs());
 
-      for (auto &B : F) {
+      for (BasicBlock &B : F) {
         outs() << "\n#[Basic block]";
         B.print(outs());
 
-        for (auto &I : B) {
+        for (Instruction &I : B) {
           outs() << "##[Instruction]\n";
           I.print(outs(), true);
           outs() << "\n";

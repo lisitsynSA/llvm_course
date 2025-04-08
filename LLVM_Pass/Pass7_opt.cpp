@@ -14,8 +14,8 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
         continue;
       }
 
-      F.print(outs());
-      outs() << "\n";
+      //F.print(outs());
+      //outs() << "\n";
 
       for (auto &B : F) {
         for (auto &I : B) {
@@ -25,6 +25,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
             outs() << "\n";
             StoreInst *Store = nullptr;
             LoadInst *Load = nullptr;
+            // TODO Add Skip Val
 
             for (auto &U : Alloca->uses()) {
               Instruction *UseInst = cast<Instruction>(U.getUser());
@@ -72,13 +73,14 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
                   continue;
                 }
                 ValInst->moveBefore(&*LoadBB->getFirstInsertionPt());
-
+                // push RemoveInstr
                 Store->eraseFromParent();
                 for (auto &U : Load->uses()) {
                   Instruction *UseInst = cast<Instruction>(U.getUser());
                   outs() << "\t Load Users: ";
                   UseInst->print(outs(), true);
                   outs() << "\n";
+                  // TODO: use GetOperandNo
                   for (int i = 0; i < UseInst->getNumOperands(); i++) {
                     if (UseInst->getOperand(i) == Load) {
                       UseInst->setOperand(i, Val);
