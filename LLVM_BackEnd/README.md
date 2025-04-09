@@ -512,3 +512,20 @@ Support custom ANTLR FrontEnd output:
 FC FF 00 B0  B .LBB0_6           <- Offset: -4
           .LBB0_5:
 ```
+#### [Sim] 35. Extend Sim instruction set with Arithmetic and INC_CCi instructions
++ Arithmetic and INC_CCi instructions
+```
+let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
+class IncCCi<bits<8> op> : SimInst<op, (outs GPR:$r1, GPR:$r2_), (ins GPR:$r2, simm16:$r3_imm),
+              NAME#" $r1 $r2 $r3_imm", []>;
+
+let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
+multiclass Arithm<bits<8> opcode, SDPatternOperator op> {
+    def NAME  : SimInst<opcode, (outs GPR:$r1), (ins GPR:$r2, GPR:$r3_imm),
+                         NAME#" $r1 $r2 $r3_imm",
+                         [(set GPR:$r1, (op GPR:$r2, GPR:$r3_imm))]>;
+    def NAME#I : SimInst<!add(opcode,0x10), (outs GPR:$r1), (ins GPR:$r2, simm16:$r3_imm),
+                         NAME#"i $r1 $r2 $r3_imm",
+                         [(set GPR:$r1, (op GPR:$r2, simm16:$r3_imm))]>;
+}
+```
