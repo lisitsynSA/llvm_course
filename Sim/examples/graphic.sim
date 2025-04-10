@@ -1,0 +1,7 @@
+entry
+    MOVhi x2 65535
+    ORi x2 x2 65535
+    MOVli x9 5
+    PUT_PIXEL x9 x9 x2
+    FLUSH
+    EXIT

@@ -61,23 +61,30 @@ void ExtIR::buildIR(Binary &Bin) {
 #undef _ISA
     }
     PC++;
-    if (I.Op == Instr::BR_COND) {
-      Value *reg_p = builder.CreateConstGEP2_32(regFileType, regFile, 0, I.R1);
-      Value *reg_i1 = builder.CreateTrunc(builder.CreateLoad(int32Type, reg_p),
-                                          builder.getInt1Ty());
-      builder.CreateCondBr(reg_i1, BBMap[I.R3Imm], BBMap[PC]);
-      builder.SetInsertPoint(BBMap[PC]);
-      continue;
-    }
     auto BB = BBMap.find(PC);
-    if (I.Op == Instr::EXIT) {
+
+    switch (I.Op) {
+    default:
+      if (BB != BBMap.end()) {
+        builder.CreateBr(BB->second);
+      }
+      break;
+    case Instr::BR_COND:
+      arg1 = builder.CreateConstGEP2_32(regFileType, regFile, 0, I.R1);
+      arg2 = builder.CreateTrunc(builder.CreateLoad(int32Type, arg1),
+                                 builder.getInt1Ty());
+      if (BB != BBMap.end()) {
+        builder.CreateCondBr(arg2, BBMap[I.R3Imm], BB->second);
+      }
+      break;
+    case Instr::B:
+      builder.CreateBr(BBMap[I.R3Imm]);
+      break;
+    case Instr::EXIT:
       builder.CreateRetVoid();
-      if (BB != BBMap.end())
-        builder.SetInsertPoint(BB->second);
-      continue;
+      break;
     }
     if (BB != BBMap.end()) {
-      builder.CreateBr(BB->second);
       builder.SetInsertPoint(BB->second);
     }
   }

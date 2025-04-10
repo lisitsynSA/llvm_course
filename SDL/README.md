@@ -47,19 +47,5 @@ clang++ $(llvm-config --cppflags --ldflags --libs) sim.c IRGen/app_asm_IRgen_2.c
 ./a.out IRGen/app.s
 ```
 
-## Simple ISA implementation:
-The ISA description is placed in the `ISA/include/ISA.h`.
-
-Application needs 2 argument: file with assembler code and execution mod (1-3):
-1. Simulation
-2. IR with emulate funcs
-3. Full IR generation
-```
-clang++ $(llvm-config --cppflags --ldflags --libs) ISA/*.cpp sim.c -lSDL2
-./a.out ISA/app.s 1
-./a.out ISA/app.s 2
-./a.out ISA/app.s 3
-```
-
 ## SDL 2.0 documentation:
 https://wiki.libsdl.org

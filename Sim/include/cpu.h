@@ -1,6 +1,6 @@
 #ifndef CPU_H
 #define CPU_H
-#include "../../sim.h"
+#include "sim.h"
 #include "bin.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cstdint>

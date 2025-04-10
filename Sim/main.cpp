@@ -5,9 +5,16 @@
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
+// Function to check if a string ends with another string
+bool endsWith(const std::string &str, const std::string &end) {
+  if (end.size() > str.size())
+    return false;
+  return str.compare(str.size() - end.size(), end.size(), end) == 0;
+}
+
 int main(int argc, char *argv[]) {
   if (argc != 3) {
-    outs() << "\n[ERROR] Need 2 argument: file with assembler code and "
+    outs() << "\n[ERROR] Need 2 argument: file with assembler/binary code and "
               "execution mod (1-3)\n  1: Simulation 2: IR with emulate funcs "
               "3: Full IR generation\n";
     return 1;
@@ -15,7 +22,12 @@ int main(int argc, char *argv[]) {
   Instr::prepareDicts();
   Binary Bin;
   std::string ErrorMsg;
-  if (Bin.readFile(argv[1], ErrorMsg)) {
+  if (endsWith(argv[1], ".o")) {
+    if (Bin.readBin(argv[1], ErrorMsg)) {
+      outs() << "\n[BIN READ ERROR] " << ErrorMsg << "\n";
+      return 1;
+    }
+  } else if (Bin.readFile(argv[1], ErrorMsg)) {
     outs() << "\n[ASM READ ERROR] " << ErrorMsg << "\n";
     return 1;
   }

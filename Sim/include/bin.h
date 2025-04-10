@@ -20,5 +20,7 @@ struct Binary {
   std::string writeInstrs();
 
   bool readFile(std::string FileName, std::string &ErrorMsg);
+
+  bool readBin(std::string FileName, std::string &ErrorMsg);
 };
 #endif // BIN_H
