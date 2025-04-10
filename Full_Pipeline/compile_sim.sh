@@ -2,8 +2,33 @@
 cd $(dirname "$0")
 set -x
 
-cat $1.lang | ../Flex_Bison/a.out > $1.ll || exit 1
-opt $1.ll -O2 -o $1.opt.ll -S  || exit 1
-../../llvm-add-backend/build/bin/llc $1.opt.ll -march sim --filetype=asm  || exit 1
-../../llvm-add-backend/build/bin/llc $1.opt.ll -march sim --filetype=obj  || exit 1
-../Simulator/simulator $1.opt.o
+LLVM_BUILD="../../llvm-add-backend/build"
+LLC="$LLVM_BUILD/bin/llc"
+CLANG="$LLVM_BUILD/bin/clang"
+OPT="$LLVM_BUILD/bin/opt"
+OPT="opt"
+LANG="../Flex_Bison/a.out"
+NODELANG="../ANTLR/Frontend/a.out"
+SIM="../Sim/a.out"
+
+NAME="${1%.*}"
+
+if [[ $1 == *.lang ]]; then
+    # Lang source
+    cat $1 | $LANG >$NAME.ll || exit 1
+    $OPT $NAME.ll -O2 -o $NAME.opt.ll || exit 1
+elif [[ $1 == *.nl ]]; then
+    # NodeLAng source
+    $NODELANG $1 $NAME.ll || exit 1
+    $OPT $NAME.ll -O2 -o $NAME.opt.ll || exit 1
+else
+    # Clang source
+    $CLANG $1 -emit-llvm -S -target sim -o $NAME.ll
+    $CLANG $1 -emit-llvm -S -target sim -O2 -o $NAME.opt.ll
+fi
+
+$LLC $NAME.opt.ll -march sim --filetype=asm || exit 1
+$LLC $NAME.opt.ll -march sim --filetype=obj || exit 1
+$SIM $NAME.opt.o 1
+
+rm $NAME.ll $NAME.opt.ll $NAME.opt.o $NAME.opt.s
