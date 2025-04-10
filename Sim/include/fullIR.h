@@ -9,6 +9,7 @@
 struct FullIR : ExtIR {
   void buildIR(Binary &Bin);
   void executeIR(CPU &Cpu);
+  bool printIR(std::string FileName, std::string &ErrorMsg);
 };
 
 #endif // FULLIR_H

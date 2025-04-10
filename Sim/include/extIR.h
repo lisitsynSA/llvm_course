@@ -10,6 +10,8 @@ struct ExtIR {
   llvm::Module *module;
   llvm::Function *mainFunc;
   llvm::GlobalVariable *regFile;
+  llvm::Type *voidType;
+  llvm::Type *int32Type;
 
   void buildIR(Binary &Bin);
   void dumpIR();

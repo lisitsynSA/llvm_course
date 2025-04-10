@@ -13,10 +13,11 @@ bool endsWith(const std::string &str, const std::string &end) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 3) {
-    outs() << "\n[ERROR] Need 2 argument: file with assembler/binary code and "
-              "execution mod (1-3)\n  1: Simulation 2: IR with emulate funcs "
-              "3: Full IR generation\n";
+  if (argc != 3 && argc != 4) {
+    outs()
+        << "\n[ERROR] Need 2 argument: file with assembler/binary code and "
+           "execution mod (1-3)\n  1: Simulation\n  2: IR with emulate funcs\n "
+           " 3: Full IR generation (optional 3rd argument for IR output)\n";
     return 1;
   }
   Instr::prepareDicts();
@@ -63,7 +64,15 @@ int main(int argc, char *argv[]) {
       Full.dumpIR();
       if (Full.verifyIR())
         return 1;
-      Full.executeIR(Cpu);
+      if (argc == 4) {
+        outs() << "Print LLVM IR to " << argv[3] << "\n";
+        if (Full.printIR(argv[3], ErrorMsg)) {
+          outs() << "\n[IR DUMP ERROR] " << ErrorMsg << "\n";
+          return 1;
+        }
+      } else {
+        Full.executeIR(Cpu);
+      }
     }
     break;
   default:

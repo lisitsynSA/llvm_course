@@ -5,26 +5,20 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <vector>
 
 using namespace llvm;
 
 void FullIR::buildIR(Binary &Bin) {
   module = new Module("top", context);
   IRBuilder<> builder(context);
-  Type *voidType = Type::getVoidTy(context);
-  Type *int32Type = Type::getInt32Ty(context);
+  voidType = Type::getVoidTy(context);
+  int32Type = Type::getInt32Ty(context);
 
-  //[16 x i32] regFile = {0, 0, 0, 0}
-  ArrayType *regFileType = ArrayType::get(int32Type, CPU::RegSize);
-
-  GlobalVariable *regFile = new GlobalVariable(
-      *module, regFileType, false, GlobalValue::PrivateLinkage, 0, "regFile");
-  regFile->setInitializer(ConstantAggregateZero::get(regFileType));
-
-  // declare void @main()
+  // declare void @app()
   FunctionType *funcType = FunctionType::get(voidType, false);
   mainFunc =
-      Function::Create(funcType, Function::ExternalLinkage, "main", module);
+      Function::Create(funcType, Function::ExternalLinkage, "app", module);
   // Funcions types
   FunctionType *voidFuncType = FunctionType::get(voidType, false);
   ArrayRef<Type *> int32x3Types = {int32Type, int32Type, int32Type};
@@ -47,6 +41,10 @@ void FullIR::buildIR(Binary &Bin) {
 
   uint32_t PC = 0;
   builder.SetInsertPoint(BBMap[0]);
+  // %0 = alloca i32, i32 16, align 4
+  ArrayType *regFileType = ArrayType::get(int32Type, CPU::RegSize);
+  Value *regFile = builder.CreateAlloca(regFileType);
+
   for (Instr &I : Bin.Instrs) {
     switch (I.Op) {
     default:
@@ -94,4 +92,49 @@ void FullIR::executeIR(CPU &Cpu) {
   outs() << "#[Code was run]\n";
 
   simExit();
+}
+
+bool FullIR::printIR(std::string FileName, std::string &ErrorMsg) {
+  // Prepare Graphic intrinsic usage
+  IRBuilder<> builder(context);
+  // declare void @llvm.sim.putpixel(i32 noundef, i32 noundef, i32 noundef)
+  ArrayRef<Type *> simPutPixelParamTypes = {int32Type, int32Type, int32Type};
+  FunctionType *simPutPixelType =
+      FunctionType::get(voidType, simPutPixelParamTypes, false);
+  FunctionCallee simPutPixelIntr =
+      module->getOrInsertFunction("llvm.sim.putpixel", simPutPixelType);
+  // define void @simPutPixel(i32 %0, i32 %1, i32 %2) {
+  Function *simPutPixelFunc = module->getFunction("simPutPixel");
+  // entry:
+  builder.SetInsertPoint(BasicBlock::Create(context, "entry", simPutPixelFunc));
+  // call void @llvm.sim.putpixel(i32 %0, i32 %1, i32 %2)
+  builder.CreateCall(simPutPixelIntr,
+                     {simPutPixelFunc->getArg(0), simPutPixelFunc->getArg(1),
+                      simPutPixelFunc->getArg(2)});
+  // ret
+  builder.CreateRetVoid();
+
+  // declare void @llvm.sim.flush()
+  FunctionType *simFlushType = FunctionType::get(voidType, false);
+  FunctionCallee simFlushIntr =
+      module->getOrInsertFunction("llvm.sim.flush", simFlushType);
+  // define void @simFlush() {
+  Function *simFlushFunc = module->getFunction("simFlush");
+  // entry:
+  builder.SetInsertPoint(BasicBlock::Create(context, "entry", simFlushFunc));
+  // call void @llvm.sim.flush()
+  builder.CreateCall(simFlushIntr);
+  // ret
+  builder.CreateRetVoid();
+
+  // Dump LLVM IR with intrinsics
+  std::error_code EC;
+  raw_fd_ostream OutputFile(FileName, EC);
+  if (!EC) {
+    module->print(OutputFile, nullptr);
+    return false;
+  } else {
+    ErrorMsg = "Can't print LLVM IR to " + FileName;
+    return true;
+  }
 }

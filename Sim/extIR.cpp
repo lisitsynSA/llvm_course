@@ -11,8 +11,8 @@ using namespace llvm;
 void ExtIR::buildIR(Binary &Bin) {
   module = new Module("top", context);
   IRBuilder<> builder(context);
-  Type *voidType = Type::getVoidTy(context);
-  Type *int32Type = Type::getInt32Ty(context);
+  voidType = Type::getVoidTy(context);
+  int32Type = Type::getInt32Ty(context);
 
   //[32 x i32] regFile = {0, 0, 0, 0}
   ArrayType *regFileType = ArrayType::get(int32Type, CPU::RegSize);

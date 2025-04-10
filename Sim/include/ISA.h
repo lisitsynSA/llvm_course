@@ -143,8 +143,9 @@ _ISA(
       Value *arg1 =
           builder.CreateAdd(builder.CreateLoad(int32Type, arg1_p), GEN_IMM(1));
       builder.CreateStore(arg1, arg1_p);
-      builder.CreateStore(builder.CreateICmpNE(arg1, GEN_IMM(I.R3Imm)),
-                          GEP2_32(I.R1));
+      Value *cmp = builder.CreateSExt(
+          builder.CreateICmpNE(arg1, GEN_IMM(I.R3Imm)), int32Type);
+      builder.CreateStore(cmp, GEP2_32(I.R1));
     })
 
 //    INC_EQi x4 x5 512 (2REGS_IMM)
@@ -156,8 +157,9 @@ _ISA(
       Value *arg1 =
           builder.CreateAdd(builder.CreateLoad(int32Type, arg1_p), GEN_IMM(1));
       builder.CreateStore(arg1, arg1_p);
-      builder.CreateStore(builder.CreateICmpEQ(arg1, GEN_IMM(I.R3Imm)),
-                          GEP2_32(I.R1));
+      Value *cmp = builder.CreateSExt(
+          builder.CreateICmpEQ(arg1, GEN_IMM(I.R3Imm)), int32Type);
+      builder.CreateStore(cmp, GEP2_32(I.R1));
     })
 
 //    BR_COND x4 label_13 (REG_IMM)
