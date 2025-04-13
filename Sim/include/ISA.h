@@ -43,6 +43,8 @@
   { READ_REG(R1) READ_REG(R2) READ_REG(R3Imm) }
 #define READ_2REGS_IMM                                                         \
   { READ_REG(R1) READ_REG(R2) READ_IMM }
+#define READ_2REGS                                                             \
+  { READ_REG(R1) READ_REG(R2) }
 #define READ_REG_LABEL                                                         \
   { READ_REG(R1) READ_LABEL }
 #define READ_REG_IMM                                                           \
@@ -59,6 +61,8 @@
   { WRITE_REG(R1) WRITE_REG(R2) WRITE_REG(R3Imm) }
 #define WRITE_2REGS_IMM                                                        \
   { WRITE_REG(R1) WRITE_REG(R2) WRITE_IMM }
+#define WRITE_2REGS                                                            \
+  { WRITE_REG(R1) WRITE_REG(R2) }
 #define WRITE_REG_LABEL                                                        \
   { WRITE_REG(R1) WRITE_LABEL }
 #define WRITE_REG_IMM                                                          \
@@ -200,3 +204,101 @@ _ISA(
     0xAF, MOVhi, SKIP_2ARGS, READ_REG_IMM, WRITE_REG_IMM,
     { C->RegFile[R1] = R3Imm << 16; },
     { builder.CreateStore(GEN_IMM(I.R3Imm << 16), GEP2_32(I.R1)); })
+
+// Support app2.c
+//    RAND r4 (REG)
+_ISA(
+    0xDD, RAND, SKIP_1ARGS, READ_REG(R1), WRITE_REG(R1),
+    { C->RegFile[R1] = simRand(); },
+    { builder.CreateStore(builder.CreateCall(simRandFunc), GEP2_32(I.R1)); })
+//    ABS r4 r11 (2REGS)
+_ISA(
+    0xAB, ABS, SKIP_2ARGS, READ_2REGS, WRITE_2REGS,
+    {
+      int32_t r2 = C->RegFile[R2];
+      C->RegFile[R1] = r2 < 0 ? -r2 : r2;
+    },
+    {
+      builder.CreateStore(
+          builder.CreateCall(AbsFunc, {LOAD_REG(I.R2), builder.getInt1(true)}),
+          GEP2_32(I.R1));
+    })
+//    UREMi r2 r2 10 (2REGS_IMM)
+_ISA(
+    0x4a, UREMi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
+    { C->RegFile[R1] = C->RegFile[R2] % R3Imm; },
+    {
+      builder.CreateStore(builder.CreateURem(LOAD_REG(I.R2), GEN_IMM(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    ANDi r4 r4 510 (2REGS_IMM)
+_ISA(
+    0x45, ANDi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
+    { C->RegFile[R1] = C->RegFile[R2] & R3Imm; },
+    {
+      builder.CreateStore(builder.CreateAnd(LOAD_REG(I.R2), GEN_IMM(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    MULi r4 r4 6554 (2REGS_IMM)
+_ISA(
+    0x42, MULi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
+    { C->RegFile[R1] = C->RegFile[R2] * R3Imm; },
+    {
+      builder.CreateStore(builder.CreateMul(LOAD_REG(I.R2), GEN_IMM(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    SRAi r14 r2 31 (2REGS_IMM)
+_ISA(
+    0x47, SRAi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
+    {
+      int32_t r2 = C->RegFile[R2];
+      C->RegFile[R1] = r2 >> R3Imm;
+    },
+    {
+      builder.CreateStore(builder.CreateAShr(LOAD_REG(I.R2), GEN_IMM(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    SRLi r4 r4 16 (2REGS_IMM)
+_ISA(
+    0x48, SRLi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
+    { C->RegFile[R1] = C->RegFile[R2] >> R3Imm; },
+    {
+      builder.CreateStore(builder.CreateLShr(LOAD_REG(I.R2), GEN_IMM(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    SHLi r14 r14 16 (2REGS_IMM)
+_ISA(
+    0x49, SHLi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
+    { C->RegFile[R1] = C->RegFile[R2] << R3Imm; },
+    {
+      builder.CreateStore(builder.CreateShl(LOAD_REG(I.R2), GEN_IMM(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    SUB r14 r15 r14 (3REGS)
+_ISA(
+    0x31, SUB, SKIP_3ARGS, READ_3REGS, WRITE_3REGS,
+    { C->RegFile[R1] = C->RegFile[R2] - C->RegFile[R3Imm]; },
+    {
+      builder.CreateStore(builder.CreateSub(LOAD_REG(I.R2), LOAD_REG(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    OR r14 r15 r14 (3REGS)
+_ISA(
+    0x34, OR, SKIP_3ARGS, READ_3REGS, WRITE_3REGS,
+    { C->RegFile[R1] = C->RegFile[R2] | C->RegFile[R3Imm]; },
+    {
+      builder.CreateStore(builder.CreateOr(LOAD_REG(I.R2), LOAD_REG(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })
+//    DIVi r15 r9 50 (2REGS_IMM)
+_ISA(
+    0x43, DIVi, SKIP_3ARGS, READ_2REGS_IMM, WRITE_2REGS_IMM,
+    {
+      int32_t r2 = C->RegFile[R2];
+      int32_t r3 = R3Imm;
+      C->RegFile[R1] = r2 / r3;
+    },
+    {
+      builder.CreateStore(builder.CreateSDiv(LOAD_REG(I.R2), GEN_IMM(I.R3Imm)),
+                          GEP2_32(I.R1));
+    })

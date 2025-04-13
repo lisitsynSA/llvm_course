@@ -15,7 +15,7 @@ struct CPU {
   bool DumpInstrs = false;
 
   bool Execute(Binary &Bin, std::string &ErrorMsg);
-  std::string dumpStatus();
+  std::string dumpStatus(Binary &Bin);
 
   static CPU *C;
   static void setCPU(CPU *Cpu) { C = Cpu; }

@@ -529,3 +529,5 @@ multiclass Arithm<bits<8> opcode, SDPatternOperator op> {
                          [(set GPR:$r1, (op GPR:$r2, simm16:$r3_imm))]>;
 }
 ```
+Support app2: Add int_sim_rand, shifts and abs
+#### [Sim] 36. Add int_sim_rand, shifts and abs

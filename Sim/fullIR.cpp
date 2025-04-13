@@ -14,6 +14,7 @@ void FullIR::buildIR(Binary &Bin) {
   IRBuilder<> builder(context);
   voidType = Type::getVoidTy(context);
   int32Type = Type::getInt32Ty(context);
+  Type *boolType = Type::getInt1Ty(context);
 
   // declare void @app()
   FunctionType *funcType = FunctionType::get(voidType, false);
@@ -33,6 +34,15 @@ void FullIR::buildIR(Binary &Bin) {
   FunctionType *simFlushType = FunctionType::get(voidType, false);
   FunctionCallee simFlushFunc =
       module->getOrInsertFunction("simFlush", simFlushType);
+
+  // declare i32 @simRand()
+  FunctionType *simRandType = FunctionType::get(int32Type, false);
+  FunctionCallee simRandFunc =
+      module->getOrInsertFunction("simRand", simRandType);
+  // declare i32 @llvm.abs.i32(i32, i1 immarg) #4
+  FunctionType *AbsType =
+      FunctionType::get(int32Type, {int32Type, boolType}, false);
+  FunctionCallee AbsFunc = module->getOrInsertFunction("llvm.abs.i32", AbsType);
 
   std::unordered_map<uint32_t, BasicBlock *> BBMap;
   for (auto &BB : Bin.BBName2PC) {
@@ -74,6 +84,9 @@ void FullIR::executeIR(CPU &Cpu) {
   ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
     if (fnName == "simFlush") {
       return reinterpret_cast<void *>(simFlush);
+    }
+    if (fnName == "simRand") {
+      return reinterpret_cast<void *>(simRand);
     }
     if (fnName == "simPutPixel") {
       return reinterpret_cast<void *>(simPutPixel);
@@ -126,6 +139,17 @@ bool FullIR::printIR(std::string FileName, std::string &ErrorMsg) {
   builder.CreateCall(simFlushIntr);
   // ret
   builder.CreateRetVoid();
+
+  // declare void @llvm.sim.rand()
+  FunctionType *simRandType = FunctionType::get(int32Type, false);
+  FunctionCallee simRandIntr =
+      module->getOrInsertFunction("llvm.sim.rand", simRandType);
+  // define void @simRand() {
+  Function *simRandFunc = module->getFunction("simRand");
+  // entry:
+  builder.SetInsertPoint(BasicBlock::Create(context, "entry", simRandFunc));
+  // ret call i32 @llvm.sim.rand()
+  builder.CreateRet(builder.CreateCall(simRandIntr));
 
   // Dump LLVM IR with intrinsics
   std::error_code EC;

@@ -88,7 +88,8 @@ bool Binary::readBin(string FileName, string &ErrorMsg) {
     switch (I.Op) {
     default:
       Stream << "Wrong Opcode\n";
-      break;
+      cout << Stream.str();
+      return true;
 #define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
              _IRGenExecute)                                                    \
   case (_Opcode):                                                              \
