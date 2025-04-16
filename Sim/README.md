@@ -24,10 +24,10 @@ Choose IR Generation:
 ./a.out examples/nodelang.o 3 tmp1_.ll
 ./a.out examples/app2.o 3 tmp1_.ll
 ```
-Compilation loop:
+Compilation loop.sh:
 ```
 IR    -> OptIR : opt tmp(i)_.ll -O2 -o tmp(i).ll -S
-OptIR -> Bin   : ../llvm-add-backend/build/bin/llc tmp(i).ll -march sim -filetype=obj
+OptIR -> Bin   : llc tmp(i).ll -march sim -filetype=obj
 Bin   -> IR    : ./a.out tmp(i).o 3 tmp(i+1)_.ll
 ```
 ## ELFIO repository:

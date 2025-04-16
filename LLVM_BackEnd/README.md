@@ -268,6 +268,13 @@ New position 0x34 (.text section address)
 ... FF FF 20 AA  05 00 40 AA  02 00 44 EE  00 00 00 FF  00 00 00 BB ...
 
 ```
+```
+FF FF 20 AA  MOVli r2 -1
+05 00 40 AA  MOVli r4 5
+02 00 44 EE  PUTPIXEL r4 r4 r2
+00 00 00 FF  FLUSH
+00 00 00 BB  BR r0
+```
 # Extra step for clang FrontEnd
 ```
 void app() {
