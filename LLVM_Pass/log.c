@@ -17,3 +17,7 @@ void binOptLogger(int val, int arg0, int arg1, char *opName, char *funcName,
   printf("[LOG] In function '%s': %d = %d %s %d {%ld}\n", funcName, val, arg0,
          opName, arg1, valID);
 }
+
+void resIntLogger(long int res, long int valID) {
+  printf("[LOG] Result %ld {%ld}\n", res, valID);
+}

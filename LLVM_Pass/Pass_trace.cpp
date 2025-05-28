@@ -1,4 +1,5 @@
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
@@ -33,7 +34,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       LLVMContext &Ctx = F.getContext();
       IRBuilder<> builder(Ctx);
       Type *retType = Type::getVoidTy(Ctx);
-      Type *int8PtrTy = Type::getInt8PtrTy(Ctx);
+      Type *int8PtrTy = PointerType::get(Type::getInt8Ty(Ctx), 0);
       Type *int32Ty = Type::getInt32Ty(Ctx);
       Type *int64Ty = Type::getInt64Ty(Ctx);
 
@@ -72,14 +73,6 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       FunctionCallee funcEndLogFunc =
           M.getOrInsertFunction("funcEndLogger", funcEndLogFuncType);
 
-      // Prepare binOptLogger function
-      ArrayRef<Type *> binOptParamTypes = {int32Ty,   int32Ty,   int32Ty,
-                                           int8PtrTy, int8PtrTy, int64Ty};
-      FunctionType *binOptLogFuncType =
-          FunctionType::get(retType, binOptParamTypes, false);
-      FunctionCallee binOptLogFunc =
-          M.getOrInsertFunction("binOptLogger", binOptLogFuncType);
-
       // Insert loggers for call, binOpt and ret instructions
       for (auto &B : F) {
         for (auto &I : B) {
@@ -115,19 +108,6 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
             Value *args[] = {funcName, valueAddr};
             builder.CreateCall(funcEndLogFunc, args);
           }
-          if (auto *op = dyn_cast<BinaryOperator>(&I)) {
-            // Insert after op
-            builder.SetInsertPoint(op);
-            builder.SetInsertPoint(&B, ++builder.GetInsertPoint());
-
-            // Insert a call to binOptLogFunc function
-            Value *lhs = op->getOperand(0);
-            Value *rhs = op->getOperand(1);
-            Value *funcName = builder.CreateGlobalStringPtr(F.getName());
-            Value *opName = builder.CreateGlobalStringPtr(op->getOpcodeName());
-            Value *args[] = {op, lhs, rhs, opName, funcName, valueAddr};
-            builder.CreateCall(binOptLogFunc, args);
-          }
         }
       }
       outs() << "\n";
@@ -141,7 +121,11 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
-    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+    /*PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+      MPM.addPass(MyModPass{});
+      return true;
+    });*/
+    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
       MPM.addPass(MyModPass{});
       return true;
     });
