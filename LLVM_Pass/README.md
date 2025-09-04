@@ -56,11 +56,6 @@ clang -fpass-plugin=./libPass.so c_examples/calc.c log.c
 clang -fpass-plugin=./libPass.so c_examples/fact.c -emit-llvm -S -o fact.ll
 clang -fpass-plugin=./libPass.so c_examples/fact.c log.c
 ./a.out 4
-
-./trace.sh c_examples/fact.c
-./a.out 4
-./trace.sh ../SDL/app.c ../SDL/start.c ../SDL/sim.c -lSDL2
-./a.out
 ```
 7. Example of bad optimization Pass
 ```

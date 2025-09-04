@@ -99,8 +99,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
 
               // Insert result dump
               if (!call->getType()->isVoidTy()) {
-                builder.SetInsertPoint(call);
-                builder.SetInsertPoint(&B, ++builder.GetInsertPoint());
+                builder.SetInsertPoint(call->getNextNode());
                 Value *resArgs[] = {call, valueAddr};
                 builder.CreateCall(resIntLogFunc, resArgs);
               }
