@@ -18,19 +18,15 @@ typedef struct {
 enum EventType {
  EVENT_CALL = 1,
  EVENT_RETURN = 2,
- EVENT_EXTERNAL_CALL = 3
+ EVENT_EXTERNAL_CALL = 3,
+ EVENT_MEMOP = 4
 };
 
-struct MemoryEvent {
+typedef struct {
     uint64_t address;
     uint64_t size;
-    uint8_t type;
-};
-
-enum MemoryEventType {
-    LOAD = 1,
-    STORE = 2,
-    ARGUMENT = 3
-};
+    uint64_t memop_id;
+    uint64_t value;
+} MemoryEvent;
 
 #endif

@@ -31,15 +31,17 @@ struct TraceInstrumentationPass
   FunctionType *TraceCallFnTy;
   FunctionType *TraceReturnFnTy;
   FunctionType *TraceExternalCallFnTy;
+  FunctionType *TraceMemFnTy;
 
   // Указатели на вставляемые функции трассировки
   FunctionCallee TraceCallFn;
   FunctionCallee TraceReturnFn;
   FunctionCallee TraceExternalCallFn;
+  FunctionCallee TraceMemFn;
 
   bool isFuncLogger(StringRef name) {
-    return name == "trace_call" || name == "trace_external_call" ||
-           name == "trace_return";
+    return name == "trace_called" || name == "trace_external_call" ||
+           name == "trace_return" || name == "trace_memory";
   }
 
   // Инициализация типов и функций трассировки
@@ -51,10 +53,10 @@ struct TraceInstrumentationPass
     Int64PtrTy = Int64Ty->getPointerTo();
     Int8PtrTy = Type::getInt8Ty(Ctx)->getPointerTo();
 
-    // void @trace_call(i64 func_id, i8* func_name, i64* args, i64 num_args)
+    // void @trace_called(i64 func_id, i8* func_name, i64* args, i64 num_args)
     std::vector<Type *> CallArgs = {Int64Ty, Int8PtrTy, Int64PtrTy, Int64Ty};
     TraceCallFnTy = FunctionType::get(VoidTy, CallArgs, false);
-    TraceCallFn = M.getOrInsertFunction("trace_call", TraceCallFnTy);
+    TraceCallFn = M.getOrInsertFunction("trace_called", TraceCallFnTy);
 
     // void @trace_return(i64 func_id, i8* func_name, i64 return_value)
     std::vector<Type *> ReturnArgs = {Int64Ty, Int8PtrTy, Int64Ty};
@@ -68,6 +70,13 @@ struct TraceInstrumentationPass
     TraceExternalCallFnTy = FunctionType::get(VoidTy, ExtCallArgs, false);
     TraceExternalCallFn =
         M.getOrInsertFunction("trace_external_call", TraceExternalCallFnTy);
+
+    // void @trace_memory(i64 func_id, ptr func_name, i64 memop_id, i64 addr,
+    // i64 size, i64 value)
+    std::vector<Type *> MemArgs = {Int64Ty, Int8PtrTy, Int64Ty,
+                                   Int64Ty, Int64Ty,   Int64Ty};
+    TraceMemFnTy = FunctionType::get(VoidTy, MemArgs, false);
+    TraceMemFn = M.getOrInsertFunction("trace_memory", TraceMemFnTy);
   }
 
   // Генерация уникального ID для функции
@@ -121,7 +130,7 @@ struct TraceInstrumentationPass
     LLVMContext &Ctx = M.getContext();
     IRBuilder<> Builder(Ctx);
 
-    // В начало первой инструкции — вставляем trace_call
+    // В начало первой инструкции — вставляем trace_called
     BasicBlock &EntryBB = F.getEntryBlock();
     Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
 
@@ -149,7 +158,7 @@ struct TraceInstrumentationPass
     // Передаём как i64*
     Value *ArgArrayPtr = Builder.CreateBitCast(ArgArray, Int64PtrTy);
 
-    // Вызов: trace_call(func_id, func_name, arg_array, num_args)
+    // Вызов: trace_called(func_id, func_name, arg_array, num_args)
     Builder.CreateCall(TraceCallFn, {FuncId, FuncName, ArgArrayPtr,
                                      Builder.getInt64(ArgI64s.size())});
     // Для возврата: обернуть все ret инструкции
@@ -224,7 +233,7 @@ struct TraceInstrumentationPass
           if (!Call->use_empty() && !Call->getType()->isVoidTy()) {
             RetAlloca = new AllocaInst(Call->getType(), 0, "ret_alloca",
                                        &EntryBB.front());
-            //Builder.SetInsertPoint(Call);
+            // Builder.SetInsertPoint(Call);
             Builder.CreateStore(Call, RetAlloca);
           }
 
@@ -275,12 +284,12 @@ void instrumentMemoryAccesses(Function &F) {
             if (auto *Load = dyn_cast<LoadInst>(&I)) {
                 addMemoryTrace(Load, MemoryEvent::LOAD);
             }
-            
+
             // Обработка store инструкций
             if (auto *Store = dyn_cast<StoreInst>(&I)) {
                 addMemoryTrace(Store, MemoryEvent::STORE);
             }
-            
+
             // Обработка аргументов функций
             if (auto *Call = dyn_cast<CallInst>(&I)) {
                 for (Value *Arg : Call->args()) {
@@ -296,17 +305,17 @@ void instrumentMemoryAccesses(Function &F) {
 void addMemoryTrace(Value *V, MemoryEventType Type) {
     // Создаем событие трассировки
     Function *traceFunc = M->getOrInsertFunction(
-        "trace_memory", 
+        "trace_memory",
         Type::getVoidTy(Ctx),
         Type::getInt64Ty(Ctx), // адрес
         Type::getInt64Ty(Ctx), // размер
         Type::getInt32Ty(Ctx)  // тип события
     ).cast<Function*>();
-    
+
     // Получаем адрес и размер
     Value *Addr = getAddress(V);
     Value *Size = getSize(V);
-    
+
     IRBuilder<> Builder(V);
     Builder.CreateCall(
         traceFunc,

@@ -22,9 +22,9 @@ void safe_write(const void *data, size_t size) {
   }
 }
 
-void trace_call(uint64_t func_id, const char *func_name, uint64_t *args,
-                uint64_t num_args) {
-  printf("[LOG] trace_call\n");
+void trace_called(uint64_t func_id, const char *func_name, uint64_t *args,
+                  uint64_t num_args) {
+  printf("[LOG] trace_called\n");
   uint64_t ts = get_timestamp();
   uint64_t name_len = strlen(func_name);
 
@@ -83,5 +83,25 @@ void trace_external_call(uint64_t func_id, const char *func_name,
   safe_write(args, sizeof(uint64_t) * num_args);
   safe_write(&return_value, sizeof(return_value));
   printf("    return_value %lu\n", return_value);
+  printf("\n");
+}
+
+void trace_memory(uint64_t func_id, const char *func_name, uint64_t memop_id,
+                  uint64_t addr, uint64_t size, uint64_t value) {
+  printf("[LOG] trace_memory\n");
+
+  uint64_t ts = get_timestamp();
+  uint64_t name_len = strlen(func_name);
+
+  TraceHeader hdr = {.type = EVENT_MEMOP,
+                     .func_id = func_id,
+                     .timestamp = ts,
+                     .name_len = name_len};
+  safe_write(&hdr, sizeof(hdr));
+  safe_write(func_name, name_len);
+  printf("    func_name %s\n", func_name);
+  MemoryEvent event = {
+      .memop_id = memop_id, .address = addr, .size = size, .value = value};
+  safe_write(&event, sizeof(event));
   printf("\n");
 }

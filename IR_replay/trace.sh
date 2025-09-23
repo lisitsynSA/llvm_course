@@ -23,6 +23,7 @@ clang++ -O2 src/TracePass.cpp -fPIC -shared -I$(llvm-config --includedir) -I./in
 
 # 1. Module instrumentation
 clang++ -O0 -fpass-plugin=./libPass.so $1 -emit-llvm -S -o $NAME.instr.ll || exit 1
+clang -O3 src/tracer.c -I./include -emit-llvm -S -o tracer.ll
 clang -O3 src/tracer.c -I./include -c -o tracer.o
 
 # 2. Build project with instrumented module
