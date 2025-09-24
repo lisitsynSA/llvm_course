@@ -1,3 +1,4 @@
+#include "llvm/IR/Module.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 using namespace llvm;

@@ -8,6 +8,12 @@ sudo apt install libsdl2-dev
 clang start.c sim.c app.c -lSDL2
 ./a.out
 ```
+Run interpreter:
+```
+clang start.c sim.c app.c -emit-llvm -S
+llvm-link start.ll sim.ll app.ll -o full.bc
+lli --load=/usr/lib/x86_64-linux-gnu/libSDL2.so full.bc
+```
 Run with your LLVM Pass:
 ```
 # Old Pass Manager

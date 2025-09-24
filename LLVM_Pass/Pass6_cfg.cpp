@@ -1,4 +1,5 @@
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
@@ -33,7 +34,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
       LLVMContext &Ctx = F.getContext();
       IRBuilder<> builder(Ctx);
       Type *retType = Type::getVoidTy(Ctx);
-      Type *int8PtrTy = Type::getInt8PtrTy(Ctx);
+      Type *int8PtrTy = Type::getInt8Ty(Ctx)->getPointerTo();
       Type *int32Ty = Type::getInt32Ty(Ctx);
       Type *int64Ty = Type::getInt64Ty(Ctx);
 
