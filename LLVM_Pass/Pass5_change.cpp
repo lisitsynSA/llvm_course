@@ -9,6 +9,9 @@ using namespace llvm;
 struct MyModPass : public PassInfoMixin<MyModPass> {
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     outs() << "[Module] " << M.getName() << '\n';
+    // Prepare builder for IR modification
+    LLVMContext &Ctx = M.getContext();
+    IRBuilder<> builder(Ctx);
     bool changed = false;
     std::list<Instruction *> RemoveInstrs;
     for (auto &F : M) {
@@ -26,7 +29,7 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
             I.print(outs(), true);
             outs() << '\n';
             // Insert at the point where the instruction `op` appears.
-            IRBuilder<> builder(op);
+            builder.SetInsertPoint(op);
 
             // Make a sub with the same operands as `op`.
             Value *lhs = op->getOperand(0);
@@ -43,12 +46,12 @@ struct MyModPass : public PassInfoMixin<MyModPass> {
             // I.eraseFromParent();
             // RemoveInstrs.push_back(&I);
             changed = true;
-            outs() << '\n';
-            bool verif = verifyFunction(F, &outs());
-            outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
           }
         }
       }
+      outs() << '\n';
+      bool verif = verifyFunction(F, &outs());
+      outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
     }
     for (auto I : RemoveInstrs) {
       I->eraseFromParent();

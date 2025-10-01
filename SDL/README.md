@@ -17,9 +17,9 @@ lli --load=/usr/lib/x86_64-linux-gnu/libSDL2.so full.bc
 Run with your LLVM Pass:
 ```
 # Old Pass Manager
-clang start.c sim.c app.c -lSDL2 -Xclang -load -Xclang ../LLVM_PASS/libPass.so -flegacy-pass-manager
+clang start.c sim.c app.c ../LLVM_Pass/log.c -lSDL2 -Xclang -load -Xclang ../LLVM_Pass/libPass.so -flegacy-pass-manager -O2
 # New Pass Manager
-clang start.c sim.c app.c -lSDL2 -fpass-plugin=../LLVM_PASS/libPass.so
+clang start.c sim.c app.c ../LLVM_Pass/log.c -lSDL2 -fpass-plugin=../LLVM_Pass/libPass.so -O2
 ```
 
 ## Graphical Interface:
