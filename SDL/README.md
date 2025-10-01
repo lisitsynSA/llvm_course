@@ -34,10 +34,9 @@ int simRand();
 
 ## Graphical app instrumentation:
 ```
-clang++ ../LLVM_Pass/Pass_cfg.cpp -c -fPIC -I$(llvm-config --includedir) -o Pass.o
-clang++ Pass.o -fPIC -shared -o libPass.so
-clang app.c -c -fpass-plugin=../LLVM_PASS/libPass.so
-clang start.c sim.c app.o ../LLVM_Pass/log.c -lSDL2
+clang++ ../LLVM_Pass/Pass_cfg.cpp -fPIC -shared -I$(llvm-config --includedir) -o libPass.so
+clang app.c -c -fpass-plugin=../LLVM_PASS/libPass.so -O2
+clang start.c sim.c app.o ../LLVM_Pass/log.c -lSDL2 -O2
 ./a.out
 
 ```
