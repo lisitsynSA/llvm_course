@@ -1,6 +1,22 @@
+#include "llvm/IR/Module.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 using namespace llvm;
+
+struct MyModPass : public PassInfoMixin<MyModPass> {
+  PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
+    outs() << "\n[Module Pass] Module: " << M.getName() << '\n';
+    return PreservedAnalyses::all();
+  };
+};
+
+struct MyFuncPass : public PassInfoMixin<MyFuncPass> {
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM) {
+    outs() << "\n[Function Pass] " << F.getName() << '\n';
+    return PreservedAnalyses::all();
+  };
+  static bool isRequired() { return true; }
+};
 
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
@@ -22,6 +38,7 @@ PassPluginLibraryInfo getPassPluginInfo() {
           if (name == "myFuncPass") {
             outs() << "Add pass to FunctionPassManager from "
                       "registerPipelineParsingCallback\n";
+            FPM.addPass(MyFuncPass{});
             return true;
           }
           return false;
@@ -33,6 +50,7 @@ PassPluginLibraryInfo getPassPluginInfo() {
           if (name == "myModPass") {
             outs() << "Add pass to ModulePassManager from "
                       "registerPipelineParsingCallback\n";
+            MPM.addPass(MyModPass{});
             return true;
           }
           return false;
