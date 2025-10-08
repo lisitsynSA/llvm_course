@@ -29,7 +29,8 @@ int main() {
   Value *helloWorld = builder.CreateGlobalStringPtr("hello world!");
 
   // declare i32 @puts(i8*)
-  ArrayRef<Type *> argsRef(builder.getInt8PtrTy());
+  Type *int8PtrType = Type::getInt8Ty(context)->getPointerTo();
+  ArrayRef<Type *> argsRef(int8PtrType);
   FunctionType *putsType =
       FunctionType::get(builder.getInt32Ty(), argsRef, false);
   FunctionCallee putsFunc = module->getOrInsertFunction("puts", putsType);

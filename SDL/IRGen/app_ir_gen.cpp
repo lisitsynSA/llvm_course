@@ -20,9 +20,8 @@ int main() {
   // declare void @simPutPixel(i32, i32, i32)
   // local_unnamed_addr #1
   Type *voidType = Type::getVoidTy(context);
-  ArrayRef<Type *> simPutPixelParamTypes = {Type::getInt32Ty(context),
-                                            Type::getInt32Ty(context),
-                                            Type::getInt32Ty(context)};
+  Type *int32Type = Type::getInt32Ty(context);
+  ArrayRef<Type *> simPutPixelParamTypes = {int32Type, int32Type, int32Type};
   FunctionType *simPutPixelType =
       FunctionType::get(voidType, simPutPixelParamTypes, false);
   FunctionCallee simPutPixelFunc =
@@ -60,14 +59,14 @@ int main() {
   // 1:                                                ; preds = %0, %7
   builder.SetInsertPoint(BB1);
   // %2 = phi i32 [ 0, %0 ], [ %8, %7 ]
-  PHINode *val2 = builder.CreatePHI(builder.getInt32Ty(), 2);
+  PHINode *val2 = builder.CreatePHI(int32Type, 2);
   // br label %4
   builder.CreateBr(BB4);
 
   // 4:                                                ; preds = %1, %10
   builder.SetInsertPoint(BB4);
   // %5 = phi i32 [ 0, %1 ], [ %11, %10 ]
-  PHINode *val5 = builder.CreatePHI(builder.getInt32Ty(), 2);
+  PHINode *val5 = builder.CreatePHI(int32Type, 2);
   // %6 = mul nuw nsw i32 %5, %2
   Value *val6 = builder.CreateMul(val5, val2, "", true, true);
   // br label %13
@@ -96,7 +95,7 @@ int main() {
   // 13:                                               ; preds = %4, %13
   builder.SetInsertPoint(BB13);
   // %14 = phi i32 [ 0, %4 ], [ %17, %13 ]
-  PHINode *val14 = builder.CreatePHI(builder.getInt32Ty(), 2);
+  PHINode *val14 = builder.CreatePHI(int32Type, 2);
   // %15 = mul nuw nsw i32 %6, %14
   Value *val15 = builder.CreateMul(val6, val14, "", true, true);
   // %16 = add nsw i32 %15, -16777216
@@ -126,7 +125,7 @@ int main() {
   // Dump LLVM IR
   module->print(outs(), nullptr);
   outs() << '\n';
-  bool verif = verifyFunction(*appFunc, &outs());
+  bool verif = verifyModule(*module, &outs());
   outs() << "[VERIFICATION] " << (verif ? "FAIL\n\n" : "OK\n\n");
 
   // LLVM IR Interpreter
