@@ -4,7 +4,7 @@
 #include <time.h>
 #include "sim.h"
 
-#define FRAME_TICKS 50
+#define FRAME_TICKS 30
 
 static SDL_Renderer *Renderer = NULL;
 static SDL_Window *Window = NULL;

@@ -1,8 +1,8 @@
 #ifndef SIM_H
 #define SIM_H
 
-#define SIM_X_SIZE 512
-#define SIM_Y_SIZE 256
+#define SIM_X_SIZE 1536//512
+#define SIM_Y_SIZE 768//256
 
 #ifndef __sim__
 void simInit();
