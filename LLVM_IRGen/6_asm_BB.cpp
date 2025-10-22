@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
     if (!name.compare("dump")) {
       input >> arg;
-      outs() << "\tdump x" << arg << '\n';
+      outs() << "\tdump " << arg << '\n';
       Value *reg1 = builder.getInt32(std::stoi(arg.substr(1)));
       ArrayRef<Value *> args = {reg1};
       builder.CreateCall(CalleeINSTR_dump, args);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
     if (!name.compare("read")) {
       input >> arg;
-      outs() << "\tread x" << arg << '\n';
+      outs() << "\tread " << arg << '\n';
       Value *reg1 = builder.getInt32(std::stoi(arg.substr(1)));
       ArrayRef<Value *> args = {reg1};
       builder.CreateCall(CalleeINSTR_read, args);

@@ -12,7 +12,7 @@
 #include <string>
 using namespace llvm;
 
-const int REG_FILE_SIZE = 8;
+constexpr int REG_FILE_SIZE = 8;
 uint32_t REG_FILE[REG_FILE_SIZE] = {};
 
 void dumpRegFile() {
