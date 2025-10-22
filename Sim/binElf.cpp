@@ -90,15 +90,15 @@ bool Binary::readBin(string FileName, string &ErrorMsg) {
       Stream << "Wrong Opcode\n";
       cout << Stream.str();
       return true;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    Stream << #_Name;                                                          \
-    _WriteArgs;                                                                \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    Stream << #Name_;                                                          \
+    WriteArgs_;                                                                \
     Stream << "\n";                                                            \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     Instrs.push_back(I);
     // Add Label

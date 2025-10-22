@@ -15,6 +15,13 @@ clang++ $(llvm-config --cppflags --ldflags --libs) *.cpp ../SDL/sim.c -I ../SDL 
 ./a.out examples/nodelang.o 1-3
 ./a.out examples/app2.o 1-3
 ```
+## Link with SDL Example
+```
+./a.out examples/app.sim 3 -> Copy to app.ll
+clang app.ll ../SDL/sim.c ../SDL/start.c -I ../SDL -lSDL2
+./a.out
+```
+
 ## Endless compilation:
 Choose IR Generation:
 ```

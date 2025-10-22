@@ -59,13 +59,13 @@ void FullIR::buildIR(Binary &Bin) {
     switch (I.Op) {
     default:
       break;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    _IRGenExecute;                                                             \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    IRGenExecute_;                                                             \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
     }
     PC++;
     auto BB = BBMap.find(PC);

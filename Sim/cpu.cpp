@@ -31,28 +31,28 @@ bool CPU::Execute(Binary &Bin, std::string &ErrorMsg) {
   return false;
 }
 
-string CPU::dumpStatus(Binary &Bin) {
+std::string CPU::dumpStatus(Binary &Bin) {
   std::stringstream Stream;
   for (uint32_t i = 0; i < RegSize; i++) {
-    Stream << " x" << i << ":" << (int32_t)RegFile[i] << "(" << hex
-           << RegFile[i] << ")" << dec;
+    Stream << " x" << i << ":" << (int32_t)RegFile[i] << "(" << std::hex
+           << RegFile[i] << ")" << std::dec;
   }
   Stream << " PC:" << PC << '\n';
   Instr I = Bin.Instrs[PC];
   std::map<uint32_t, std::string> &PC2BBName = Bin.PC2BBName;
   switch (I.Op) {
   default:
-    Stream << "\nWrong Opcode: " << I.Op << '\n'
+    Stream << "\nWrong Opcode: " << I.Op << '\n';
     break;
-#define _ISA(_Opcode, _Name, _SkipArgs, _ReadArgs, _WriteArgs, _Execute,       \
-             _IRGenExecute)                                                    \
-  case (_Opcode):                                                              \
-    Stream << "  " << #_Name;                                                  \
-    _WriteArgs;                                                                \
+#define ISA_(Opcode_, Name_, SkipArgs_, ReadArgs_, WriteArgs_, Execute_,       \
+             IRGenExecute_)                                                    \
+  case (Opcode_):                                                              \
+    Stream << "  " << #Name_;                                                  \
+    WriteArgs_;                                                                \
     Stream << '\n';                                                            \
     break;
 #include "include/ISA.h"
-#undef _ISA
+#undef ISA_
   }
   return Stream.str();
 }
