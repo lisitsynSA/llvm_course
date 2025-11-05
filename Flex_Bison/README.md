@@ -1,5 +1,5 @@
 ## Examples of parsers based on Flex and Bison
-Use N.sh script for run examples.
+Use `make N` for run examples.
 
 0. Flex `hello world` example.
 1. Simple Flex arithmetic parsing.

@@ -1,5 +1,6 @@
 %{
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Module.h"
 #include <map>
 
 #define YYSTYPE llvm::Value*
