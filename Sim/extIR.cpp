@@ -116,6 +116,8 @@ void ExtIR::executeIR(CPU &Cpu) {
     return reinterpret_cast<void *>(CPU::do_##Name_);
 #include "include/ISA.h"
 #undef ISA_
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
 

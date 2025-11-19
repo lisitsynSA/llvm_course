@@ -285,6 +285,8 @@ int main(int argc, char *argv[]) {
     if (fnName == "do_FLUSH") {
       return reinterpret_cast<void *>(do_FLUSH);
     }
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
 

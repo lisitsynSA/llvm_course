@@ -156,6 +156,8 @@ int main(int argc, char **argv) {
     if (fnName == "INSTR_addi") {
       return reinterpret_cast<void *>(INSTR_addi);
     }
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
   ee->finalizeObject();

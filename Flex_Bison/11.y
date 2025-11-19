@@ -89,6 +89,8 @@ int main(int argc, char **argv)
         if (fnName == "simPutPixel") {
             return reinterpret_cast<void *>(simPutPixel);
         }
+        outs() << "[ExecutionEngine] Can't find function " << fnName
+            << ". Catch the Segmentation fault:)\n";
         return nullptr;
     });
 

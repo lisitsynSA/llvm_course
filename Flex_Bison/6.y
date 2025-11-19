@@ -65,6 +65,8 @@ int main(int argc, char **argv)
 	ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
     ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
         if (fnName == "readVal") { return reinterpret_cast<void *>(readVal); }
+        outs() << "[ExecutionEngine] Can't find function " << fnName
+            << ". Catch the Segmentation fault:)\n";
         return nullptr;
     });
     ee->finalizeObject();

@@ -359,6 +359,8 @@ void *lazyFunctionCreator(const std::string &fnName) {
   if (fnName == "do_write") {
     return reinterpret_cast<void *>(do_write);
   }
+  outs() << "[ExecutionEngine] Can't find function " << fnName
+          << ". Catch the Segmentation fault:)\n";
   return nullptr;
 }
 

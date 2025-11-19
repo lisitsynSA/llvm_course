@@ -141,6 +141,8 @@ int main() {
     if (fnName == "simFlush") {
       return reinterpret_cast<void *>(simFlush);
     }
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
   ee->finalizeObject();

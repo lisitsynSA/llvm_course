@@ -91,6 +91,8 @@ void FullIR::executeIR(CPU &Cpu) {
     if (fnName == "simPutPixel") {
       return reinterpret_cast<void *>(simPutPixel);
     }
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
   ee->finalizeObject();

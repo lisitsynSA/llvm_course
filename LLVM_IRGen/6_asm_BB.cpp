@@ -292,6 +292,8 @@ int main(int argc, char *argv[]) {
     if (fnName == "INSTR_read") {
       return reinterpret_cast<void *>(INSTR_read);
     }
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
 

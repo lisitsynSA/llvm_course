@@ -66,6 +66,8 @@ int main() {
     if (fnName == "func") {
       return reinterpret_cast<void *>(func);
     }
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
   ee->finalizeObject();

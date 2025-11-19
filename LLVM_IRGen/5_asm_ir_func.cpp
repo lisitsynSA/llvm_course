@@ -142,6 +142,8 @@ int main(int argc, char **argv) {
     if (fnName == "INSTR_sort") {
       return reinterpret_cast<void *>(INSTR_sort);
     }
+    outs() << "[ExecutionEngine] Can't find function " << fnName
+           << ". Catch the Segmentation fault:)\n";
     return nullptr;
   });
   ee->finalizeObject();
