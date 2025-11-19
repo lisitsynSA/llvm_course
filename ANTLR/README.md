@@ -7,6 +7,16 @@ sudo apt install libantlr4-runtime-dev
 ```
 
 ## Examples
+0) Correct Bracket Sequences
+> {{}{{}}}{}
+```
+cd CBS
+antlr4 -Dlanguage=Cpp CBS.g4
+clang++ *.cpp -I /usr/include/antlr4-runtime/ -lantlr4-runtime
+./a.out CBS.txt
+./a.out CBS_WS.txt
+```
+
 1) Simple Expression
 > 1+2*{3-4}-5/-1
 ```
