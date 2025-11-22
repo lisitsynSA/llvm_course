@@ -88,7 +88,7 @@ int main() {
   // %11 = add nuw nsw i32 %5, 1
   Value *val11 = builder.CreateAdd(val5, builder.getInt32(1), "", true, true);
   // %12 = icmp eq i32 %11, 256
-  Value *val12 = builder.CreateICmpEQ(val11, builder.getInt32(256));
+  Value *val12 = builder.CreateICmpEQ(val11, builder.getInt32(SIM_Y_SIZE));
   // br i1 %12, label %7, label %4, !llvm.loop !7
   builder.CreateCondBr(val12, BB7, BB4);
 
@@ -106,7 +106,7 @@ int main() {
   // %17 = add nuw nsw i32 %14, 1
   Value *val17 = builder.CreateAdd(val14, builder.getInt32(1), "", true, true);
   // %18 = icmp eq i32 %17, 512
-  Value *val18 = builder.CreateICmpEQ(val17, builder.getInt32(512));
+  Value *val18 = builder.CreateICmpEQ(val17, builder.getInt32(SIM_X_SIZE));
   // br i1 %18, label %10, label %13, !llvm.loop !8
   builder.CreateCondBr(val18, BB10, BB13);
   // }
