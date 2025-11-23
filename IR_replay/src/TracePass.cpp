@@ -50,8 +50,10 @@ struct TraceInstrumentationPass
 
     VoidTy = Type::getVoidTy(Ctx);
     Int64Ty = Type::getInt64Ty(Ctx);
-    Int64PtrTy = Int64Ty->getPointerTo();
-    Int8PtrTy = Type::getInt8Ty(Ctx)->getPointerTo();
+    // Int64PtrTy = Int64Ty->getPointerTo();
+    Int64PtrTy = PointerType::get(Int64Ty, 0);
+    // Int8PtrTy = Type::getInt8Ty(Ctx)->getPointerTo();
+    Int8PtrTy = PointerType::get(Type::getInt8Ty(Ctx), 0);
 
     // void @trace_called(i64 func_id, i8* func_name, i64* args, i64 num_args)
     std::vector<Type *> CallArgs = {Int64Ty, Int8PtrTy, Int64PtrTy, Int64Ty};
@@ -122,6 +124,87 @@ struct TraceInstrumentationPass
     return ConstantInt::get(Ctx, APInt(64, 0));
   }
 
+  void instrumentCall(IRBuilder<> &Builder, CallInst *Call,
+                      BasicBlock &EntryBB) {
+    Value *Callee = Call->getCalledOperand();
+    Function *CalleeFunc = Call->getCalledFunction();
+
+    // Пропускаем intrinsic'и
+    if (isa<IntrinsicInst>(Call))
+      return;
+
+    // Если вызов через указатель (неизвестная функция) — тоже можно
+    // трассировать
+    if (!CalleeFunc) {
+      // Это вызов через функциональный указатель — сложнее, но можно
+      // трассировать имя через адрес Упрощённо: пока пропускаем или
+      // используем адрес
+      return;
+    }
+
+    // Трассируем только внешние функции (не из этого модуля)
+    if (!CalleeFunc->isDeclaration() || isFuncLogger(CalleeFunc->getName()))
+      return;
+
+    Builder.SetInsertPoint(Call->getNextNode());
+    Value *ExtFuncName = Builder.CreateGlobalString(CalleeFunc->getName());
+    Value *ExtFuncId = Builder.getInt64(getFunctionId(*CalleeFunc));
+
+    // Собираем аргументы как i64
+    std::vector<Value *> ExtArgI64s;
+    for (auto &Arg : Call->args()) {
+      Value *AsI64 = valueToI64(Builder, Arg);
+      ExtArgI64s.push_back(AsI64);
+    }
+
+    // Создаём массив i64
+    ArrayType *ExtArrayTy = ArrayType::get(Int64Ty, ExtArgI64s.size());
+    Value *ExtArray =
+        Builder.CreateAlloca(ExtArrayTy, nullptr, "ext_arg_array_i64");
+    for (size_t i = 0; i < ExtArgI64s.size(); ++i) {
+      Value *GEP =
+          Builder.CreateConstInBoundsGEP2_32(ExtArrayTy, ExtArray, 0, i);
+      Builder.CreateStore(ExtArgI64s[i], GEP);
+    }
+    Value *ExtArrayPtr = Builder.CreateBitCast(ExtArray, Int64PtrTy);
+
+    // Результат вызова
+    Value *ExtRetValue = Call->getType()->isVoidTy()
+                             ? Builder.getInt64(0)
+                             : valueToI64(Builder, Call);
+
+    // Временно сохраняем результат вызова, если он используется
+    // Мы не можем просто заменить CallInst — нужно сохранить значение
+    // Поэтому создаём временный alloca, если нужно
+    AllocaInst *RetAlloca = nullptr;
+    if (!Call->use_empty() && !Call->getType()->isVoidTy()) {
+      RetAlloca = new AllocaInst(Call->getType(), 0, "ret_alloca",
+                                 //&EntryBB.front());
+                                 EntryBB.begin());
+      // Builder.SetInsertPoint(Call);
+      Builder.CreateStore(Call, RetAlloca);
+    }
+
+    // Вставляем вызов трассировки ДО вызова
+    Builder.CreateCall(TraceExternalCallFn,
+                       {ExtFuncId, ExtFuncName, ExtArrayPtr,
+                        Builder.getInt64(ExtArgI64s.size()), ExtRetValue});
+
+    // Если был alloca — загружаем значение обратно
+    /*if (RetAlloca) {
+      Builder.SetInsertPoint(Call->getNextNode());
+      Value *Reloaded =
+          Builder.CreateLoad(RetAlloca->getAllocatedType(), RetAlloca);
+      Call->replaceAllUsesWith(Reloaded);
+    }*/
+
+    // Удаляем оригинальный CallInst и заменяем на биткаст null (если
+    // используется) Это опасно Мы не должны удалять CallInst, если он
+    // используется. Вместо этого — оставляем вызов, но добавляем
+    // трассировку ДО него. Мы не удаляем вызов Только добавляем
+    // логирование. Таким образом, поведение остаётся тем же.
+  }
+
   // Инструментация тела функции: запись вызова и возврата
   void instrumentFunction(Function &F, Module &M) {
     if (F.empty() || F.isDeclaration() || isFuncLogger(F.getName()))
@@ -135,7 +218,8 @@ struct TraceInstrumentationPass
     Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
 
     Value *FuncId = Builder.getInt64(getFunctionId(F));
-    Value *FuncName = Builder.CreateGlobalStringPtr(F.getName());
+    // Value *FuncName = Builder.CreateGlobalStringPtr(F.getName());
+    Value *FuncName = Builder.CreateGlobalString(F.getName());
 
     // Собираем аргументы как i64
     std::vector<Value *> ArgI64s;
@@ -177,90 +261,12 @@ struct TraceInstrumentationPass
     for (auto &BB : F) {
       for (auto &I : BB) {
         if (auto *Call = dyn_cast<CallInst>(&I)) {
-          Value *Callee = Call->getCalledOperand();
-          Function *CalleeFunc = Call->getCalledFunction();
-
-          // Пропускаем intrinsic'и
-          if (isa<IntrinsicInst>(Call))
-            continue;
-
-          // Если вызов через указатель (неизвестная функция) — тоже можно
-          // трассировать
-          if (!CalleeFunc) {
-            // Это вызов через функциональный указатель — сложнее, но можно
-            // трассировать имя через адрес Упрощённо: пока пропускаем или
-            // используем адрес
-            continue;
-          }
-
-          // Трассируем только внешние функции (не из этого модуля)
-          if (!CalleeFunc->isDeclaration() ||
-              isFuncLogger(CalleeFunc->getName()))
-            continue;
-
-          Builder.SetInsertPoint(Call->getNextNode());
-          Value *ExtFuncName =
-              Builder.CreateGlobalStringPtr(CalleeFunc->getName());
-          Value *ExtFuncId = Builder.getInt64(getFunctionId(*CalleeFunc));
-
-          // Собираем аргументы как i64
-          std::vector<Value *> ExtArgI64s;
-          for (auto &Arg : Call->args()) {
-            Value *AsI64 = valueToI64(Builder, Arg);
-            ExtArgI64s.push_back(AsI64);
-          }
-
-          // Создаём массив i64
-          ArrayType *ExtArrayTy = ArrayType::get(Int64Ty, ExtArgI64s.size());
-          Value *ExtArray =
-              Builder.CreateAlloca(ExtArrayTy, nullptr, "ext_arg_array_i64");
-          for (size_t i = 0; i < ExtArgI64s.size(); ++i) {
-            Value *GEP =
-                Builder.CreateConstInBoundsGEP2_32(ExtArrayTy, ExtArray, 0, i);
-            Builder.CreateStore(ExtArgI64s[i], GEP);
-          }
-          Value *ExtArrayPtr = Builder.CreateBitCast(ExtArray, Int64PtrTy);
-
-          // Результат вызова
-          Value *ExtRetValue = Call->getType()->isVoidTy()
-                                   ? ConstantInt::get(Ctx, APInt(64, 0))
-                                   : valueToI64(Builder, Call);
-
-          // Временно сохраняем результат вызова, если он используется
-          // Мы не можем просто заменить CallInst — нужно сохранить значение
-          // Поэтому создаём временный alloca, если нужно
-          AllocaInst *RetAlloca = nullptr;
-          if (!Call->use_empty() && !Call->getType()->isVoidTy()) {
-            RetAlloca = new AllocaInst(Call->getType(), 0, "ret_alloca",
-                                       &EntryBB.front());
-            // Builder.SetInsertPoint(Call);
-            Builder.CreateStore(Call, RetAlloca);
-          }
-
-          // Вставляем вызов трассировки ДО вызова
-          Builder.CreateCall(TraceExternalCallFn,
-                             {ExtFuncId, ExtFuncName, ExtArrayPtr,
-                              Builder.getInt64(ExtArgI64s.size()),
-                              ExtRetValue});
-
-          // Если был alloca — загружаем значение обратно
-          /*if (RetAlloca) {
-            Builder.SetInsertPoint(Call->getNextNode());
-            Value *Reloaded =
-                Builder.CreateLoad(RetAlloca->getAllocatedType(), RetAlloca);
-            Call->replaceAllUsesWith(Reloaded);
-          }*/
-
-          // Удаляем оригинальный CallInst и заменяем на биткаст null (если
-          // используется) ⚠️ Это опасно Мы не должны удалять CallInst, если он
-          // используется. Вместо этого — оставляем вызов, но добавляем
-          // трассировку ДО него. Мы не удаляем вызов Только добавляем
-          // логирование. Таким образом, поведение остаётся тем же.
+          instrumentCall(Builder, Call, EntryBB);
         }
       }
     }
 
-    outs() << "[VERIFICATION] " << F.getName() << "\n";
+    outs() << "[VERIFICATION] " << F.getName() << '\n';
     bool verif = verifyFunction(F, &outs());
     outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
   }

@@ -1,8 +1,5 @@
 # IR scenario reproducer
 
-TODO:
-Cmake
-
 
 ```
 ./trace.sh examples/fact.c

@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
     printf("Usage: 1 argument - factorial len\n");
     return 1;
   }
-  //uint64_t arg = atoi(argv[1]);
-  uint64_t arg = 4;
+  uint64_t arg = atoi(argv[1]);
+  //uint64_t arg = 4;
   //if (errno == 0) {
   if (1) {
     printf("Fact(%lu) = %lu\n", arg, fact(arg));

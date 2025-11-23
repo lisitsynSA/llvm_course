@@ -16,10 +16,10 @@ typedef struct {
 #pragma pack(pop)
 
 enum EventType {
- EVENT_CALL = 1,
- EVENT_RETURN = 2,
- EVENT_EXTERNAL_CALL = 3,
- EVENT_MEMOP = 4
+ EVENT_CALL = 'C',
+ EVENT_RETURN = 'R',
+ EVENT_EXTERNAL_CALL = 'E',
+ EVENT_MEMOP = 'M',
 };
 
 typedef struct {
