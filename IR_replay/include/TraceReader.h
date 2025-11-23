@@ -1,26 +1,11 @@
 #ifndef TRACE_READER_H
 #define TRACE_READER_H
-#include "trace.h"
-#include "llvm/AsmParser/Parser.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/IRReader/IRReader.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Transforms/Utils/Cloning.h"
-#include "llvm/Transforms/Utils/ValueMapper.h"
 
-#include <cstdint>
+#include "trace.h"
 #include <fstream>
-#include <iostream>
 #include <map>
 #include <stack>
 #include <string>
-#include <variant>
 #include <vector>
 
 // Запись о вызове функции

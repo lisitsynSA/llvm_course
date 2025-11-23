@@ -1,4 +1,4 @@
-#include "trace.h"
+#include "../include/trace.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +39,6 @@ void trace_called(uint64_t func_id, const char *func_name, uint64_t *args,
   safe_write(&num_args, sizeof(num_args));
   printf("    num_args %lu\n", num_args);
   safe_write(args, sizeof(uint64_t) * num_args);
-  printf("\n");
 }
 
 void trace_return(uint64_t func_id, const char *func_name,
@@ -59,7 +58,6 @@ void trace_return(uint64_t func_id, const char *func_name,
   printf("    func_name %s\n", func_name);
   safe_write(&return_value, sizeof(return_value));
   printf("    return_value %lu\n", return_value);
-  printf("\n");
 }
 
 void trace_external_call(uint64_t func_id, const char *func_name,
@@ -83,7 +81,6 @@ void trace_external_call(uint64_t func_id, const char *func_name,
   safe_write(args, sizeof(uint64_t) * num_args);
   safe_write(&return_value, sizeof(return_value));
   printf("    return_value %lu\n", return_value);
-  printf("\n");
 }
 
 void trace_memory(uint64_t func_id, const char *func_name, uint64_t memop_id,
@@ -103,5 +100,4 @@ void trace_memory(uint64_t func_id, const char *func_name, uint64_t memop_id,
   MemoryEvent event = {
       .memop_id = memop_id, .address = addr, .size = size, .value = value};
   safe_write(&event, sizeof(event));
-  printf("\n");
 }

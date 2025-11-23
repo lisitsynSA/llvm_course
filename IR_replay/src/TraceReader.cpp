@@ -1,12 +1,12 @@
-#include "TraceReader.h"
+#include "../include/TraceReader.h"
+#include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
-// === Парсер трассы с восстановлением последовательности ===
 
 bool TraceReader::parse(const std::string &tracePath) {
   file.open(tracePath, std::ios::binary);
   if (!file.is_open()) {
-    errs() << "Cannot open trace file: " << tracePath << "\n";
+    errs() << "Cannot open trace file: " << tracePath << '\n';
     return false;
   }
 
@@ -24,13 +24,13 @@ bool TraceReader::parse(const std::string &tracePath) {
       CallEvent call;
       call.func_id = hdr.func_id;
       call.func_name = name;
-      outs() << "        func_name " << name << "\n";
+      outs() << "        func_name " << name << '\n';
       call.is_external = false;
 
       uint64_t num_args;
       if (!file.read(reinterpret_cast<char *>(&num_args), sizeof(num_args)))
         break;
-      outs() << "        num_args " << num_args << "\n";
+      outs() << "        num_args " << num_args << '\n';
       call.args.resize(num_args);
       if (num_args > 0) {
         if (!file.read(reinterpret_cast<char *>(call.args.data()),
@@ -41,12 +41,12 @@ bool TraceReader::parse(const std::string &tracePath) {
       callSequence.push_back(call);
     } else if (hdr.type == EVENT_RETURN) {
       outs() << "    EVENT_RETURN\n";
-      outs() << "        func_name " << name << "\n";
+      outs() << "        func_name " << name << '\n';
       uint64_t ret_value;
       if (!file.read(reinterpret_cast<char *>(&ret_value), sizeof(ret_value)))
         break;
 
-      outs() << "        ret_value " << ret_value << "\n";
+      outs() << "        ret_value " << ret_value << '\n';
       // Можно закрыть CALL из стека, если нужно
       if (!callStack.empty()) {
         callStack.pop();
@@ -57,13 +57,13 @@ bool TraceReader::parse(const std::string &tracePath) {
       call.func_id = hdr.func_id;
       call.func_name = name;
       call.is_external = true;
-      outs() << "        func_name " << name << "\n";
+      outs() << "        func_name " << name << '\n';
 
       uint64_t num_args;
       if (!file.read(reinterpret_cast<char *>(&num_args), sizeof(num_args)))
         break;
       call.args.resize(num_args);
-      outs() << "        num_args " << num_args << "\n";
+      outs() << "        num_args " << num_args << '\n';
       if (num_args > 0) {
         if (!file.read(reinterpret_cast<char *>(call.args.data()),
                        sizeof(uint64_t) * num_args))
@@ -73,14 +73,14 @@ bool TraceReader::parse(const std::string &tracePath) {
       if (!file.read(reinterpret_cast<char *>(&call.return_value),
                      sizeof(call.return_value)))
         break;
-      outs() << "        return_value " << call.return_value << "\n";
+      outs() << "        return_value " << call.return_value << '\n';
 
       callSequence.push_back(call);
     } else {
-      errs() << "Unknown event type: " << (int)hdr.type << "\n";
+      errs() << "Unknown event type: " << (int)hdr.type << '\n';
       return false;
     }
-    outs() << "\n";
+    outs() << '\n';
   }
 
   if (file.bad()) {
@@ -99,6 +99,6 @@ void TraceReader::dumpSequence() const {
            << " args";
     if (ev.is_external)
       outs() << " [external]";
-    outs() << "\n";
+    outs() << '\n';
   }
 }
