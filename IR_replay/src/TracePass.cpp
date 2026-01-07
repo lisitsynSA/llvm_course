@@ -14,6 +14,7 @@
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
+#include <fstream>
 
 using namespace llvm;
 
@@ -38,6 +39,7 @@ struct TraceInstrumentationPass
   FunctionCallee TraceReturnFn;
   FunctionCallee TraceExternalCallFn;
   FunctionCallee TraceMemFn;
+  std::unordered_map<std::string, uint64_t> FuncIdMap;
 
   bool isFuncLogger(StringRef name) {
     return name == "trace_called" || name == "trace_external_call" ||
@@ -56,34 +58,38 @@ struct TraceInstrumentationPass
     Int8PtrTy = PointerType::get(Type::getInt8Ty(Ctx), 0);
 
     // void @trace_called(i64 func_id, i8* func_name, i64* args, i64 num_args)
-    std::vector<Type *> CallArgs = {Int64Ty, Int8PtrTy, Int64PtrTy, Int64Ty};
+    std::vector<Type *> CallArgs = {Int64Ty, Int64PtrTy, Int64Ty};
     TraceCallFnTy = FunctionType::get(VoidTy, CallArgs, false);
     TraceCallFn = M.getOrInsertFunction("trace_called", TraceCallFnTy);
 
     // void @trace_return(i64 func_id, i8* func_name, i64 return_value)
-    std::vector<Type *> ReturnArgs = {Int64Ty, Int8PtrTy, Int64Ty};
+    std::vector<Type *> ReturnArgs = {Int64Ty, Int64Ty};
     TraceReturnFnTy = FunctionType::get(VoidTy, ReturnArgs, false);
     TraceReturnFn = M.getOrInsertFunction("trace_return", TraceReturnFnTy);
 
     // void @trace_external_call(i64 func_id, i8* func_name, i64* args, i64
     // num_args, i64 return_value)
-    std::vector<Type *> ExtCallArgs = {Int64Ty, Int8PtrTy, Int64PtrTy, Int64Ty,
-                                       Int64Ty};
+    std::vector<Type *> ExtCallArgs = {Int64Ty, Int64PtrTy, Int64Ty, Int64Ty};
     TraceExternalCallFnTy = FunctionType::get(VoidTy, ExtCallArgs, false);
     TraceExternalCallFn =
         M.getOrInsertFunction("trace_external_call", TraceExternalCallFnTy);
 
     // void @trace_memory(i64 func_id, ptr func_name, i64 memop_id, i64 addr,
     // i64 size, i64 value)
-    std::vector<Type *> MemArgs = {Int64Ty, Int8PtrTy, Int64Ty,
-                                   Int64Ty, Int64Ty,   Int64Ty};
+    std::vector<Type *> MemArgs = {Int64Ty, Int64Ty, Int64Ty, Int64Ty, Int64Ty};
     TraceMemFnTy = FunctionType::get(VoidTy, MemArgs, false);
     TraceMemFn = M.getOrInsertFunction("trace_memory", TraceMemFnTy);
   }
 
   // Генерация уникального ID для функции
-  static uint64_t getFunctionId(const Function &F) {
-    return static_cast<uint64_t>(std::hash<std::string>{}(F.getName().str()));
+  uint64_t getFunctionId(const Function &F) {
+    const auto &name = F.getName().str();
+    auto search = FuncIdMap.find(name);
+    if (search == FuncIdMap.end()) {
+      FuncIdMap[name] = static_cast<uint64_t>(std::hash<std::string>{}(name));
+      return FuncIdMap[name];
+    }
+    return search->second;
   }
 
   Value *valueToI64(IRBuilder<> &Builder, Value *V) {
@@ -147,7 +153,6 @@ struct TraceInstrumentationPass
       return;
 
     Builder.SetInsertPoint(Call->getNextNode());
-    Value *ExtFuncName = Builder.CreateGlobalString(CalleeFunc->getName());
     Value *ExtFuncId = Builder.getInt64(getFunctionId(*CalleeFunc));
 
     // Собираем аргументы как i64
@@ -187,7 +192,7 @@ struct TraceInstrumentationPass
 
     // Вставляем вызов трассировки ДО вызова
     Builder.CreateCall(TraceExternalCallFn,
-                       {ExtFuncId, ExtFuncName, ExtArrayPtr,
+                       {ExtFuncId, ExtArrayPtr,
                         Builder.getInt64(ExtArgI64s.size()), ExtRetValue});
 
     // Если был alloca — загружаем значение обратно
@@ -218,8 +223,6 @@ struct TraceInstrumentationPass
     Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
 
     Value *FuncId = Builder.getInt64(getFunctionId(F));
-    // Value *FuncName = Builder.CreateGlobalStringPtr(F.getName());
-    Value *FuncName = Builder.CreateGlobalString(F.getName());
 
     // Собираем аргументы как i64
     std::vector<Value *> ArgI64s;
@@ -243,8 +246,8 @@ struct TraceInstrumentationPass
     Value *ArgArrayPtr = Builder.CreateBitCast(ArgArray, Int64PtrTy);
 
     // Вызов: trace_called(func_id, func_name, arg_array, num_args)
-    Builder.CreateCall(TraceCallFn, {FuncId, FuncName, ArgArrayPtr,
-                                     Builder.getInt64(ArgI64s.size())});
+    Builder.CreateCall(TraceCallFn,
+                       {FuncId, ArgArrayPtr, Builder.getInt64(ArgI64s.size())});
     // Для возврата: обернуть все ret инструкции
     for (auto &BB : F) {
       if (auto *RetInst = dyn_cast<ReturnInst>(BB.getTerminator())) {
@@ -253,7 +256,7 @@ struct TraceInstrumentationPass
         Value *RetI64 = RetValue ? valueToI64(Builder, RetValue)
                                  : ConstantInt::get(Ctx, APInt(64, 0));
 
-        Builder.CreateCall(TraceReturnFn, {FuncId, FuncName, RetI64});
+        Builder.CreateCall(TraceReturnFn, {FuncId, RetI64});
       }
     }
 
@@ -271,12 +274,22 @@ struct TraceInstrumentationPass
     outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
   }
 
+  void dumpFuncIdMap() {
+    std::ofstream funcTrace("app.func.trace");
+    for (auto &[name, id] : FuncIdMap) {
+      funcTrace << name << " " << id << "\n";
+    }
+    funcTrace.close();
+  }
+
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM) {
     initTracingFunctions(M);
 
     for (Function &F : M) {
       instrumentFunction(F, M);
     }
+
+    dumpFuncIdMap();
 
     // Мы изменяем IR, но не ломаем анализ — пересчитаем всё
     return PreservedAnalyses::none();

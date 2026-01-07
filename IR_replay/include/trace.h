@@ -9,8 +9,7 @@
 typedef struct {
  uint8_t  type;        // 1=call, 2=return, 3=external_call
  uint64_t func_id;
- uint64_t timestamp;   // можно игнорировать
- uint64_t name_len;
+ uint64_t timestamp;
 } TraceHeader;
 
 #pragma pack(pop)

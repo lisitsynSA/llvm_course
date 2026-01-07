@@ -3,7 +3,8 @@
 
 ```
 ./trace.sh examples/fact.c
-./a.out 4
+./TraceDump ./app.func.trace ./app.trace
+
 ./trace.sh ../SDL/app.c ../SDL/start.c ../SDL/sim.c -lSDL2
-./a.out
+./TraceDump ./app.func.trace ./app.trace
 ```

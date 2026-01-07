@@ -21,7 +21,7 @@ clang++ -O0 $1 -emit-llvm -S -o $NAME.ll || exit 1
 clang++ -O0 -fpass-plugin=./libTracePass.so $1 -emit-llvm -S -o $NAME.instr.ll || exit 1
 
 # 2. Build project with instrumented module
-clang++ -O0 tracer.o $NAME.instr.ll ${@:2} -I./include -o app.instr || exit 1
+clang++ -O0 tracer.o $NAME.instr.ll ${@:2} -o app.instr || exit 1
 
 # 3. Run instruemnted project - generate app.trace
 ./app.instr 4
@@ -29,7 +29,7 @@ clang++ -O0 tracer.o $NAME.instr.ll ${@:2} -I./include -o app.instr || exit 1
 exit
 
 # 4. Generate IR reproducer
-./IRGen $NAME.ll app.trace replay.ll
+./IRGen $NAME.ll app.func.trace app.trace replay.ll
 
 # 5. Compile IR reproducer
 clang++ replay.ll -o app.replay

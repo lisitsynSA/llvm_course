@@ -3,8 +3,29 @@
 
 using namespace std;
 
-bool TraceReader::parse(const string &tracePath) {
-  file.open(tracePath, ios::binary);
+bool TraceReader::loadFuncMap(const std::string &traceFuncPath) {
+  std::ifstream file(traceFuncPath);
+  if (!file.is_open()) {
+    cerr << "Cannot open trace file: " << traceFuncPath << '\n';
+    return false;
+  }
+  std::string name;
+  uint64_t id = 0;
+  while(!file.eof()) {
+    file >> name >> id;
+    funcIdToName[id] = name;
+  }
+  if (file.bad()) {
+    cerr << "Error reading trace file\n";
+    return false;
+  }
+
+  file.close();
+  return true;
+}
+
+bool TraceReader::parse(const std::string &tracePath) {
+  std::ifstream file(tracePath, ios::binary);
   if (!file.is_open()) {
     cerr << "Cannot open trace file: " << tracePath << '\n';
     return false;
@@ -12,18 +33,12 @@ bool TraceReader::parse(const string &tracePath) {
 
   TraceHeader hdr;
   while (file.read(reinterpret_cast<char *>(&hdr), sizeof(hdr))) {
-    vector<char> nameBuf(hdr.name_len + 1);
-    if (!file.read(nameBuf.data(), hdr.name_len))
-      break;
-    nameBuf[hdr.name_len] = '\0';
-    string name(nameBuf.data());
-
+    cout << hdr.timestamp << " ";
     if (hdr.type == EVENT_CALL) {
       cout << "[CALL] ";
       CallEvent call;
       call.func_id = hdr.func_id;
-      call.func_name = name;
-      cout << name;
+      cout << funcIdToName[hdr.func_id];
       call.is_external = false;
 
       uint64_t num_args;
@@ -43,7 +58,7 @@ bool TraceReader::parse(const string &tracePath) {
 
       callSequence.push_back(call);
     } else if (hdr.type == EVENT_RETURN) {
-      cout << "[RET] " << name;
+      cout << "[RET] " << funcIdToName[hdr.func_id];
       uint64_t ret_value;
       if (!file.read(reinterpret_cast<char *>(&ret_value), sizeof(ret_value)))
         break;
@@ -57,9 +72,8 @@ bool TraceReader::parse(const string &tracePath) {
       cout << "[EXTCALL] ";
       CallEvent call;
       call.func_id = hdr.func_id;
-      call.func_name = name;
       call.is_external = true;
-      cout << name;
+      cout << funcIdToName[hdr.func_id];
 
       uint64_t num_args;
       if (!file.read(reinterpret_cast<char *>(&num_args), sizeof(num_args)))
@@ -98,10 +112,10 @@ bool TraceReader::parse(const string &tracePath) {
   return true;
 }
 
-void TraceReader::dumpSequence() const {
+void TraceReader::dumpSequence() {
   cout << "; Call sequence:\n";
-  for (const auto &ev : callSequence) {
-    cout << "; call " << ev.func_name << " with " << ev.args.size() << " args";
+  for (auto &ev : callSequence) {
+    cout << "; call " << funcIdToName[ev.func_id] << " with " << ev.args.size() << " args";
     if (ev.is_external)
       cout << " [external]";
     cout << '\n';

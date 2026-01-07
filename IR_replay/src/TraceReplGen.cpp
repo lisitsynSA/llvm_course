@@ -18,14 +18,16 @@ bool TraceReplayGenerator::loadOriginalModule(const std::string &llPath) {
   return true;
 }
 
-void TraceReplayGenerator::populateMocks(const std::vector<CallEvent> &calls) {
+void TraceReplayGenerator::populateMocks(
+    const std::vector<CallEvent> &calls,
+    std::unordered_map<uint64_t, std::string> &funcIdToName) {
   CallSequence = &calls;
 
   for (const auto &ev : calls) {
-    if (ev.is_external || ev.func_name == "main") {
-      outs() << "  populateMocks for " << ev.func_name << '\n';
-      MockReturns[ev.func_name].push_back(ev.return_value);
-      MockArgs[ev.func_name].push_back(ev.args);
+    if (ev.is_external || funcIdToName[ev.func_id] == "main") {
+      outs() << "  populateMocks for " << funcIdToName[ev.func_id] << '\n';
+      MockReturns[funcIdToName[ev.func_id]].push_back(ev.return_value);
+      MockArgs[funcIdToName[ev.func_id]].push_back(ev.args);
     }
   }
 }

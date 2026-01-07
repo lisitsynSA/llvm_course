@@ -22,60 +22,38 @@ void safe_write(const void *data, size_t size) {
   }
 }
 
-void trace_called(uint64_t func_id, const char *func_name, uint64_t *args,
-                  uint64_t num_args) {
+void trace_called(uint64_t func_id, uint64_t *args, uint64_t num_args) {
   printf("[LOG] trace_called\n");
   uint64_t ts = get_timestamp();
-  uint64_t name_len = strlen(func_name);
 
-  TraceHeader hdr = {.type = EVENT_CALL,
-                     .func_id = func_id,
-                     .timestamp = ts,
-                     .name_len = name_len};
+  TraceHeader hdr = {.type = EVENT_CALL, .func_id = func_id, .timestamp = ts};
 
   safe_write(&hdr, sizeof(hdr));
-  safe_write(func_name, name_len);
-  printf("    func_name %s\n", func_name);
   safe_write(&num_args, sizeof(num_args));
   printf("    num_args %lu\n", num_args);
   safe_write(args, sizeof(uint64_t) * num_args);
 }
 
-void trace_return(uint64_t func_id, const char *func_name,
-                  uint64_t return_value) {
+void trace_return(uint64_t func_id, uint64_t return_value) {
   printf("[LOG] trace_return\n");
-
   uint64_t ts = get_timestamp();
-  uint64_t name_len = strlen(func_name);
 
-  TraceHeader hdr = {.type = EVENT_RETURN,
-                     .func_id = func_id,
-                     .timestamp = ts,
-                     .name_len = name_len};
+  TraceHeader hdr = {.type = EVENT_RETURN, .func_id = func_id, .timestamp = ts};
 
   safe_write(&hdr, sizeof(hdr));
-  safe_write(func_name, name_len);
-  printf("    func_name %s\n", func_name);
   safe_write(&return_value, sizeof(return_value));
   printf("    return_value %lu\n", return_value);
 }
 
-void trace_external_call(uint64_t func_id, const char *func_name,
-                         uint64_t *args, uint64_t num_args,
+void trace_external_call(uint64_t func_id, uint64_t *args, uint64_t num_args,
                          uint64_t return_value) {
   printf("[LOG] trace_external_call\n");
-
   uint64_t ts = get_timestamp();
-  uint64_t name_len = strlen(func_name);
 
-  TraceHeader hdr = {.type = EVENT_EXTERNAL_CALL,
-                     .func_id = func_id,
-                     .timestamp = ts,
-                     .name_len = name_len};
+  TraceHeader hdr = {
+      .type = EVENT_EXTERNAL_CALL, .func_id = func_id, .timestamp = ts};
 
   safe_write(&hdr, sizeof(hdr));
-  safe_write(func_name, name_len);
-  printf("    func_name %s\n", func_name);
   safe_write(&num_args, sizeof(num_args));
   printf("    num_args %lu\n", num_args);
   safe_write(args, sizeof(uint64_t) * num_args);
@@ -83,20 +61,13 @@ void trace_external_call(uint64_t func_id, const char *func_name,
   printf("    return_value %lu\n", return_value);
 }
 
-void trace_memory(uint64_t func_id, const char *func_name, uint64_t memop_id,
-                  uint64_t addr, uint64_t size, uint64_t value) {
+void trace_memory(uint64_t func_id, uint64_t memop_id, uint64_t addr,
+                  uint64_t size, uint64_t value) {
   printf("[LOG] trace_memory\n");
-
   uint64_t ts = get_timestamp();
-  uint64_t name_len = strlen(func_name);
 
-  TraceHeader hdr = {.type = EVENT_MEMOP,
-                     .func_id = func_id,
-                     .timestamp = ts,
-                     .name_len = name_len};
+  TraceHeader hdr = {.type = EVENT_MEMOP, .func_id = func_id, .timestamp = ts};
   safe_write(&hdr, sizeof(hdr));
-  safe_write(func_name, name_len);
-  printf("    func_name %s\n", func_name);
   MemoryEvent event = {
       .memop_id = memop_id, .address = addr, .size = size, .value = value};
   safe_write(&event, sizeof(event));

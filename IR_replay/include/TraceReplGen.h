@@ -1,7 +1,7 @@
 #ifndef TRACE_REPLGEN_H
 #define TRACE_REPLGEN_H
-#include "trace.h"
 #include "TraceReader.h"
+#include "trace.h"
 #include "llvm/AsmParser/Parser.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
@@ -40,11 +40,14 @@ public:
 
   bool loadOriginalModule(const std::string &llPath);
 
-  void populateMocks(const std::vector<CallEvent> &calls);
+  void populateMocks(const std::vector<CallEvent> &calls,
+                     std::unordered_map<uint64_t, std::string> &funcIdToName);
 
-  llvm::Function *createMockFunction(const std::string &Name, llvm::FunctionType *FT);
+  llvm::Function *createMockFunction(const std::string &Name,
+                                     llvm::FunctionType *FT);
 
-  llvm::Value *createValueFromBits(llvm::IRBuilder<> &Builder, llvm::Type *Ty, uint64_t bits);
+  llvm::Value *createValueFromBits(llvm::IRBuilder<> &Builder, llvm::Type *Ty,
+                                   uint64_t bits);
 
   bool generate();
 
