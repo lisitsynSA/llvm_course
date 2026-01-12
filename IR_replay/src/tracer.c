@@ -23,31 +23,31 @@ void safe_write(const void *data, size_t size) {
 }
 
 void trace_called(uint64_t func_id, uint64_t *args, uint64_t num_args) {
-  printf("[LOG] trace_called\n");
+  printf("[CALL]");
   uint64_t ts = get_timestamp();
 
   TraceHeader hdr = {.type = EVENT_CALL, .func_id = func_id, .timestamp = ts};
 
   safe_write(&hdr, sizeof(hdr));
   safe_write(&num_args, sizeof(num_args));
-  printf("    num_args %lu\n", num_args);
+  printf(" num_args %lu\n", num_args);
   safe_write(args, sizeof(uint64_t) * num_args);
 }
 
 void trace_return(uint64_t func_id, uint64_t return_value) {
-  printf("[LOG] trace_return\n");
+  printf("[RET]");
   uint64_t ts = get_timestamp();
 
   TraceHeader hdr = {.type = EVENT_RETURN, .func_id = func_id, .timestamp = ts};
 
   safe_write(&hdr, sizeof(hdr));
   safe_write(&return_value, sizeof(return_value));
-  printf("    return_value %lu\n", return_value);
+  printf(" return_value %lu\n", return_value);
 }
 
 void trace_external_call(uint64_t func_id, uint64_t *args, uint64_t num_args,
                          uint64_t return_value) {
-  printf("[LOG] trace_external_call\n");
+  printf("[EXTCALL]");
   uint64_t ts = get_timestamp();
 
   TraceHeader hdr = {
@@ -55,20 +55,24 @@ void trace_external_call(uint64_t func_id, uint64_t *args, uint64_t num_args,
 
   safe_write(&hdr, sizeof(hdr));
   safe_write(&num_args, sizeof(num_args));
-  printf("    num_args %lu\n", num_args);
+  printf(" num_args %lu", num_args);
   safe_write(args, sizeof(uint64_t) * num_args);
   safe_write(&return_value, sizeof(return_value));
-  printf("    return_value %lu\n", return_value);
+  printf(" return_value %lu\n", return_value);
 }
 
 void trace_memory(uint64_t func_id, uint64_t memop_id, uint64_t addr,
                   uint64_t size, uint64_t value) {
-  printf("[LOG] trace_memory\n");
+  printf("[MEMOP]");
   uint64_t ts = get_timestamp();
 
   TraceHeader hdr = {.type = EVENT_MEMOP, .func_id = func_id, .timestamp = ts};
   safe_write(&hdr, sizeof(hdr));
   MemoryEvent event = {
       .memop_id = memop_id, .address = addr, .size = size, .value = value};
+  printf(" memop_id %lu", memop_id);
+  printf(" addr %lu", addr);
+  printf(" size %lu", size);
+  printf(" value %lu\n", value);
   safe_write(&event, sizeof(event));
 }

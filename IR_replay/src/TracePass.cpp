@@ -57,24 +57,24 @@ struct TraceInstrumentationPass
     // Int8PtrTy = Type::getInt8Ty(Ctx)->getPointerTo();
     Int8PtrTy = PointerType::get(Type::getInt8Ty(Ctx), 0);
 
-    // void @trace_called(i64 func_id, i8* func_name, i64* args, i64 num_args)
+    // void @trace_called(i64 func_id, i64* args, i64 num_args)
     std::vector<Type *> CallArgs = {Int64Ty, Int64PtrTy, Int64Ty};
     TraceCallFnTy = FunctionType::get(VoidTy, CallArgs, false);
     TraceCallFn = M.getOrInsertFunction("trace_called", TraceCallFnTy);
 
-    // void @trace_return(i64 func_id, i8* func_name, i64 return_value)
+    // void @trace_return(i64 func_id, i64 return_value)
     std::vector<Type *> ReturnArgs = {Int64Ty, Int64Ty};
     TraceReturnFnTy = FunctionType::get(VoidTy, ReturnArgs, false);
     TraceReturnFn = M.getOrInsertFunction("trace_return", TraceReturnFnTy);
 
-    // void @trace_external_call(i64 func_id, i8* func_name, i64* args, i64
+    // void @trace_external_call(i64 func_id, i64* args, i64
     // num_args, i64 return_value)
     std::vector<Type *> ExtCallArgs = {Int64Ty, Int64PtrTy, Int64Ty, Int64Ty};
     TraceExternalCallFnTy = FunctionType::get(VoidTy, ExtCallArgs, false);
     TraceExternalCallFn =
         M.getOrInsertFunction("trace_external_call", TraceExternalCallFnTy);
 
-    // void @trace_memory(i64 func_id, ptr func_name, i64 memop_id, i64 addr,
+    // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
     // i64 size, i64 value)
     std::vector<Type *> MemArgs = {Int64Ty, Int64Ty, Int64Ty, Int64Ty, Int64Ty};
     TraceMemFnTy = FunctionType::get(VoidTy, MemArgs, false);
@@ -210,6 +210,24 @@ struct TraceInstrumentationPass
     // логирование. Таким образом, поведение остаётся тем же.
   }
 
+  void addMemoryTrace(IRBuilder<> &Builder, Value *V, Instruction *I) {
+    LLVMContext &Ctx = Builder.getContext();
+    Value *ExtFuncId = Builder.getInt64(getFunctionId(*I->getParent()->getParent()));
+    Builder.SetInsertPoint(I);
+
+    // Получаем адрес и размер
+    Value *Addr = valueToI64(Builder, V);
+    Value *Size = Builder.getInt64(V->getType()->getScalarSizeInBits());
+    Value *AsI64 = valueToI64(Builder, V);
+    static int id = 0;
+    Value *MemopId = Builder.getInt64(id++);
+
+    // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
+    // i64 size, i64 value)
+    Builder.CreateCall(
+        TraceMemFn, {ExtFuncId, MemopId, Addr, Size, AsI64});
+  }
+
   // Инструментация тела функции: запись вызова и возврата
   void instrumentFunction(Function &F, Module &M) {
     if (F.empty() || F.isDeclaration() || isFuncLogger(F.getName()))
@@ -265,6 +283,19 @@ struct TraceInstrumentationPass
       for (auto &I : BB) {
         if (auto *Call = dyn_cast<CallInst>(&I)) {
           instrumentCall(Builder, Call, EntryBB);
+          for (Value *Arg : Call->args()) {
+            if (auto *Ptr = dyn_cast<PointerType>(Arg->getType())) {
+              addMemoryTrace(Builder, Arg, Call);
+            }
+          }
+        }
+        // Обработка load инструкций
+        if (auto *Load = dyn_cast<LoadInst>(&I)) {
+          addMemoryTrace(Builder, Load->getOperand(0), Load);
+        }
+        // Обработка store инструкций
+        if (auto *Store = dyn_cast<StoreInst>(&I)) {
+          addMemoryTrace(Builder, Store->getOperand(1), Store);
         }
       }
     }
@@ -295,62 +326,6 @@ struct TraceInstrumentationPass
     return PreservedAnalyses::none();
   }
 };
-/*
-void instrumentMemoryAccesses(Function &F) {
-    for (auto &BB : F) {
-        for (auto &I : BB) {
-            // Обработка load инструкций
-            if (auto *Load = dyn_cast<LoadInst>(&I)) {
-                addMemoryTrace(Load, MemoryEvent::LOAD);
-            }
-
-            // Обработка store инструкций
-            if (auto *Store = dyn_cast<StoreInst>(&I)) {
-                addMemoryTrace(Store, MemoryEvent::STORE);
-            }
-
-            // Обработка аргументов функций
-            if (auto *Call = dyn_cast<CallInst>(&I)) {
-                for (Value *Arg : Call->args()) {
-                    if (auto *Ptr = dyn_cast<PointerType>(Arg->getType())) {
-                        addMemoryTrace(Arg, MemoryEvent::ARGUMENT);
-                    }
-                }
-            }
-        }
-    }
-}
-
-void addMemoryTrace(Value *V, MemoryEventType Type) {
-    // Создаем событие трассировки
-    Function *traceFunc = M->getOrInsertFunction(
-        "trace_memory",
-        Type::getVoidTy(Ctx),
-        Type::getInt64Ty(Ctx), // адрес
-        Type::getInt64Ty(Ctx), // размер
-        Type::getInt32Ty(Ctx)  // тип события
-    ).cast<Function*>();
-
-    // Получаем адрес и размер
-    Value *Addr = getAddress(V);
-    Value *Size = getSize(V);
-
-    IRBuilder<> Builder(V);
-    Builder.CreateCall(
-        traceFunc,
-        {Addr, Size, ConstantInt::get(Type::getInt32Ty(Ctx), Type)}
-    );
-}
-
-Value *getAddress(Value *V) {
-    // Реализация получения адреса
-    // ...
-}
-
-Value *getSize(Value *V) {
-    // Реализация получения размера
-    // ...
-}*/
 
 } // namespace
 

@@ -32,6 +32,7 @@ bool TraceReader::parse(const std::string &tracePath) {
   }
 
   TraceHeader hdr;
+  MemoryEvent memEvent;
   while (file.read(reinterpret_cast<char *>(&hdr), sizeof(hdr))) {
     cout << hdr.timestamp << " ";
     if (hdr.type == EVENT_CALL) {
@@ -96,6 +97,11 @@ bool TraceReader::parse(const std::string &tracePath) {
       cout << " (ret " << call.return_value << ')';
 
       callSequence.push_back(call);
+    } else if (hdr.type == EVENT_MEMOP) {
+      cout << "[MEMOP] ";
+      if (!file.read(reinterpret_cast<char *>(&memEvent), sizeof(memEvent)))
+        break;
+      cout << memEvent.memop_id << " " << memEvent.size << " " << memEvent.address;
     } else {
       cerr << "Unknown event type: " << (int)hdr.type << '\n';
       return false;
