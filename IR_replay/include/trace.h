@@ -7,25 +7,32 @@
 
 // Единый заголовок события
 typedef struct {
- uint8_t  type;        // 1=call, 2=return, 3=external_call
- uint64_t func_id;
- uint64_t timestamp;
+  uint8_t type;
+  uint64_t func_id;
+  uint64_t timestamp;
 } TraceHeader;
 
 #pragma pack(pop)
 
 enum EventType {
- EVENT_CALL = 'C',
- EVENT_RETURN = 'R',
- EVENT_EXTERNAL_CALL = 'E',
- EVENT_MEMOP = 'M',
+  EVENT_CALL = 'C',
+  EVENT_RETURN = 'R',
+  EVENT_EXTERNAL_CALL = 'E',
+  EVENT_MEMOP = 'M',
 };
 
 typedef struct {
-    uint64_t address;
-    uint64_t size;
-    uint64_t memop_id;
-    uint64_t value;
+  uint8_t type;
+  uint64_t memop_id;
+  uint64_t address;
+  uint64_t size;
+  uint64_t value;
 } MemoryEvent;
+
+enum MemType {
+  MEM_UPD = 'U',
+  MEM_LOAD = 'L',
+  MEM_STORE = 'S',
+};
 
 #endif

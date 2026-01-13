@@ -2,6 +2,7 @@
 // LLVM Pass для инструментации модуля с целью сбора runtime IR трассы
 
 // #include "llvm/IR/CallSite.h"
+#include "../include/trace.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
@@ -26,6 +27,7 @@ struct TraceInstrumentationPass
     : public PassInfoMixin<TraceInstrumentationPass> {
   // Указатели на часто используемые типы
   Type *VoidTy;
+  IntegerType *Int8Ty;
   IntegerType *Int64Ty;
   PointerType *Int64PtrTy;
   PointerType *Int8PtrTy;
@@ -51,11 +53,10 @@ struct TraceInstrumentationPass
     LLVMContext &Ctx = M.getContext();
 
     VoidTy = Type::getVoidTy(Ctx);
+    Int8Ty = Type::getInt8Ty(Ctx);
+    Int8PtrTy = PointerType::get(Int8Ty, 0);
     Int64Ty = Type::getInt64Ty(Ctx);
-    // Int64PtrTy = Int64Ty->getPointerTo();
     Int64PtrTy = PointerType::get(Int64Ty, 0);
-    // Int8PtrTy = Type::getInt8Ty(Ctx)->getPointerTo();
-    Int8PtrTy = PointerType::get(Type::getInt8Ty(Ctx), 0);
 
     // void @trace_called(i64 func_id, i64* args, i64 num_args)
     std::vector<Type *> CallArgs = {Int64Ty, Int64PtrTy, Int64Ty};
@@ -75,8 +76,9 @@ struct TraceInstrumentationPass
         M.getOrInsertFunction("trace_external_call", TraceExternalCallFnTy);
 
     // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
-    // i64 size, i64 value)
-    std::vector<Type *> MemArgs = {Int64Ty, Int64Ty, Int64Ty, Int64Ty, Int64Ty};
+    // i64 size, i64 value, i8 mem_type)
+    std::vector<Type *> MemArgs = {Int64Ty, Int64Ty, Int64Ty,
+                                   Int64Ty, Int64Ty, Int8Ty};
     TraceMemFnTy = FunctionType::get(VoidTy, MemArgs, false);
     TraceMemFn = M.getOrInsertFunction("trace_memory", TraceMemFnTy);
   }
@@ -130,8 +132,7 @@ struct TraceInstrumentationPass
     return ConstantInt::get(Ctx, APInt(64, 0));
   }
 
-  void instrumentCall(IRBuilder<> &Builder, CallInst *Call,
-                      BasicBlock &EntryBB) {
+  void instrumentCall(IRBuilder<> &Builder, CallInst *Call) {
     Value *Callee = Call->getCalledOperand();
     Function *CalleeFunc = Call->getCalledFunction();
 
@@ -178,69 +179,37 @@ struct TraceInstrumentationPass
                              ? Builder.getInt64(0)
                              : valueToI64(Builder, Call);
 
-    // Временно сохраняем результат вызова, если он используется
-    // Мы не можем просто заменить CallInst — нужно сохранить значение
-    // Поэтому создаём временный alloca, если нужно
-    AllocaInst *RetAlloca = nullptr;
-    if (!Call->use_empty() && !Call->getType()->isVoidTy()) {
-      RetAlloca = new AllocaInst(Call->getType(), 0, "ret_alloca",
-                                 //&EntryBB.front());
-                                 EntryBB.begin());
-      // Builder.SetInsertPoint(Call);
-      Builder.CreateStore(Call, RetAlloca);
-    }
-
     // Вставляем вызов трассировки ДО вызова
     Builder.CreateCall(TraceExternalCallFn,
                        {ExtFuncId, ExtArrayPtr,
                         Builder.getInt64(ExtArgI64s.size()), ExtRetValue});
-
-    // Если был alloca — загружаем значение обратно
-    /*if (RetAlloca) {
-      Builder.SetInsertPoint(Call->getNextNode());
-      Value *Reloaded =
-          Builder.CreateLoad(RetAlloca->getAllocatedType(), RetAlloca);
-      Call->replaceAllUsesWith(Reloaded);
-    }*/
-
-    // Удаляем оригинальный CallInst и заменяем на биткаст null (если
-    // используется) Это опасно Мы не должны удалять CallInst, если он
-    // используется. Вместо этого — оставляем вызов, но добавляем
-    // трассировку ДО него. Мы не удаляем вызов Только добавляем
-    // логирование. Таким образом, поведение остаётся тем же.
   }
 
-  void addMemoryTrace(IRBuilder<> &Builder, Value *V, Instruction *I) {
+  void addMemoryTrace(IRBuilder<> &Builder, Value *V, Value *A, Instruction *I,
+                      uint64_t type) {
     LLVMContext &Ctx = Builder.getContext();
-    Value *ExtFuncId = Builder.getInt64(getFunctionId(*I->getParent()->getParent()));
-    Builder.SetInsertPoint(I);
+    Value *ExtFuncId =
+        Builder.getInt64(getFunctionId(*I->getParent()->getParent()));
+    Builder.SetInsertPoint(I->getNextNode());
 
     // Получаем адрес и размер
-    Value *Addr = valueToI64(Builder, V);
+    Value *Addr = valueToI64(Builder, A);
     Value *Size = Builder.getInt64(V->getType()->getScalarSizeInBits());
-    Value *AsI64 = valueToI64(Builder, V);
+    Value *Val = valueToI64(Builder, V);
     static int id = 0;
     Value *MemopId = Builder.getInt64(id++);
+    Value *Type = Builder.getInt8(type);
 
     // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
-    // i64 size, i64 value)
-    Builder.CreateCall(
-        TraceMemFn, {ExtFuncId, MemopId, Addr, Size, AsI64});
+    // i64 size, i64 value, i64 type)
+    Builder.CreateCall(TraceMemFn, {ExtFuncId, MemopId, Addr, Size, Val, Type});
   }
 
-  // Инструментация тела функции: запись вызова и возврата
-  void instrumentFunction(Function &F, Module &M) {
-    if (F.empty() || F.isDeclaration() || isFuncLogger(F.getName()))
-      return;
-
-    LLVMContext &Ctx = M.getContext();
-    IRBuilder<> Builder(Ctx);
-
+  void instrumentFuncStart(IRBuilder<> &Builder, Function &F) {
+    Value *FuncId = Builder.getInt64(getFunctionId(F));
     // В начало первой инструкции — вставляем trace_called
     BasicBlock &EntryBB = F.getEntryBlock();
     Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
-
-    Value *FuncId = Builder.getInt64(getFunctionId(F));
 
     // Собираем аргументы как i64
     std::vector<Value *> ArgI64s;
@@ -266,39 +235,49 @@ struct TraceInstrumentationPass
     // Вызов: trace_called(func_id, func_name, arg_array, num_args)
     Builder.CreateCall(TraceCallFn,
                        {FuncId, ArgArrayPtr, Builder.getInt64(ArgI64s.size())});
-    // Для возврата: обернуть все ret инструкции
-    for (auto &BB : F) {
-      if (auto *RetInst = dyn_cast<ReturnInst>(BB.getTerminator())) {
-        Builder.SetInsertPoint(RetInst);
-        Value *RetValue = RetInst->getReturnValue();
-        Value *RetI64 = RetValue ? valueToI64(Builder, RetValue)
-                                 : ConstantInt::get(Ctx, APInt(64, 0));
+  }
 
-        Builder.CreateCall(TraceReturnFn, {FuncId, RetI64});
-      }
-    }
+  // Инструментация тела функции: запись вызова и возврата
+  void instrumentFunction(Function &F, Module &M) {
+    if (F.empty() || F.isDeclaration() || isFuncLogger(F.getName()))
+      return;
 
-    // Инструментация вызовов внешних функций
+    LLVMContext &Ctx = M.getContext();
+    IRBuilder<> Builder(Ctx);
+    Value *FuncId = Builder.getInt64(getFunctionId(F));
+
     for (auto &BB : F) {
       for (auto &I : BB) {
+        // Инструментация вызовов внешних функций
         if (auto *Call = dyn_cast<CallInst>(&I)) {
-          instrumentCall(Builder, Call, EntryBB);
+          instrumentCall(Builder, Call);
           for (Value *Arg : Call->args()) {
             if (auto *Ptr = dyn_cast<PointerType>(Arg->getType())) {
-              addMemoryTrace(Builder, Arg, Call);
+              addMemoryTrace(Builder, Builder.getInt64(0), Arg, Call, MEM_UPD);
             }
           }
         }
         // Обработка load инструкций
         if (auto *Load = dyn_cast<LoadInst>(&I)) {
-          addMemoryTrace(Builder, Load->getOperand(0), Load);
+          addMemoryTrace(Builder, Load, Load->getOperand(0), Load, MEM_LOAD);
         }
         // Обработка store инструкций
         if (auto *Store = dyn_cast<StoreInst>(&I)) {
-          addMemoryTrace(Builder, Store->getOperand(1), Store);
+          addMemoryTrace(Builder, Store->getOperand(0), Store->getOperand(1),
+                         Store, MEM_STORE);
+        }
+        // Обработка ret инструкций
+        if (auto *RetInst = dyn_cast<ReturnInst>(&I)) {
+          Builder.SetInsertPoint(RetInst);
+          Value *RetValue = RetInst->getReturnValue();
+          Value *RetI64 = RetValue ? valueToI64(Builder, RetValue)
+                                   : ConstantInt::get(Ctx, APInt(64, 0));
+          Builder.CreateCall(TraceReturnFn, {FuncId, RetI64});
         }
       }
     }
+
+    instrumentFuncStart(Builder, F);
 
     outs() << "[VERIFICATION] " << F.getName() << '\n';
     bool verif = verifyFunction(F, &outs());

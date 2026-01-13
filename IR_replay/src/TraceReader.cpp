@@ -1,5 +1,7 @@
 #include "../include/TraceReader.h"
-#include "iostream"
+#include <iomanip>
+#include <iostream>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -11,7 +13,7 @@ bool TraceReader::loadFuncMap(const std::string &traceFuncPath) {
   }
   std::string name;
   uint64_t id = 0;
-  while(!file.eof()) {
+  while (!file.eof()) {
     file >> name >> id;
     funcIdToName[id] = name;
   }
@@ -24,6 +26,23 @@ bool TraceReader::loadFuncMap(const std::string &traceFuncPath) {
   return true;
 }
 
+static void printTime(uint64_t tv_sec) {
+  const uint64_t SEC_PER_DAY = 86400;
+  const uint64_t SEC_PER_HOUR = 3600;
+  const uint64_t SEC_PER_MIN = 60;
+  struct timeval tv;
+  struct timezone tz;
+  gettimeofday(&tv, &tz);
+  long hms = tv_sec % SEC_PER_DAY;
+  hms += tz.tz_dsttime * SEC_PER_HOUR;
+  hms -= tz.tz_minuteswest * SEC_PER_MIN;
+  hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
+  int hour = hms / SEC_PER_HOUR;
+  int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
+  int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN;
+  printf("TIME: %02d:%02d:%02d\n", hour, min, sec);
+}
+
 bool TraceReader::parse(const std::string &tracePath) {
   std::ifstream file(tracePath, ios::binary);
   if (!file.is_open()) {
@@ -33,8 +52,13 @@ bool TraceReader::parse(const std::string &tracePath) {
 
   TraceHeader hdr;
   MemoryEvent memEvent;
+  uint64_t tv_sec = 0;
   while (file.read(reinterpret_cast<char *>(&hdr), sizeof(hdr))) {
-    cout << hdr.timestamp << " ";
+    if (hdr.timestamp / 1000000 != tv_sec) {
+      tv_sec = hdr.timestamp / 1000000;
+      printTime(tv_sec);
+    }
+    cout << setw(6) << hdr.timestamp % 1000000 << "u ";
     if (hdr.type == EVENT_CALL) {
       cout << "[CALL] ";
       CallEvent call;
@@ -51,7 +75,7 @@ bool TraceReader::parse(const std::string &tracePath) {
         if (!file.read(reinterpret_cast<char *>(call.args.data()),
                        sizeof(uint64_t) * num_args))
           break;
-        for (uint64_t &arg: call.args) {
+        for (uint64_t &arg : call.args) {
           cout << ' ' << arg;
         }
       }
@@ -64,7 +88,7 @@ bool TraceReader::parse(const std::string &tracePath) {
       if (!file.read(reinterpret_cast<char *>(&ret_value), sizeof(ret_value)))
         break;
 
-      cout << " (ret " << ret_value << ')';
+      cout << " ret " << ret_value;
       // Можно закрыть CALL из стека, если нужно
       if (!callStack.empty()) {
         callStack.pop();
@@ -85,7 +109,7 @@ bool TraceReader::parse(const std::string &tracePath) {
         if (!file.read(reinterpret_cast<char *>(call.args.data()),
                        sizeof(uint64_t) * num_args))
           break;
-        for (uint64_t &arg: call.args) {
+        for (uint64_t &arg : call.args) {
           cout << ' ' << arg;
         }
       }
@@ -101,7 +125,10 @@ bool TraceReader::parse(const std::string &tracePath) {
       cout << "[MEMOP] ";
       if (!file.read(reinterpret_cast<char *>(&memEvent), sizeof(memEvent)))
         break;
-      cout << memEvent.memop_id << " " << memEvent.size << " " << memEvent.address;
+      cout << memEvent.type << " " << memEvent.memop_id << " " << memEvent.size
+           << "bit [0x" << hex << memEvent.address << dec << "]";
+      if (memEvent.type != MEM_UPD)
+        cout << ": " << memEvent.value;
     } else {
       cerr << "Unknown event type: " << (int)hdr.type << '\n';
       return false;
@@ -121,7 +148,8 @@ bool TraceReader::parse(const std::string &tracePath) {
 void TraceReader::dumpSequence() {
   cout << "; Call sequence:\n";
   for (auto &ev : callSequence) {
-    cout << "; call " << funcIdToName[ev.func_id] << " with " << ev.args.size() << " args";
+    cout << "; call " << funcIdToName[ev.func_id] << " with " << ev.args.size()
+         << " args";
     if (ev.is_external)
       cout << " [external]";
     cout << '\n';
