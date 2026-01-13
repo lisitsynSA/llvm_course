@@ -1,8 +1,8 @@
 #include "../include/TracePass.h"
 #include "../include/trace.h"
-#include <fstream>
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
+#include <fstream>
 
 using namespace llvm;
 
@@ -150,6 +150,28 @@ void TraceInstrumentationPass::instrumentCall(IRBuilder<> &Builder,
 void TraceInstrumentationPass::addMemoryTrace(IRBuilder<> &Builder, Value *V,
                                               Value *A, Instruction *I,
                                               uint64_t type) {
+  if (type != MEM_UPD) {
+    // Check mem2reg allocations
+    if (auto *Alloca = dyn_cast<AllocaInst>(A)) {
+      bool IsReg = true;
+      for (auto &U : Alloca->uses()) {
+        User *user = U.getUser();
+        if (!dyn_cast<StoreInst>(user) && !dyn_cast<LoadInst>(user)) {
+          IsReg = false;
+        }
+      }
+      if (IsReg)
+        return;
+    }
+  } else {
+    // Check updates from loggers or internal funcs
+    if (auto *Call = dyn_cast<CallInst>(I)) {
+      Function *CalleeFunc = Call->getCalledFunction();
+      if (CalleeFunc &&
+          (!CalleeFunc->isDeclaration() || isFuncLogger(CalleeFunc->getName())))
+        return;
+    }
+  }
   LLVMContext &Ctx = Builder.getContext();
   Value *ExtFuncId =
       Builder.getInt64(getFunctionId(*I->getParent()->getParent()));
@@ -210,15 +232,6 @@ void TraceInstrumentationPass::instrumentFunction(Function &F, Module &M) {
 
   for (auto &BB : F) {
     for (auto &I : BB) {
-      // Инструментация вызовов внешних функций
-      if (auto *Call = dyn_cast<CallInst>(&I)) {
-        instrumentCall(Builder, Call);
-        for (Value *Arg : Call->args()) {
-          if (auto *Ptr = dyn_cast<PointerType>(Arg->getType())) {
-            addMemoryTrace(Builder, Builder.getInt64(0), Arg, Call, MEM_UPD);
-          }
-        }
-      }
       // Обработка load инструкций
       if (auto *Load = dyn_cast<LoadInst>(&I)) {
         addMemoryTrace(Builder, Load, Load->getOperand(0), Load, MEM_LOAD);
@@ -235,6 +248,19 @@ void TraceInstrumentationPass::instrumentFunction(Function &F, Module &M) {
         Value *RetI64 = RetValue ? valueToI64(Builder, RetValue)
                                  : ConstantInt::get(Ctx, APInt(64, 0));
         Builder.CreateCall(TraceReturnFn, {FuncId, RetI64});
+      }
+    }
+  }
+  for (auto &BB : F) {
+    for (auto &I : BB) {
+      // Инструментация вызовов внешних функций
+      if (auto *Call = dyn_cast<CallInst>(&I)) {
+        for (Value *Arg : Call->args()) {
+          if (auto *Ptr = dyn_cast<PointerType>(Arg->getType())) {
+            addMemoryTrace(Builder, Builder.getInt64(0), Arg, Call, MEM_UPD);
+          }
+        }
+        instrumentCall(Builder, Call);
       }
     }
   }

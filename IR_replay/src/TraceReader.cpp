@@ -104,7 +104,7 @@ bool TraceReader::parse(const std::string &tracePath) {
       if (!file.read(reinterpret_cast<char *>(&num_args), sizeof(num_args)))
         break;
       call.args.resize(num_args);
-      cout << " (" << num_args << " arg:";
+      cout << " (" << num_args << " args:";
       if (num_args > 0) {
         if (!file.read(reinterpret_cast<char *>(call.args.data()),
                        sizeof(uint64_t) * num_args))
@@ -118,7 +118,7 @@ bool TraceReader::parse(const std::string &tracePath) {
       if (!file.read(reinterpret_cast<char *>(&call.return_value),
                      sizeof(call.return_value)))
         break;
-      cout << " (ret " << call.return_value << ')';
+      cout << " ret " << call.return_value;
 
       callSequence.push_back(call);
     } else if (hdr.type == EVENT_MEMOP) {
