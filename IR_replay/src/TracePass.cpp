@@ -8,10 +8,7 @@ using namespace llvm;
 
 #define DEBUG_TYPE "trace-instrumentation"
 
-bool TraceInstrumentationPass::isFuncLogger(StringRef name) {
-  return name == "trace_called" || name == "trace_external_call" ||
-         name == "trace_return" || name == "trace_memory";
-}
+int TraceInstrumentationPass::MemId = 0;
 
 void TraceInstrumentationPass::initTracingFunctions(Module &M) {
   LLVMContext &Ctx = M.getContext();
@@ -62,7 +59,9 @@ Value *TraceInstrumentationPass::valueToI64(IRBuilder<> &Builder, Value *V) {
   Type *Ty = V->getType();
 
   if (Ty->isPointerTy()) {
-    return Builder.CreatePtrToInt(V, Type::getInt64Ty(Ctx));
+    V = Builder.CreatePtrToInt(V, Type::getInt64Ty(Ctx));
+    InsertedInstrs.insert(V);
+    return V;
   }
 
   if (Ty->isIntegerTy()) {
@@ -72,16 +71,21 @@ Value *TraceInstrumentationPass::valueToI64(IRBuilder<> &Builder, Value *V) {
     } else if (BitWidth > 64) {
       V = Builder.CreateTrunc(V, Type::getInt64Ty(Ctx));
     }
+    InsertedInstrs.insert(V);
     return V;
   }
 
   if (Ty->isFloatTy()) {
     Value *Bits = Builder.CreateBitCast(V, Type::getInt32Ty(Ctx));
-    return Builder.CreateZExt(Bits, Type::getInt64Ty(Ctx));
+    InsertedInstrs.insert(Bits);
+    V = Builder.CreateZExt(Bits, Type::getInt64Ty(Ctx));
+    InsertedInstrs.insert(V);
+    return V;
   }
 
   if (Ty->isDoubleTy()) {
     Value *Bits = Builder.CreateBitCast(V, Type::getInt64Ty(Ctx));
+    InsertedInstrs.insert(Bits);
     return Bits;
   }
 
@@ -99,6 +103,9 @@ void TraceInstrumentationPass::instrumentCall(IRBuilder<> &Builder,
                                               CallInst *Call) {
   Value *Callee = Call->getCalledOperand();
   Function *CalleeFunc = Call->getCalledFunction();
+
+  if (isInstrInserted(Call))
+    return;
 
   // Пропускаем intrinsic'и
   if (isa<IntrinsicInst>(Call))
@@ -131,32 +138,38 @@ void TraceInstrumentationPass::instrumentCall(IRBuilder<> &Builder,
   ArrayType *ExtArrayTy = ArrayType::get(Int64Ty, ExtArgI64s.size());
   Value *ExtArray =
       Builder.CreateAlloca(ExtArrayTy, nullptr, "ext_arg_array_i64");
+  InsertedInstrs.insert(ExtArray);
   for (size_t i = 0; i < ExtArgI64s.size(); ++i) {
     Value *GEP = Builder.CreateConstInBoundsGEP2_32(ExtArrayTy, ExtArray, 0, i);
-    Builder.CreateStore(ExtArgI64s[i], GEP);
+    InsertedInstrs.insert(GEP);
+    InsertedInstrs.insert(Builder.CreateStore(ExtArgI64s[i], GEP));
   }
   Value *ExtArrayPtr = Builder.CreateBitCast(ExtArray, Int64PtrTy);
+  InsertedInstrs.insert(ExtArrayPtr);
 
   // Результат вызова
   Value *ExtRetValue = Call->getType()->isVoidTy() ? Builder.getInt64(0)
                                                    : valueToI64(Builder, Call);
 
   // Вставляем вызов трассировки ДО вызова
-  Builder.CreateCall(TraceExternalCallFn,
-                     {ExtFuncId, ExtArrayPtr,
-                      Builder.getInt64(ExtArgI64s.size()), ExtRetValue});
+  InsertedInstrs.insert(Builder.CreateCall(
+      TraceExternalCallFn, {ExtFuncId, ExtArrayPtr,
+                            Builder.getInt64(ExtArgI64s.size()), ExtRetValue}));
 }
 
 void TraceInstrumentationPass::addMemoryTrace(IRBuilder<> &Builder, Value *V,
                                               Value *A, Instruction *I,
                                               uint64_t type) {
+  if (isInstrInserted(I))
+    return;
   if (type != MEM_UPD) {
     // Check mem2reg allocations
     if (auto *Alloca = dyn_cast<AllocaInst>(A)) {
       bool IsReg = true;
       for (auto &U : Alloca->uses()) {
         User *user = U.getUser();
-        if (!dyn_cast<StoreInst>(user) && !dyn_cast<LoadInst>(user)) {
+        if (!dyn_cast<StoreInst>(user) && !dyn_cast<LoadInst>(user) &&
+            !isInstrInserted(user)) {
           IsReg = false;
         }
       }
@@ -168,26 +181,56 @@ void TraceInstrumentationPass::addMemoryTrace(IRBuilder<> &Builder, Value *V,
     if (auto *Call = dyn_cast<CallInst>(I)) {
       Function *CalleeFunc = Call->getCalledFunction();
       if (CalleeFunc &&
-          (!CalleeFunc->isDeclaration() || isFuncLogger(CalleeFunc->getName())))
+          (!CalleeFunc->isDeclaration() ||
+           isFuncLogger(CalleeFunc->getName()) || isInstrInserted(Call)))
         return;
     }
   }
-  LLVMContext &Ctx = Builder.getContext();
-  Value *ExtFuncId =
-      Builder.getInt64(getFunctionId(*I->getParent()->getParent()));
+  Value *FuncId = Builder.getInt64(getFunctionId(*I->getParent()->getParent()));
   Builder.SetInsertPoint(I->getNextNode());
 
   // Получаем адрес и размер
   Value *Addr = valueToI64(Builder, A);
-  Value *Size = Builder.getInt64(V->getType()->getScalarSizeInBits());
+  Value *Size;
+  if (V->getType()->isPointerTy()) {
+    Size = Builder.getInt64(64);
+  } else {
+    Size = Builder.getInt64(V->getType()->getScalarSizeInBits());
+  }
   Value *Val = valueToI64(Builder, V);
-  static int id = 0;
-  Value *MemopId = Builder.getInt64(id++);
+  Value *MemopId = Builder.getInt64(MemId++);
   Value *Type = Builder.getInt8(type);
 
   // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
-  // i64 size, i64 value, i64 type)
-  Builder.CreateCall(TraceMemFn, {ExtFuncId, MemopId, Addr, Size, Val, Type});
+  // i64 size, i64 value, i8 type)
+  InsertedInstrs.insert(
+      Builder.CreateCall(TraceMemFn, {FuncId, MemopId, Addr, Size, Val, Type}));
+}
+
+void TraceInstrumentationPass::addGepTrace(IRBuilder<> &Builder,
+                                           GetElementPtrInst *Gep) {
+  if (isInstrInserted(Gep))
+    return;
+  Value *FuncId =
+      Builder.getInt64(getFunctionId(*Gep->getParent()->getParent()));
+  Builder.SetInsertPoint(Gep->getNextNode());
+  // Получаем адрес и размер
+  Value *Addr = valueToI64(Builder, Gep);
+  Value *V = Builder.getInt64(Gep->getNumIndices());
+  Value *Size;
+  if (Gep->getResultElementType()->isPointerTy()) {
+    Size = Builder.getInt64(64);
+  } else {
+    Size = Builder.getInt64(Gep->getResultElementType()->getScalarSizeInBits());
+  }
+  Value *Val = valueToI64(Builder, V);
+  Value *MemopId = Builder.getInt64(MemId++);
+  Value *Type = Builder.getInt8(MEM_GEP);
+
+  // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
+  // i64 size, i64 value, i8 type)
+  InsertedInstrs.insert(
+      Builder.CreateCall(TraceMemFn, {FuncId, MemopId, Addr, Size, Val, Type}));
 }
 
 void TraceInstrumentationPass::instrumentFuncStart(IRBuilder<> &Builder,
@@ -207,18 +250,21 @@ void TraceInstrumentationPass::instrumentFuncStart(IRBuilder<> &Builder,
   // Создаём массив i64 на стеке
   ArrayType *ArgArrayTy = ArrayType::get(Int64Ty, ArgI64s.size());
   Value *ArgArray = Builder.CreateAlloca(ArgArrayTy, nullptr, "arg_array_i64");
+  InsertedInstrs.insert(ArgArray);
 
   for (size_t i = 0; i < ArgI64s.size(); ++i) {
     Value *GEP = Builder.CreateConstInBoundsGEP2_32(ArgArrayTy, ArgArray, 0, i);
-    Builder.CreateStore(ArgI64s[i], GEP);
+    InsertedInstrs.insert(GEP);
+    InsertedInstrs.insert(Builder.CreateStore(ArgI64s[i], GEP));
   }
 
   // Передаём как i64*
   Value *ArgArrayPtr = Builder.CreateBitCast(ArgArray, Int64PtrTy);
+  InsertedInstrs.insert(ArgArrayPtr);
 
   // Вызов: trace_called(func_id, func_name, arg_array, num_args)
-  Builder.CreateCall(TraceCallFn,
-                     {FuncId, ArgArrayPtr, Builder.getInt64(ArgI64s.size())});
+  InsertedInstrs.insert(Builder.CreateCall(
+      TraceCallFn, {FuncId, ArgArrayPtr, Builder.getInt64(ArgI64s.size())}));
 }
 
 // Инструментация тела функции: запись вызова и возврата
@@ -232,6 +278,15 @@ void TraceInstrumentationPass::instrumentFunction(Function &F, Module &M) {
 
   for (auto &BB : F) {
     for (auto &I : BB) {
+      // Инструментация вызовов внешних функций
+      if (auto *Call = dyn_cast<CallInst>(&I)) {
+        for (Value *Arg : Call->args()) {
+          if (auto *Ptr = dyn_cast<PointerType>(Arg->getType())) {
+            addMemoryTrace(Builder, Builder.getInt64(0), Arg, Call, MEM_UPD);
+          }
+        }
+        instrumentCall(Builder, Call);
+      }
       // Обработка load инструкций
       if (auto *Load = dyn_cast<LoadInst>(&I)) {
         addMemoryTrace(Builder, Load, Load->getOperand(0), Load, MEM_LOAD);
@@ -249,18 +304,9 @@ void TraceInstrumentationPass::instrumentFunction(Function &F, Module &M) {
                                  : ConstantInt::get(Ctx, APInt(64, 0));
         Builder.CreateCall(TraceReturnFn, {FuncId, RetI64});
       }
-    }
-  }
-  for (auto &BB : F) {
-    for (auto &I : BB) {
-      // Инструментация вызовов внешних функций
-      if (auto *Call = dyn_cast<CallInst>(&I)) {
-        for (Value *Arg : Call->args()) {
-          if (auto *Ptr = dyn_cast<PointerType>(Arg->getType())) {
-            addMemoryTrace(Builder, Builder.getInt64(0), Arg, Call, MEM_UPD);
-          }
-        }
-        instrumentCall(Builder, Call);
+      // Обработка gep инструкций
+      if (auto *Gep = dyn_cast<GetElementPtrInst>(&I)) {
+        addGepTrace(Builder, Gep);
       }
     }
   }
@@ -274,8 +320,8 @@ void TraceInstrumentationPass::instrumentFunction(Function &F, Module &M) {
 
 void TraceInstrumentationPass::dumpFuncIdMap() {
   std::ofstream funcTrace("app.func.trace");
-  for (auto &[name, id] : FuncIdMap) {
-    funcTrace << name << " " << id << "\n";
+  for (auto &[name, funcId] : FuncIdMap) {
+    funcTrace << name << " " << funcId << "\n";
   }
   funcTrace.close();
 }
@@ -297,7 +343,7 @@ PreservedAnalyses TraceInstrumentationPass::run(Module &M,
 // Регистрация через PassPlugin (LLVM 14+)
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
-    PB.registerPipelineStartEPCallback([=](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([=](ModulePassManager &MPM, auto) {
       MPM.addPass(TraceInstrumentationPass{});
       return true;
     });

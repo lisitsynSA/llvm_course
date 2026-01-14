@@ -32,7 +32,17 @@ struct TraceInstrumentationPass
   llvm::FunctionCallee TraceMemFn;
   std::unordered_map<std::string, uint64_t> FuncIdMap;
 
-  bool isFuncLogger(llvm::StringRef name);
+  static int MemId;
+  std::set<llvm::Value *> InsertedInstrs;
+
+  bool isInstrInserted(llvm::Value *I) {
+    return InsertedInstrs.find(I) != InsertedInstrs.end();
+  }
+
+  bool isFuncLogger(llvm::StringRef name) {
+    return name == "trace_called" || name == "trace_external_call" ||
+           name == "trace_return" || name == "trace_memory";
+  }
 
   // Инициализация типов и функций трассировки
   void initTracingFunctions(llvm::Module &M);
@@ -46,6 +56,8 @@ struct TraceInstrumentationPass
 
   void addMemoryTrace(llvm::IRBuilder<> &Builder, llvm::Value *V,
                       llvm::Value *A, llvm::Instruction *I, uint64_t type);
+
+  void addGepTrace(llvm::IRBuilder<> &Builder, llvm::GetElementPtrInst *Gep);
 
   void instrumentFuncStart(llvm::IRBuilder<> &Builder, llvm::Function &F);
 

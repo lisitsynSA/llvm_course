@@ -33,6 +33,7 @@ enum MemType {
   MEM_UPD = 'U',
   MEM_LOAD = 'L',
   MEM_STORE = 'S',
+  MEM_GEP = 'G',
 };
 
 #endif
