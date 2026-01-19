@@ -129,6 +129,20 @@ bool TraceReader::parse(const std::string &tracePath) {
            << "bit [0x" << hex << memEvent.address << dec << "]";
       if (memEvent.type != MEM_UPD)
         cout << ": " << memEvent.value;
+      if (memEvent.type == MEM_GEP) {
+        std::vector<uint64_t> ptrs;
+        if (memEvent.value > 0) {
+          cout << "\n                [0x" << hex << memEvent.address << "]";
+          ptrs.resize(memEvent.value);
+          if (!file.read(reinterpret_cast<char *>(ptrs.data()),
+                         sizeof(uint64_t) * memEvent.value))
+            break;
+          for (uint64_t &ptr : ptrs) {
+            cout << " -> [0x" << ptr << "]";
+          }
+          cout << dec;
+        }
+      }
     } else {
       cerr << "Unknown event type: " << (int)hdr.type << '\n';
       return false;

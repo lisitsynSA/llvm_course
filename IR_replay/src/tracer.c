@@ -54,7 +54,8 @@ void trace_external_call(uint64_t func_id, uint64_t *args, uint64_t num_args,
 }
 
 void trace_memory(uint64_t func_id, uint64_t memop_id, uint64_t addr,
-                  uint64_t size, uint64_t value, uint8_t mem_type) {
+                  uint64_t size, uint64_t value, uint8_t mem_type,
+                  uint64_t *ptrs) {
   printf("[MEMOP] %c id %lu %lubit [0x%lx]: %lu\n", mem_type, memop_id, size,
          addr, value);
   uint64_t ts = get_timestamp();
@@ -66,4 +67,12 @@ void trace_memory(uint64_t func_id, uint64_t memop_id, uint64_t addr,
                        .size = size,
                        .value = value};
   safe_write(&event, sizeof(event));
+  if (mem_type == MEM_GEP) {
+    printf("        [0x%lx]", addr);
+    for (int i = 0; i < value; i++) {
+      printf(" -> [0x%lx]", ptrs[i]);
+    }
+    printf("\n");
+    safe_write(ptrs, sizeof(uint64_t) * value);
+  }
 }

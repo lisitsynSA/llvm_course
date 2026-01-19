@@ -52,6 +52,9 @@ struct TraceInstrumentationPass
 
   llvm::Value *valueToI64(llvm::IRBuilder<> &Builder, llvm::Value *V);
 
+  llvm::Value *instrumentArray(llvm::IRBuilder<> &Builder,
+                               std::vector<llvm::Value *> &Arr);
+
   void instrumentCall(llvm::IRBuilder<> &Builder, llvm::CallInst *Call);
 
   void addMemoryTrace(llvm::IRBuilder<> &Builder, llvm::Value *V,

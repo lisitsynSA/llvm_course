@@ -37,9 +37,9 @@ void TraceInstrumentationPass::initTracingFunctions(Module &M) {
       M.getOrInsertFunction("trace_external_call", TraceExternalCallFnTy);
 
   // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
-  // i64 size, i64 value, i8 mem_type)
-  std::vector<Type *> MemArgs = {Int64Ty, Int64Ty, Int64Ty,
-                                 Int64Ty, Int64Ty, Int8Ty};
+  // i64 size, i64 value, i8 mem_type, i64* ptrs)
+  std::vector<Type *> MemArgs = {Int64Ty, Int64Ty, Int64Ty,   Int64Ty,
+                                 Int64Ty, Int8Ty,  Int64PtrTy};
   TraceMemFnTy = FunctionType::get(VoidTy, MemArgs, false);
   TraceMemFn = M.getOrInsertFunction("trace_memory", TraceMemFnTy);
 }
@@ -99,6 +99,22 @@ Value *TraceInstrumentationPass::valueToI64(IRBuilder<> &Builder, Value *V) {
   return ConstantInt::get(Ctx, APInt(64, 0));
 }
 
+Value *TraceInstrumentationPass::instrumentArray(IRBuilder<> &Builder,
+                                                 std::vector<Value *> &Arr) {
+  // Создаём массив i64
+  ArrayType *ArrayTy = ArrayType::get(Int64Ty, Arr.size());
+  Value *Alloca = Builder.CreateAlloca(ArrayTy, nullptr);
+  InsertedInstrs.insert(Alloca);
+  for (size_t i = 0; i < Arr.size(); ++i) {
+    Value *GEP = Builder.CreateConstInBoundsGEP2_32(ArrayTy, Alloca, 0, i);
+    InsertedInstrs.insert(GEP);
+    InsertedInstrs.insert(Builder.CreateStore(Arr[i], GEP));
+  }
+  Value *AllocaPtr = Builder.CreateBitCast(Alloca, Int64PtrTy);
+  InsertedInstrs.insert(AllocaPtr);
+  return AllocaPtr;
+}
+
 void TraceInstrumentationPass::instrumentCall(IRBuilder<> &Builder,
                                               CallInst *Call) {
   Value *Callee = Call->getCalledOperand();
@@ -133,19 +149,7 @@ void TraceInstrumentationPass::instrumentCall(IRBuilder<> &Builder,
     Value *AsI64 = valueToI64(Builder, Arg);
     ExtArgI64s.push_back(AsI64);
   }
-
-  // Создаём массив i64
-  ArrayType *ExtArrayTy = ArrayType::get(Int64Ty, ExtArgI64s.size());
-  Value *ExtArray =
-      Builder.CreateAlloca(ExtArrayTy, nullptr, "ext_arg_array_i64");
-  InsertedInstrs.insert(ExtArray);
-  for (size_t i = 0; i < ExtArgI64s.size(); ++i) {
-    Value *GEP = Builder.CreateConstInBoundsGEP2_32(ExtArrayTy, ExtArray, 0, i);
-    InsertedInstrs.insert(GEP);
-    InsertedInstrs.insert(Builder.CreateStore(ExtArgI64s[i], GEP));
-  }
-  Value *ExtArrayPtr = Builder.CreateBitCast(ExtArray, Int64PtrTy);
-  InsertedInstrs.insert(ExtArrayPtr);
+  Value *ExtArrayPtr = instrumentArray(Builder, ExtArgI64s);
 
   // Результат вызова
   Value *ExtRetValue = Call->getType()->isVoidTy() ? Builder.getInt64(0)
@@ -200,11 +204,13 @@ void TraceInstrumentationPass::addMemoryTrace(IRBuilder<> &Builder, Value *V,
   Value *Val = valueToI64(Builder, V);
   Value *MemopId = Builder.getInt64(MemId++);
   Value *Type = Builder.getInt8(type);
+  Value *Ptrs = Builder.CreateBitCast(Builder.getInt64(0), Int64PtrTy);
+  InsertedInstrs.insert(Ptrs);
 
   // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
   // i64 size, i64 value, i8 type)
-  InsertedInstrs.insert(
-      Builder.CreateCall(TraceMemFn, {FuncId, MemopId, Addr, Size, Val, Type}));
+  InsertedInstrs.insert(Builder.CreateCall(
+      TraceMemFn, {FuncId, MemopId, Addr, Size, Val, Type, Ptrs}));
 }
 
 void TraceInstrumentationPass::addGepTrace(IRBuilder<> &Builder,
@@ -215,22 +221,35 @@ void TraceInstrumentationPass::addGepTrace(IRBuilder<> &Builder,
       Builder.getInt64(getFunctionId(*Gep->getParent()->getParent()));
   Builder.SetInsertPoint(Gep->getNextNode());
   // Получаем адрес и размер
-  Value *Addr = valueToI64(Builder, Gep);
-  Value *V = Builder.getInt64(Gep->getNumIndices());
+  Value *Addr = valueToI64(Builder, Gep->getOperand(0));
   Value *Size;
   if (Gep->getResultElementType()->isPointerTy()) {
     Size = Builder.getInt64(64);
   } else {
     Size = Builder.getInt64(Gep->getResultElementType()->getScalarSizeInBits());
   }
-  Value *Val = valueToI64(Builder, V);
   Value *MemopId = Builder.getInt64(MemId++);
-  Value *Type = Builder.getInt8(MEM_GEP);
+  Value *MemopType = Builder.getInt8(MEM_GEP);
+
+  // Собираем аргументы как i64
+  std::vector<Value *> PtrI64s;
+  Value *CurPtr = Gep->getOperand(0);
+  Type *CurType = Gep->getSourceElementType();
+  for (auto &index : Gep->indices()) {
+    Value *GEP = Builder.CreateGEP(CurType, CurPtr, {index});
+    InsertedInstrs.insert(GEP);
+    Value *AsI64 = valueToI64(Builder, GEP);
+    PtrI64s.push_back(AsI64);
+    CurPtr = GEP;
+    CurType = CurPtr->getType();
+  }
+  Value *Ptrs = instrumentArray(Builder, PtrI64s);
+  Value *Val = Builder.getInt64(PtrI64s.size());
 
   // void @trace_memory(i64 func_id, i64 memop_id, i64 addr,
   // i64 size, i64 value, i8 type)
-  InsertedInstrs.insert(
-      Builder.CreateCall(TraceMemFn, {FuncId, MemopId, Addr, Size, Val, Type}));
+  InsertedInstrs.insert(Builder.CreateCall(
+      TraceMemFn, {FuncId, MemopId, Addr, Size, Val, MemopType, Ptrs}));
 }
 
 void TraceInstrumentationPass::instrumentFuncStart(IRBuilder<> &Builder,
@@ -246,21 +265,7 @@ void TraceInstrumentationPass::instrumentFuncStart(IRBuilder<> &Builder,
     Value *AsI64 = valueToI64(Builder, &Arg);
     ArgI64s.push_back(AsI64);
   }
-
-  // Создаём массив i64 на стеке
-  ArrayType *ArgArrayTy = ArrayType::get(Int64Ty, ArgI64s.size());
-  Value *ArgArray = Builder.CreateAlloca(ArgArrayTy, nullptr, "arg_array_i64");
-  InsertedInstrs.insert(ArgArray);
-
-  for (size_t i = 0; i < ArgI64s.size(); ++i) {
-    Value *GEP = Builder.CreateConstInBoundsGEP2_32(ArgArrayTy, ArgArray, 0, i);
-    InsertedInstrs.insert(GEP);
-    InsertedInstrs.insert(Builder.CreateStore(ArgI64s[i], GEP));
-  }
-
-  // Передаём как i64*
-  Value *ArgArrayPtr = Builder.CreateBitCast(ArgArray, Int64PtrTy);
-  InsertedInstrs.insert(ArgArrayPtr);
+  Value *ArgArrayPtr = instrumentArray(Builder, ArgI64s);
 
   // Вызов: trace_called(func_id, func_name, arg_array, num_args)
   InsertedInstrs.insert(Builder.CreateCall(
