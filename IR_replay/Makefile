@@ -1,19 +1,10 @@
-all: libTracePass.so TraceDump IRGen tracer.o
+all: tracer.o unitool
 
-LLVM_FLAGS = $(shell llvm-config --cxxflags --ldflags --libs core bitreader bitwriter)
+LLVM_FLAGS = $(shell llvm-config --cxxflags --ldflags --libs)
 LLVM_INCPATH = $(shell llvm-config --includedir)
 
-
-# Build pass
-libTracePass.so: src/TracePass.cpp
-	clang++ -fPIC -shared -I$(LLVM_INCPATH) $^ -o $@
-
-# Build IR generator for traces
-TraceDump: src/TraceDump.cpp src/TraceReader.cpp
-	clang++ $^ -o $@
-
-# Build IR generator for traces
-IRGen: src/IRGen.cpp src/TraceReader.cpp src/TraceReplGen.cpp
+# Build unitool
+unitool: src/ModuleInfo.cpp src/unitool.cpp src/ModuleInstrument.cpp
 	clang++ $(LLVM_FLAGS) $^ -o $@
 
 tracer.o: src/tracer.c
@@ -21,6 +12,6 @@ tracer.o: src/tracer.c
 	clang -O3 src/tracer.c -c -o tracer.o
 
 clean:
-	rm libTracePass.so TraceDump IRGen tracer.o
+	rm tracer.o unitool
 
 .PHONY: all clean

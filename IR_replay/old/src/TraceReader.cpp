@@ -126,9 +126,12 @@ bool TraceReader::parse(const std::string &tracePath) {
       if (!file.read(reinterpret_cast<char *>(&memEvent), sizeof(memEvent)))
         break;
       cout << memEvent.type << " " << memEvent.memop_id << " " << memEvent.size
-           << "bit [0x" << hex << memEvent.address << dec << "]";
-      if (memEvent.type != MEM_UPD)
-        cout << ": " << memEvent.value;
+           << "bit [0x" << hex << memEvent.address << dec;
+      if (memEvent.type == MEM_UPD) {
+        cout << " = " << memEvent.address << "]";
+      } else {
+        cout << "]: " << memEvent.value;
+      }
       if (memEvent.type == MEM_GEP) {
         std::vector<uint64_t> ptrs;
         if (memEvent.value > 0) {
