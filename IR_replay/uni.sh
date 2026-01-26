@@ -19,13 +19,16 @@ OPT="-O0"
 clang++ $OPT $1 -emit-llvm -S -o $NAME.ll || exit 1
 
 # 1. Module instrumentation
-./unitool $NAME.ll $NAME.instr.ll
+./unitool -instrument -i $NAME.ll -o $NAME.instr.ll
 
 # 2. Build project with instrumented module
 clang++ $OPT tracer.o $NAME.instr.ll ${@:2} -o app.instr || exit 1
 
 # 3. Run instruemnted project - generate app.trace
 ./app.instr 4
+
+#./unitool -trace-dump -t ./app.trace
+./unitool -trace-dump -t ./app.trace -i $NAME.ll
 
 exit
 

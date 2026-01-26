@@ -188,7 +188,7 @@ void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
   if (F->empty() || F->isDeclaration() || isFuncLogger(F->getName()))
     return;
   IRBuilder<> Builder(Ctx);
-  Value *FuncId = Builder.getInt64(Id);
+  Value *OpId = Builder.getInt64(Id);
   // В начало первой инструкции — вставляем trace_called
   BasicBlock &EntryBB = F->getEntryBlock();
   Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
@@ -203,7 +203,7 @@ void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
 
   // trace_called(uint64_t func_id, uint64_t *args, uint64_t num_args)
   Builder.CreateCall(TraceCallFn,
-                     {FuncId, ArgArrayPtr, Builder.getInt64(ArgI64s.size())});
+                     {OpId, ArgArrayPtr, Builder.getInt64(ArgI64s.size())});
 }
 
 void ModuleInstrument::InstrumentModule() {

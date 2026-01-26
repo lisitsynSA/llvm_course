@@ -14,7 +14,7 @@ protected:
 public:
   // Functions Info
   std::unordered_map<uint64_t, llvm::Function *> FuncsMap;
-  std::unordered_map<uint64_t, std::string> FuncId2Name;
+  std::unordered_map<uint64_t, std::string> Id2FuncName;
 
   // Instructions Info
   std::unordered_map<uint64_t, llvm::CallInst *> CallsMap;
@@ -28,7 +28,8 @@ public:
 
 private:
   void PrepareFuncInfo(llvm::Function &F);
-  void PrepareInstrInfo(llvm::Instruction &I);
+  void PrepareInstrInfo(llvm::Instruction &I, llvm::StringRef FuncName);
+  static uint64_t OpID;
 };
 
 #endif // MODULE_INFO_H

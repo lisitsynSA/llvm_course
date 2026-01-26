@@ -4,8 +4,10 @@
 
 using namespace llvm;
 
+uint64_t ModuleInfo::OpID = 0;
+
 ModuleInfo::ModuleInfo(std::string path, LLVMContext &C) : Ctx(C) {
-  outs() << "[UNITOOL] Load " << path << "\n";
+  outs() << "[UNITOOL] Load module " << path << "\n";
   // Read IR file
   SMDiagnostic Err;
   M = parseIRFile(path, Err, Ctx);
@@ -22,34 +24,33 @@ ModuleInfo::ModuleInfo(std::string path, LLVMContext &C) : Ctx(C) {
 }
 
 void ModuleInfo::PrepareFuncInfo(Function &F) {
-  static uint64_t FuncID = 0;
-  FuncsMap[FuncID] = &F;
-  FuncId2Name[FuncID] = F.getName().str();
-  FuncID++;
+  FuncsMap[OpID] = &F;
+  Id2FuncName[OpID] = F.getName().str();
+  OpID++;
 
   for (auto &BB : F) {
     for (auto &I : BB) {
-      PrepareInstrInfo(I);
+      PrepareInstrInfo(I, F.getName());
     }
   }
 }
 
-void ModuleInfo::PrepareInstrInfo(Instruction &I) {
-  static uint64_t InstrID = 0;
+void ModuleInfo::PrepareInstrInfo(Instruction &I, StringRef FuncName) {
+  Id2FuncName[OpID] = FuncName.str();
   if (auto *Call = dyn_cast<CallInst>(&I)) {
-    CallsMap[InstrID++] = Call;
+    CallsMap[OpID++] = Call;
   }
   if (auto *RetInst = dyn_cast<ReturnInst>(&I)) {
-    RetsMap[InstrID++] = RetInst;
+    RetsMap[OpID++] = RetInst;
   }
   if (auto *Load = dyn_cast<LoadInst>(&I)) {
-    LoadsMap[InstrID++] = Load;
+    LoadsMap[OpID++] = Load;
   }
   if (auto *Store = dyn_cast<StoreInst>(&I)) {
-    StoresMap[InstrID++] = Store;
+    StoresMap[OpID++] = Store;
   }
   if (auto *Gep = dyn_cast<GetElementPtrInst>(&I)) {
-    GepsMap[InstrID++] = Gep;
+    GepsMap[OpID++] = Gep;
   }
 }
 
