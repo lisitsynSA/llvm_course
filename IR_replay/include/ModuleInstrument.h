@@ -6,6 +6,7 @@
 #include "llvm/IR/IRBuilder.h"
 
 class ModuleInstrument : public ModuleInfo {
+protected:
   // Types
   llvm::Type *VoidTy;
   llvm::IntegerType *Int8Ty;
@@ -24,7 +25,6 @@ class ModuleInstrument : public ModuleInfo {
   llvm::FunctionCallee TraceMemFn;
 
   // Intrumentation
-  bool isFuncLogger(llvm::StringRef name);
   void initTracingFunctions();
   llvm::Value *getTypeSize(llvm::IRBuilder<> &Builder, llvm::Type *Ty) {
     if (Ty->isPointerTy()) {
@@ -45,7 +45,8 @@ class ModuleInstrument : public ModuleInfo {
   void instrumentFuncStart(llvm::Function *F, uint64_t Id);
 
 public:
-  ModuleInstrument(std::string path, llvm::LLVMContext &C);
+  ModuleInstrument(std::string path, llvm::LLVMContext &C)
+      : ModuleInfo(path, C) {}
   void InstrumentModule();
   // bool ReplayGen(TraceInfo &T, ModuleInfo &M);
   // bool ExtReplayGen(TraceInfo &T, ModuleInfo &M);

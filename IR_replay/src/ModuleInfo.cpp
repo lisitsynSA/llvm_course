@@ -1,10 +1,11 @@
 #include "../include/ModuleInfo.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/SourceMgr.h"
 
 using namespace llvm;
 
-uint64_t ModuleInfo::OpID = 0;
+uint64_t ModuleInfo::OpID = 1;
 
 ModuleInfo::ModuleInfo(std::string path, LLVMContext &C) : Ctx(C) {
   outs() << "[UNITOOL] Load module " << path << "\n";
@@ -23,21 +24,30 @@ ModuleInfo::ModuleInfo(std::string path, LLVMContext &C) : Ctx(C) {
   }
 }
 
+Function *ModuleInfo::getCallee(uint64_t id) {
+  if (CallsMap.find(id) == CallsMap.end()) {
+    return nullptr;
+  }
+  return CallsMap[id]->getCalledFunction();
+}
+
 void ModuleInfo::PrepareFuncInfo(Function &F) {
   FuncsMap[OpID] = &F;
-  Id2FuncName[OpID] = F.getName().str();
+  Id2Func[OpID] = &F;
   OpID++;
 
   for (auto &BB : F) {
     for (auto &I : BB) {
-      PrepareInstrInfo(I, F.getName());
+      PrepareInstrInfo(I, F);
     }
   }
 }
 
-void ModuleInfo::PrepareInstrInfo(Instruction &I, StringRef FuncName) {
-  Id2FuncName[OpID] = FuncName.str();
+void ModuleInfo::PrepareInstrInfo(Instruction &I, Function &F) {
+  Id2Func[OpID] = &F;
   if (auto *Call = dyn_cast<CallInst>(&I)) {
+    if (isa<IntrinsicInst>(Call))
+      return;
     CallsMap[OpID++] = Call;
   }
   if (auto *RetInst = dyn_cast<ReturnInst>(&I)) {

@@ -4,7 +4,7 @@ LLVM_FLAGS = $(shell llvm-config --cxxflags --ldflags --libs)
 LLVM_INCPATH = $(shell llvm-config --includedir)
 
 # Build unitool
-unitool: src/ModuleInfo.cpp src/unitool.cpp src/ModuleInstrument.cpp src/TraceInfo.cpp src/TraceRecord.cpp
+unitool: src/*.cpp
 	clang++ $(LLVM_FLAGS) $^ -o $@
 
 tracer.o: src/tracer.c

@@ -7,12 +7,12 @@
 class ModuleInfo;
 
 class TraceInfo {
-  std::vector<TraceRecord> Trace;
   void parseFile(std::ifstream &file);
 
 public:
   TraceInfo(std::string path);
   void dump(ModuleInfo *M = nullptr);
+  std::vector<TraceRecord> Trace;
 };
 
 #endif // TRACE_INFO_H

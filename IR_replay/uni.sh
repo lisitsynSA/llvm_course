@@ -27,21 +27,15 @@ clang++ $OPT tracer.o $NAME.instr.ll ${@:2} -o app.instr || exit 1
 # 3. Run instruemnted project - generate app.trace
 ./app.instr 4
 
+# 4. Trace dump
 #./unitool -trace-dump -t ./app.trace
 ./unitool -trace-dump -t ./app.trace -i $NAME.ll
 
-exit
-
-# 4. Dump trace
-./TraceDump ./app.func.trace ./app.trace
-
-exit
-
 # 5. Generate IR reproducer
-./IRGen $NAME.ll app.func.trace app.trace replay.ll
+./unitool -replay-gen -t ./app.trace -i $NAME.ll -o $NAME.replay.ll
 
 # 6. Compile IR reproducer
-clang++ replay.ll -o app.replay
+clang++ tracer.o $NAME.replay.ll -o app.replay
 
 # 7. Run IR reproducer
 ./app.replay

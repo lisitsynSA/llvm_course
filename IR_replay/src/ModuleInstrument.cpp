@@ -1,14 +1,8 @@
 #include "../include/ModuleInstrument.h"
 #include "../include/trace.h"
-#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Verifier.h"
 
 using namespace llvm;
-
-bool ModuleInstrument::isFuncLogger(StringRef name) {
-  return name == "trace_called" || name == "trace_external_call" ||
-         name == "trace_return" || name == "trace_memory";
-}
 
 void ModuleInstrument::initTracingFunctions() {
   VoidTy = Type::getVoidTy(Ctx);
@@ -17,8 +11,9 @@ void ModuleInstrument::initTracingFunctions() {
   Int64Ty = Type::getInt64Ty(Ctx);
   Int64PtrTy = PointerType::get(Int64Ty, 0);
 
-  // void trace_called(uint64_t func_id, uint64_t *args, uint64_t num_args)
-  std::vector<Type *> CallArgs = {Int64Ty, Int64PtrTy, Int64Ty};
+  // void trace_called(uint64_t op_id, uint8_t *name, uint64_t *args, uint64_t
+  //                   num_args)
+  std::vector<Type *> CallArgs = {Int64Ty, Int8PtrTy, Int64PtrTy, Int64Ty};
   TraceCallFnTy = FunctionType::get(VoidTy, CallArgs, false);
   TraceCallFn = M->getOrInsertFunction("trace_called", TraceCallFnTy);
 
@@ -87,9 +82,6 @@ Value *ModuleInstrument::instrumentArray(IRBuilder<> &Builder,
 
 void ModuleInstrument::instrumentCall(CallInst *Call, uint64_t Id) {
   IRBuilder<> Builder(Ctx);
-  if (isa<IntrinsicInst>(Call))
-    return;
-
   Function *CalleeFunc = Call->getCalledFunction();
   if (!CalleeFunc) {
     // TODO: support function pointer call
@@ -97,7 +89,7 @@ void ModuleInstrument::instrumentCall(CallInst *Call, uint64_t Id) {
   }
 
   // Skip all internal functions
-  if (!CalleeFunc->isDeclaration() || isFuncLogger(CalleeFunc->getName()))
+  if (!CalleeFunc->isDeclaration())
     return;
 
   Builder.SetInsertPoint(Call->getNextNode());
@@ -185,13 +177,14 @@ void ModuleInstrument::instrumentGep(GetElementPtrInst *Gep, uint64_t Id) {
 }
 
 void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
-  if (F->empty() || F->isDeclaration() || isFuncLogger(F->getName()))
+  if (F->empty() || F->isDeclaration())
     return;
   IRBuilder<> Builder(Ctx);
   Value *OpId = Builder.getInt64(Id);
   // В начало первой инструкции — вставляем trace_called
   BasicBlock &EntryBB = F->getEntryBlock();
   Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
+  Value *FuncName = Builder.CreateGlobalStringPtr(F->getName());
 
   // Собираем аргументы как i64
   std::vector<Value *> ArgI64s;
@@ -201,12 +194,14 @@ void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
   }
   Value *ArgArrayPtr = instrumentArray(Builder, ArgI64s);
 
-  // trace_called(uint64_t func_id, uint64_t *args, uint64_t num_args)
-  Builder.CreateCall(TraceCallFn,
-                     {OpId, ArgArrayPtr, Builder.getInt64(ArgI64s.size())});
+  // void trace_called(uint64_t op_id, uint8_t *name, uint64_t *args, uint64_t
+  //                   num_args)
+  Builder.CreateCall(TraceCallFn, {OpId, FuncName, ArgArrayPtr,
+                                   Builder.getInt64(ArgI64s.size())});
 }
 
 void ModuleInstrument::InstrumentModule() {
+  outs() << "[UNITOOL] Instrumentation\n";
   initTracingFunctions();
 
   for (auto &[Id, Call] : CallsMap) {
@@ -233,12 +228,7 @@ void ModuleInstrument::InstrumentModule() {
   for (auto &[Id, F] : FuncsMap) {
     instrumentFuncStart(F, Id);
   }
-}
 
-ModuleInstrument::ModuleInstrument(std::string path, llvm::LLVMContext &C)
-    : ModuleInfo(path, C) {
-  outs() << "[UNITOOL] Instrument " << path << "\n";
-  InstrumentModule();
   bool verif = verifyModule(*M, &outs());
   outs() << "[UNITOOL] Instrumentation Verification: "
          << (verif ? "FAIL\n" : "OK\n");

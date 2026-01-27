@@ -8,11 +8,13 @@
 class ModuleInfo;
 
 class TraceRecord {
+public:
   TraceHeader Hdr;
   std::vector<uint64_t> Args;
   uint64_t Ret;
   MemoryEvent Mem;
 
+private:
   bool readArray(std::ifstream &file);
   void printArgs(std::string name);
   std::string printFuncName(ModuleInfo *M);

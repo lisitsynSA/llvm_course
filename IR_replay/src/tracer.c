@@ -22,18 +22,21 @@ void safe_write(const void *data, size_t size) {
   }
 }
 
-void trace_called(uint64_t op_id, uint64_t *args, uint64_t num_args) {
-  printf("[FUNC %lu] %lu args\n", op_id, num_args);
+void trace_called(uint64_t op_id, uint8_t *name, uint64_t *args,
+                  uint64_t num_args) {
+  // op_id == 0 - for replay printing
+  printf("[FUNC %s] %lu args\n", name, num_args);
   for (int i = 0; i < num_args; i++) {
     printf("\targ%d: %lu\n", i, args[i]);
   }
   uint64_t ts = get_timestamp();
 
   TraceHeader hdr = {.type = EVENT_FUNC_START, .op_id = op_id, .timestamp = ts};
-
-  safe_write(&hdr, sizeof(hdr));
-  safe_write(&num_args, sizeof(num_args));
-  safe_write(args, sizeof(uint64_t) * num_args);
+  if (op_id) {
+    safe_write(&hdr, sizeof(hdr));
+    safe_write(&num_args, sizeof(num_args));
+    safe_write(args, sizeof(uint64_t) * num_args);
+  }
 }
 
 void trace_return(uint64_t op_id, uint64_t return_value) {
@@ -62,7 +65,8 @@ void trace_external_call(uint64_t op_id, uint64_t *args, uint64_t num_args,
 
 void trace_memory(uint64_t op_id, uint64_t addr, uint64_t size, uint64_t value,
                   uint8_t mem_type, uint64_t *ptrs) {
-  printf("[MEMOP %lu] %c %lubit [0x%lx]: %lu\n", op_id, mem_type, size, addr, value);
+  printf("[MEMOP %lu] %c %lubit [0x%lx]: %lu\n", op_id, mem_type, size, addr,
+         value);
   uint64_t ts = get_timestamp();
   TraceHeader hdr = {.type = EVENT_MEMOP, .op_id = op_id, .timestamp = ts};
   safe_write(&hdr, sizeof(hdr));

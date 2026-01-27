@@ -50,7 +50,7 @@ void TraceRecord::printArgs(string name) {
 }
 
 string TraceRecord::printFuncName(ModuleInfo *M) {
-  return M ? M->Id2FuncName[Hdr.op_id] : to_string(Hdr.op_id);
+  return M ? M->Id2Func[Hdr.op_id]->getName().str() : to_string(Hdr.op_id);
 }
 
 void TraceRecord::printFuncEvent(ModuleInfo *M) {
@@ -61,7 +61,11 @@ void TraceRecord::printRetEvent(ModuleInfo *M) {
   cout << "[RET " << printFuncName(M) << "] ret " << Ret << '\n';
 }
 void TraceRecord::printCallEvent(ModuleInfo *M) {
-  cout << "[EXTCALL " << printFuncName(M) << "] " << Args.size() << " args\n";
+  cout << "[EXTCALL " << printFuncName(M) << "] ";
+  if (M && M->getCallee(Hdr.op_id)) {
+    cout << M->getCallee(Hdr.op_id)->getName().str() << " ";
+  }
+  cout << Args.size() << " args\n";
   printArgs("arg");
   cout << "    ret: " << Ret << '\n';
 }

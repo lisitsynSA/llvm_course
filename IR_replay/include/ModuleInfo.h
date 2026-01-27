@@ -14,7 +14,7 @@ protected:
 public:
   // Functions Info
   std::unordered_map<uint64_t, llvm::Function *> FuncsMap;
-  std::unordered_map<uint64_t, std::string> Id2FuncName;
+  std::unordered_map<uint64_t, llvm::Function *> Id2Func;
 
   // Instructions Info
   std::unordered_map<uint64_t, llvm::CallInst *> CallsMap;
@@ -25,10 +25,11 @@ public:
 
   ModuleInfo(std::string path, llvm::LLVMContext &C);
   void dumpModule(std::string path);
+  llvm::Function *getCallee(uint64_t id);
 
 private:
   void PrepareFuncInfo(llvm::Function &F);
-  void PrepareInstrInfo(llvm::Instruction &I, llvm::StringRef FuncName);
+  void PrepareInstrInfo(llvm::Instruction &I, llvm::Function &F);
   static uint64_t OpID;
 };
 
