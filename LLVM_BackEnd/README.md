@@ -2,8 +2,17 @@
 # TableGen Experiments
 ```
 llvm-tblgen test.td
-llvm-tblgen test_i.td
 llvm-tblgen test.td -print-enums -class=SimReg
+
+llvm-tblgen regs.td -print-enums -class=Register -I llvm/include/
+./build/bin/llvm-tblgen regs.td -print-enums -class=Register -I llvm/include/
+./build/bin/llvm-tblgen regs.td -gen-register-info -I llvm/include/ &> regs.h
+
+llvm-tblgen test_i.td
+llvm-tblgen test_i.td -print-enums -class=Inst
+
+./build/bin/llvm-tblgen instr.td -print-enums -class=SimInst -I llvm/include/
+./build/bin/llvm-tblgen instr.td -gen-instr-info -I llvm/include/ &> instrs.h
 
 cd llvm-project
 ./build/bin/llvm-tblgen llvm/lib/Target/X86/X86.td -print-enums -class Register -I llvm/include/ -I llvm/lib/Target/X86/
