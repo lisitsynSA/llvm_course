@@ -59,7 +59,7 @@ Value *ReplayGen::createValueFromBits(IRBuilder<> &Builder, Type *Ty,
   }
   if (Ty->isPointerTy()) {
     if (inMem(bits)) {
-      return getMem(Builder, bits);
+      return Builder.CreateBitCast(getMem(Builder, bits), Ty);
     } else {
       Value *IntVal = ConstantInt::get(Type::getInt64Ty(Ctx), bits);
       return Builder.CreateIntToPtr(IntVal, Ty);
@@ -106,11 +106,10 @@ Function *ReplayGen::createMockFunction(Function *F, bool isAllow) {
     return Mock;
   }
 
-  // @0 = private global [1 x i64] zeroinitializer
-  ArrayType *CounterTy = ArrayType::get(Int64Ty, 1);
-  GlobalVariable *Counter = new GlobalVariable(*ExtMod, CounterTy, false,
+  // @0 = private global i64 zeroinitializer
+  GlobalVariable *Counter = new GlobalVariable(*ExtMod, Int64Ty, false,
                                                GlobalValue::PrivateLinkage, 0);
-  Counter->setInitializer(ConstantAggregateZero::get(CounterTy));
+  Counter->setInitializer(ConstantAggregateZero::get(Int64Ty));
 
   Value *Loaded = Builder.CreateLoad(Int64Ty, Counter);
   Value *Inc = Builder.CreateAdd(Loaded, Builder.getInt64(1));
@@ -218,7 +217,8 @@ void ReplayGen::createOrigCall(IRBuilder<> &Builder, TraceRecord *Rec) {
 
   // TODO: Support Memory Update Points
 
-  Value *FuncName = Builder.CreateGlobalString(F->getName());
+  Value *FuncNameStr = Builder.CreateGlobalString(F->getName());
+  Value *FuncName = Builder.CreateBitCast(FuncNameStr, Int8PtrTy);
   uint64_t i = 0;
   std::vector<Value *> Args;
   std::vector<Value *> ArgI64s;

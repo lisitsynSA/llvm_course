@@ -69,7 +69,7 @@ void ReplayGen::prepareArrays() {
 
 Value *ReplayGen::getMem(IRBuilder<> &Builder, uint64_t Addr) {
   auto &[Array, Offset] = AllocMap[Addr];
-  Value *GEP = Builder.CreateConstGEP2_64(Int64PtrTy, Array, 0, Offset);
+  Value *GEP = Builder.CreateConstGEP1_64(Array->getType(), Array, Offset);
   outs() << "# MEM USE " << Addr << "[" << Offset << "]\n";
   return GEP;
 }
