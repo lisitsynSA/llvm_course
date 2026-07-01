@@ -43,24 +43,24 @@ TraceRecord::TraceRecord(TraceHeader &hdr, ifstream &file) : Hdr(hdr) {
   }
 }
 
-void TraceRecord::printArgs(string name) {
+void TraceRecord::printArgs(string name) const {
   for (int i = 0; i < Args.size(); i++) {
     cout << "    " << name << i + 1 << ": " << Args[i] << '\n';
   }
 }
 
-string TraceRecord::printFuncName(ModuleInfo *M) {
+string TraceRecord::printFuncName(ModuleInfo *M) const {
   return M ? M->Id2Func[Hdr.op_id]->getName().str() : to_string(Hdr.op_id);
 }
 
-void TraceRecord::printFuncEvent(ModuleInfo *M) {
+void TraceRecord::printFuncEvent(ModuleInfo *M) const {
   cout << "[FUNC " << printFuncName(M) << "] " << Args.size() << " args\n";
   printArgs("arg");
 }
-void TraceRecord::printRetEvent(ModuleInfo *M) {
+void TraceRecord::printRetEvent(ModuleInfo *M) const {
   cout << "[RET " << printFuncName(M) << "] ret " << Ret << '\n';
 }
-void TraceRecord::printCallEvent(ModuleInfo *M) {
+void TraceRecord::printCallEvent(ModuleInfo *M) const {
   cout << "[EXTCALL " << printFuncName(M) << "] ";
   if (M && M->getCallee(Hdr.op_id)) {
     cout << M->getCallee(Hdr.op_id)->getName().str() << " ";
@@ -69,7 +69,7 @@ void TraceRecord::printCallEvent(ModuleInfo *M) {
   printArgs("arg");
   cout << "    ret: " << Ret << '\n';
 }
-void TraceRecord::printMemEvent(ModuleInfo *M) {
+void TraceRecord::printMemEvent(ModuleInfo *M) const {
   cout << "[MEM " << printFuncName(M) << "] " << Mem.type << " " << Mem.size
        << "bit [0x" << hex << Mem.address << "]: ";
   if (Mem.type == MEM_GEP) {
@@ -81,7 +81,7 @@ void TraceRecord::printMemEvent(ModuleInfo *M) {
   }
 }
 
-void TraceRecord::dump(ModuleInfo *M) {
+void TraceRecord::dump(ModuleInfo *M) const {
   switch (Hdr.type) {
   default:
     cerr << "Unknown event type: " << Hdr.type << '\n';

@@ -2,7 +2,6 @@
 #include "../include/TraceRecord.h"
 #include "../include/trace.h"
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <sys/time.h>
 
@@ -51,7 +50,7 @@ TraceInfo::TraceInfo(string path) {
   file.close();
 }
 
-void TraceInfo::dump(ModuleInfo *M) {
+void TraceInfo::dump(ModuleInfo *M) const {
   for (auto &Rec : Trace) {
     Rec.dump(M);
   }

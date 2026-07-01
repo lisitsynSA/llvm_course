@@ -4,8 +4,9 @@
 #include "ModuleInstrument.h"
 #include "TraceInfo.h"
 #include <cstdint>
-#include <llvm-20/llvm/IR/DerivedTypes.h>
+#include <llvm/IR/DerivedTypes.h>
 #include <map>
+#include <memory>
 
 class ReplayGen : public ModuleInstrument {
   std::unordered_map<llvm::Function *, llvm::FunctionCallee> MocksMap;
@@ -13,7 +14,7 @@ class ReplayGen : public ModuleInstrument {
   std::unordered_map<llvm::Function *, std::vector<TraceRecord *>>
       ExtFuncsCalls;
   llvm::Function *LastExtFunc = nullptr;
-  llvm::Module *ExtMod = nullptr;
+  std::unique_ptr<llvm::Module> ExtMod;
 
   void collectInfo(TraceInfo &trace);
   void removeOptnoneAttrs();
@@ -40,15 +41,15 @@ class ReplayGen : public ModuleInstrument {
 public:
   ReplayGen(std::string path, llvm::LLVMContext &C)
       : ModuleInstrument(path, C) {
-    ExtMod = new llvm::Module("Compensation", C);
+    ExtMod = std::make_unique<llvm::Module>("Compensation", C);
     ExtMod->setTargetTriple(M->getTargetTriple());
   }
   void replayGeneration(TraceInfo &trace, std::string &AllowFunsFile,
                         bool Debug = false);
   void addPrepCall();
-  void dumpModules(std::string path, std::string extPath) {
+  void dumpModules(std::string path, std::string extPath) const {
     dumpModule(path);
-    dumpModule(extPath, ExtMod);
+    dumpModule(extPath, ExtMod.get());
   }
 };
 

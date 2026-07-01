@@ -11,7 +11,7 @@ class TraceInfo {
 
 public:
   TraceInfo(std::string path);
-  void dump(ModuleInfo *M = nullptr);
+  void dump(ModuleInfo *M = nullptr) const;
   std::vector<TraceRecord> Trace;
 };
 

@@ -40,7 +40,3 @@ clang++ tracer.o $NAME.comp.o $NAME.replay.ll -o app.replay || exit 1
 
 # 7. Run IR reproducer
 ./app.replay || exit 1
-
-#clang++ -O2 $NAME.replay.ll -S -emit-llvm -o $NAME.replay.opt.ll || exit 1
-#clang++ $NAME.replay.opt.ll -o app.replay.opt || exit 1
-#./app.replay.opt || exit 1

@@ -5,7 +5,7 @@ using namespace llvm;
 
 void ReplayGen::handleMem(TraceRecord &Rec) {
   outs() << "# MEM " << Rec.Mem.type << " " << Rec.Mem.size << "bit ["
-        << Rec.Mem.address << "]: ";
+         << Rec.Mem.address << "]: ";
   if (Rec.Mem.type == MEM_LOAD) {
     handleLoad(Rec);
   } else if (Rec.Mem.type == MEM_STORE) {
@@ -27,7 +27,7 @@ void ReplayGen::handleStore(TraceRecord &Rec) {
 void ReplayGen::handleGEP(TraceRecord &Rec) {
   for (uint64_t i = 0; i < Rec.Args.size(); i += 2) {
     outs() << "\n\t" << Rec.Args[i] << " " << Rec.Args[i + 1];
-    for (uint64_t adr = Rec.Args[i]; adr <= Rec.Args[i + 1]; adr += 8) {
+    for (uint64_t adr = Rec.Args[i]; adr <= Rec.Args[i + 1]; adr += BYTE_SIZE) {
       // TODO: Check no rewrite
       MemMap[adr] = 0;
     }
@@ -44,11 +44,11 @@ void ReplayGen::AddArray(uint64_t Addr, uint64_t Size) {
     return;
   outs() << "# MEM ARRAY [" << Size << " x i64] at " << Addr << '\n';
   ArrayType *ArrayTy = ArrayType::get(Int64Ty, Size);
-  GlobalVariable *Array =
-      new GlobalVariable(*ExtMod, ArrayTy, false, GlobalValue::PrivateLinkage, 0);
+  GlobalVariable *Array = new GlobalVariable(*ExtMod, ArrayTy, false,
+                                             GlobalValue::PrivateLinkage, 0);
   Array->setInitializer(ConstantAggregateZero::get(ArrayTy));
   for (uint64_t i = 0; i < Size; i++) {
-    AllocMap[Addr + i * 8] = std::make_pair(Array, i);
+    AllocMap[Addr + i * BYTE_SIZE] = std::make_pair(Array, i);
   }
 }
 
@@ -57,14 +57,14 @@ void ReplayGen::prepareArrays() {
   uint64_t CurSize = 0;
   for (auto [Addr, Value] : MemMap) {
     if (CurPtr + CurSize != Addr) {
-      AddArray(CurPtr, CurSize / 8);
+      AddArray(CurPtr, CurSize / BYTE_SIZE);
       CurPtr = Addr;
-      CurSize = 8;
+      CurSize = BYTE_SIZE;
     } else {
-      CurSize += 8;
+      CurSize += BYTE_SIZE;
     }
   }
-  AddArray(CurPtr, CurSize / 8);
+  AddArray(CurPtr, CurSize / BYTE_SIZE);
 }
 
 Value *ReplayGen::getMem(IRBuilder<> &Builder, uint64_t Addr) {

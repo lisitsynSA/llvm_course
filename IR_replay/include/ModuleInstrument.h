@@ -6,6 +6,9 @@
 #include "llvm/IR/IRBuilder.h"
 #include <unordered_map>
 
+constexpr uint64_t BYTE_SIZE = 8;
+constexpr uint64_t PTR_SIZE = 64;
+
 class ModuleInstrument : public ModuleInfo {
 protected:
   // Types
@@ -27,16 +30,18 @@ protected:
 
   std::unordered_map<uint64_t, llvm::GlobalVariable *> Arrays;
 
-  // Intrumentation
+  // Intrumentation functions
   void initTracingFunctions();
   llvm::Value *getTypeSize(llvm::IRBuilder<> &Builder, llvm::Type *Ty) {
     if (Ty->isPointerTy()) {
-      return Builder.getInt64(64);
+      return Builder.getInt64(PTR_SIZE);
     } else {
       return Builder.getInt64(Ty->getScalarSizeInBits());
     }
   }
-  void instruemntAllInstrs();
+  // Instrument all instructions with debug output
+  void instruemntAllInstructions();
+
   llvm::Value *valueToI64(llvm::IRBuilder<> &Builder, llvm::Value *V);
   llvm::Value *instrumentArray(llvm::IRBuilder<> &Builder,
                                std::vector<llvm::Value *> &Arr);

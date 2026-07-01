@@ -7,6 +7,7 @@
 static FILE *trace_file = NULL;
 
 // TODO: maybe we don't need this optimization
+// Check the callstack size for skip internal calls
 uint64_t callstack_size = 0;
 
 // #define PRINT_LOG

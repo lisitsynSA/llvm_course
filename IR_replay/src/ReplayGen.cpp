@@ -3,10 +3,10 @@
 #include "llvm/IR/Verifier.h"
 #include <cstdint>
 #include <fstream>
-#include <llvm-20/llvm/IR/BasicBlock.h>
-#include <llvm-20/llvm/IR/Constant.h>
-#include <llvm-20/llvm/IR/DerivedTypes.h>
-#include <llvm-20/llvm/IR/Instructions.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Instructions.h>
 #include <set>
 #include <string>
 
@@ -91,7 +91,7 @@ Function *ReplayGen::createMockFunction(Function *F, bool isAllow) {
   FunctionType *FT = F->getFunctionType();
   Type *RetTy = FT->getReturnType();
   Function *Mock = Function::Create(FT, GlobalValue::ExternalLinkage,
-                                    Name + ".mock", ExtMod);
+                                    Name + ".mock", ExtMod.get());
   BasicBlock *Entry = BasicBlock::Create(Ctx, "entry", Mock);
   IRBuilder<> Builder(Entry);
 
@@ -244,7 +244,7 @@ void ReplayGen::createOrigCall(IRBuilder<> &Builder, TraceRecord *Rec) {
 void ReplayGen::replayChain() {
   Function *NewMain =
       Function::Create(FunctionType::get(Type::getInt32Ty(Ctx), false),
-                       GlobalValue::ExternalLinkage, "main.new", ExtMod);
+                       GlobalValue::ExternalLinkage, "main.new", ExtMod.get());
   BasicBlock *EntryBB = BasicBlock::Create(Ctx, "entry", NewMain);
   IRBuilder<> Builder(Ctx);
   Builder.SetInsertPoint(EntryBB);
@@ -268,7 +268,7 @@ void ReplayGen::replayGeneration(TraceInfo &trace, std::string &AllowFunsFile,
   createMocks(AllowFunsFile);
   replayChain();
   if (Debug) {
-    instruemntAllInstrs();
+    instruemntAllInstructions();
     for (auto &[Id, F] : FuncsMap)
       instrumentFuncStart(F, Id);
   }

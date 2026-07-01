@@ -1,6 +1,7 @@
 #include "../include/ModuleInstrument.h"
 #include "../include/trace.h"
 #include "llvm/IR/Verifier.h"
+#include <llvm/IR/Value.h>
 #include <llvm/IR/Instructions.h>
 
 using namespace llvm;
@@ -38,7 +39,7 @@ void ModuleInstrument::initTracingFunctions() {
   TraceMemFn = M->getOrInsertFunction("trace_memory", TraceMemFnTy);
 }
 
-void ModuleInstrument::instruemntAllInstrs() {
+void ModuleInstrument::instruemntAllInstructions() {
   IRBuilder<> Builder(Ctx);
   std::vector<Type *> argsRef = {Int8PtrTy};
   FunctionType *printType =
@@ -236,12 +237,12 @@ void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
     return;
   IRBuilder<> Builder(Ctx);
   Value *OpId = Builder.getInt64(Id);
-  // В начало первой инструкции — вставляем trace_called
+  // Insert trace_called in the function begin
   BasicBlock &EntryBB = F->getEntryBlock();
   Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
   Value *FuncName = Builder.CreateGlobalString(F->getName());
 
-  // Собираем аргументы как i64
+  // Gather arguments as i64
   std::vector<Value *> ArgI64s;
   for (auto &Arg : F->args()) {
     Value *AsI64 = valueToI64(Builder, &Arg);
@@ -285,7 +286,7 @@ void ModuleInstrument::InstrumentModule(bool Debug) {
   }
 
   if (Debug)
-    instruemntAllInstrs();
+    instruemntAllInstructions();
 
   bool verif = verifyModule(*M, &outs());
   outs() << "[UNITOOL] Instrumentation Verification: "

@@ -66,7 +66,7 @@ void ModuleInfo::PrepareInstrInfo(Instruction &I, Function &F) {
   }
 }
 
-void ModuleInfo::dumpModule(std::string path, Module *ExtMod) {
+void ModuleInfo::dumpModule(std::string path, Module *ExtMod) const {
   std::error_code EC;
   raw_fd_ostream OS(path, EC);
   if (EC) {

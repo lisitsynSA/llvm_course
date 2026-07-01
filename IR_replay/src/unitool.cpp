@@ -70,8 +70,10 @@ int main(int argc, char **argv) {
     }
     break;
   case ReplayGeneration:
-    if (TraceName.empty() || InputIR.empty() || OutputIR.empty() || CompIR.empty()) {
-      errs() << "[UNITOOL] Trace, InputIR, OutputIR and CompIR are required for Replay "
+    if (TraceName.empty() || InputIR.empty() || OutputIR.empty() ||
+        CompIR.empty()) {
+      errs() << "[UNITOOL] Trace, InputIR, OutputIR and CompIR are required "
+                "for Replay "
                 "Generation.\n";
       return 1;
     } else {
