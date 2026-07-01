@@ -1,4 +1,4 @@
-all: app
+all: app app2 app3
 
 start.ll: start.c
 	clang -emit-llvm -S $^
@@ -15,6 +15,8 @@ app2.ll: app2.c
 	clang -emit-llvm -S $^
 app2-opt.ll: app2.c 
 	clang -emit-llvm -S $^ -o $@ -O2
+app3.ll: app3.c
+	clang -emit-llvm -S $^
 
 app: app.ll start.c sim.c
 	clang $^ -lSDL2 -o $@
@@ -24,6 +26,9 @@ app2: app2.ll start.c sim.c
 	clang $^ -lSDL2 -o $@
 app2-opt: app2-opt.ll start.c sim.c
 	clang $^ -lSDL2 -o $@ -O2
+
+app3: app3.ll start.c sim.c
+	clang $^ -lSDL2 -o $@
 
 LLVM_FLAGS = $(shell llvm-config --cppflags --ldflags --libs)
 
@@ -37,6 +42,6 @@ asm2fullir: sim.c IRGen/app_asm_IRgen_2.cpp
 	clang++ $(LLVM_FLAGS) $^ -lSDL2 -o $@
 
 clean:
-	rm app app-opt app2 app2-opt *.ll full.bc ir_gen asm2ir asm2fullir
+	rm app app-opt app2 app2-opt app3 *.ll full.bc ir_gen asm2ir asm2fullir
 
 .PHONY: all clean
