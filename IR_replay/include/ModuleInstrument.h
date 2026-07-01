@@ -40,7 +40,7 @@ protected:
     }
   }
   // Instrument all instructions with debug output
-  void instruemntAllInstructions();
+  void instrumentAllInstructions();
 
   llvm::Value *valueToI64(llvm::IRBuilder<> &Builder, llvm::Value *V);
   llvm::Value *instrumentArray(llvm::IRBuilder<> &Builder,

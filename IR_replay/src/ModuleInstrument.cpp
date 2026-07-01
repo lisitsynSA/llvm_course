@@ -1,8 +1,8 @@
 #include "../include/ModuleInstrument.h"
 #include "../include/trace.h"
 #include "llvm/IR/Verifier.h"
-#include <llvm/IR/Value.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Value.h>
 
 using namespace llvm;
 
@@ -39,7 +39,7 @@ void ModuleInstrument::initTracingFunctions() {
   TraceMemFn = M->getOrInsertFunction("trace_memory", TraceMemFnTy);
 }
 
-void ModuleInstrument::instruemntAllInstructions() {
+void ModuleInstrument::instrumentAllInstructions() {
   IRBuilder<> Builder(Ctx);
   std::vector<Type *> argsRef = {Int8PtrTy};
   FunctionType *printType =
@@ -213,10 +213,12 @@ void ModuleInstrument::instrumentGep(GetElementPtrInst *Gep, uint64_t Id) {
   std::vector<Value *> PtrI64s;
   Value *CurPtr = Gep->getOperand(0);
   Type *CurType = Gep->getSourceElementType();
-  for (auto &index : Gep->indices()) {
-    Value *GEP0 = Builder.CreateGEP(CurType, CurPtr, {Builder.getInt64(0)});
+  for (auto &indexUse : Gep->indices()) {
+    std::vector<Value *> Index0{Builder.getInt64(0)};
+    Value *GEP0 = Builder.CreateGEP(CurType, CurPtr, Index0);
     PtrI64s.push_back(valueToI64(Builder, GEP0));
-    Value *GEP = Builder.CreateGEP(CurType, CurPtr, {index});
+    std::vector<Value *> Index{indexUse};
+    Value *GEP = Builder.CreateGEP(CurType, CurPtr, Index);
     PtrI64s.push_back(valueToI64(Builder, GEP));
     CurPtr = GEP;
     CurType = CurPtr->getType();
@@ -240,7 +242,8 @@ void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
   // Insert trace_called in the function begin
   BasicBlock &EntryBB = F->getEntryBlock();
   Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
-  Value *FuncName = Builder.CreateGlobalString(F->getName());
+  Value *FuncNameStr = Builder.CreateGlobalString(F->getName());
+  Value *FuncName = Builder.CreateBitCast(FuncNameStr, Int8PtrTy);
 
   // Gather arguments as i64
   std::vector<Value *> ArgI64s;
@@ -286,7 +289,7 @@ void ModuleInstrument::InstrumentModule(bool Debug) {
   }
 
   if (Debug)
-    instruemntAllInstructions();
+    instrumentAllInstructions();
 
   bool verif = verifyModule(*M, &outs());
   outs() << "[UNITOOL] Instrumentation Verification: "

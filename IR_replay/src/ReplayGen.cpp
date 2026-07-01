@@ -268,7 +268,7 @@ void ReplayGen::replayGeneration(TraceInfo &trace, std::string &AllowFunsFile,
   createMocks(AllowFunsFile);
   replayChain();
   if (Debug) {
-    instruemntAllInstructions();
+    instrumentAllInstructions();
     for (auto &[Id, F] : FuncsMap)
       instrumentFuncStart(F, Id);
   }
