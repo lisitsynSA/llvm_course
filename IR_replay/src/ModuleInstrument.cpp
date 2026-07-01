@@ -1,6 +1,7 @@
 #include "../include/ModuleInstrument.h"
 #include "../include/trace.h"
 #include "llvm/IR/Verifier.h"
+#include <llvm/IR/Instructions.h>
 
 using namespace llvm;
 
@@ -37,29 +38,50 @@ void ModuleInstrument::initTracingFunctions() {
   TraceMemFn = M->getOrInsertFunction("trace_memory", TraceMemFnTy);
 }
 
+void ModuleInstrument::instruemntAllInstrs() {
+  IRBuilder<> Builder(Ctx);
+  std::vector<Type *> argsRef = {Int8PtrTy};
+  FunctionType *printType =
+      FunctionType::get(Builder.getInt32Ty(), argsRef, true);
+  FunctionCallee printFunc = M->getOrInsertFunction("printf", printType);
+  uint64_t Number = 0;
+  Value *PrintFormat = nullptr;
+  for (auto &[Id, F] : FuncsMap) {
+    if (F->empty() || F->isDeclaration())
+      continue;
+    for (auto &BB : *F) {
+      for (auto &I : BB) {
+        if (isa<PHINode>(I))
+          continue;
+        Builder.SetInsertPoint(&I);
+        Value *opName = Builder.CreateGlobalString(I.getOpcodeName());
+        if (!PrintFormat)
+          PrintFormat = Builder.CreateGlobalString("\%5d: \%s\n");
+        Value *NumVal = Builder.getInt64(Number);
+        Number++;
+        Builder.CreateCall(printFunc, {PrintFormat, NumVal, opName});
+      }
+    }
+  }
+}
+
 Value *ModuleInstrument::valueToI64(IRBuilder<> &Builder, Value *V) {
   if (!V) {
     return Builder.getInt64(0);
   }
   Type *Ty = V->getType();
   if (Ty->isPointerTy()) {
-    return Builder.CreatePtrToInt(V, Type::getInt64Ty(Ctx));
+    return Builder.CreatePtrToInt(V, Int64Ty);
   }
   if (Ty->isIntegerTy()) {
-    unsigned BitWidth = Ty->getIntegerBitWidth();
-    if (BitWidth < 64) {
-      V = Builder.CreateZExtOrTrunc(V, Type::getInt64Ty(Ctx));
-    } else if (BitWidth > 64) {
-      V = Builder.CreateTrunc(V, Type::getInt64Ty(Ctx));
-    }
-    return V;
+    return Builder.CreateZExtOrTrunc(V, Int64Ty);
   }
   if (Ty->isFloatTy()) {
     Value *Bits = Builder.CreateBitCast(V, Type::getInt32Ty(Ctx));
-    return Builder.CreateZExt(Bits, Type::getInt64Ty(Ctx));
+    return Builder.CreateZExt(Bits, Int64Ty);
   }
   if (Ty->isDoubleTy()) {
-    return Builder.CreateBitCast(V, Type::getInt64Ty(Ctx));
+    return Builder.CreateBitCast(V, Int64Ty);
   }
   if (Ty->isVoidTy()) {
     return Builder.getInt64(0);
@@ -72,12 +94,19 @@ Value *ModuleInstrument::valueToI64(IRBuilder<> &Builder, Value *V) {
 Value *ModuleInstrument::instrumentArray(IRBuilder<> &Builder,
                                          std::vector<Value *> &Arr) {
   ArrayType *ArrayTy = ArrayType::get(Int64Ty, Arr.size());
-  Value *Alloca = Builder.CreateAlloca(ArrayTy, nullptr);
+  if (Arrays.find(Arr.size()) == Arrays.end()) {
+    GlobalVariable *Array =
+        new GlobalVariable(*Builder.GetInsertBlock()->getModule(), ArrayTy,
+                           false, GlobalValue::PrivateLinkage, 0);
+    Array->setInitializer(ConstantAggregateZero::get(ArrayTy));
+    Arrays[Arr.size()] = Array;
+  }
+  GlobalVariable *Array = Arrays[Arr.size()];
   for (size_t i = 0; i < Arr.size(); ++i) {
-    Value *GEP = Builder.CreateConstInBoundsGEP2_32(ArrayTy, Alloca, 0, i);
+    Value *GEP = Builder.CreateConstInBoundsGEP2_32(ArrayTy, Array, 0, i);
     Builder.CreateStore(Arr[i], GEP);
   }
-  return Builder.CreateBitCast(Alloca, Int64PtrTy);
+  return Builder.CreateBitCast(Array, Int64PtrTy);
 }
 
 void ModuleInstrument::instrumentCall(CallInst *Call, uint64_t Id) {
@@ -120,21 +149,44 @@ void ModuleInstrument::instrumentRet(llvm::ReturnInst *Ret, uint64_t Id) {
   Builder.CreateCall(TraceReturnFn, {RetId, RetI64});
 }
 
+bool ModuleInstrument::isLocalMem(Value *V) {
+  for (auto &U : V->uses()) {
+    User *user = U.getUser();
+    if (dyn_cast<StoreInst>(user) || dyn_cast<LoadInst>(user)) {
+      continue;
+    }
+    if (auto *Call = dyn_cast<CallInst>(user)) {
+      if (Call->getCalledFunction()->isIntrinsic())
+        continue;
+    }
+    if (auto *Gep = dyn_cast<GetElementPtrInst>(user))
+      if (isLocalMem(Gep))
+        continue;
+    return false;
+  }
+  return true;
+}
+
+bool ModuleInstrument::isAllocaMem(Value *V) {
+  if (auto *Alloca = dyn_cast<AllocaInst>(V)) {
+    return isLocalMem(Alloca);
+  }
+  if (auto *Gep = dyn_cast<GetElementPtrInst>(V)) {
+    return isLocalMem(Gep->getOperand(0));
+  }
+  if (auto *Load = dyn_cast<LoadInst>(V)) {
+    return isLocalMem(Load->getOperand(0));
+  }
+  return false;
+}
+
 void ModuleInstrument::instrumentMem(Value *V, Value *A, Instruction *I,
                                      uint64_t type, uint64_t Id) {
-  IRBuilder<> Builder(Ctx);
   // Check mem2reg allocations
-  if (auto *Alloca = dyn_cast<AllocaInst>(A)) {
-    bool IsReg = true;
-    for (auto &U : Alloca->uses()) {
-      User *user = U.getUser();
-      if (!dyn_cast<StoreInst>(user) && !dyn_cast<LoadInst>(user)) {
-        IsReg = false;
-      }
-    }
-    if (IsReg)
-      return;
+  if (isAllocaMem(A)) {
+    return;
   }
+  IRBuilder<> Builder(Ctx);
   Builder.SetInsertPoint(I->getNextNode());
   Value *Ptrs = Builder.CreateBitCast(Builder.getInt64(0), Int64PtrTy);
 
@@ -150,6 +202,10 @@ void ModuleInstrument::instrumentMem(Value *V, Value *A, Instruction *I,
 }
 
 void ModuleInstrument::instrumentGep(GetElementPtrInst *Gep, uint64_t Id) {
+  // Check mem2reg allocations
+  if (isAllocaMem(Gep->getOperand(0))) {
+    return;
+  }
   IRBuilder<> Builder(Ctx);
   // Collect ponters chain
   Builder.SetInsertPoint(Gep->getNextNode());
@@ -157,9 +213,10 @@ void ModuleInstrument::instrumentGep(GetElementPtrInst *Gep, uint64_t Id) {
   Value *CurPtr = Gep->getOperand(0);
   Type *CurType = Gep->getSourceElementType();
   for (auto &index : Gep->indices()) {
+    Value *GEP0 = Builder.CreateGEP(CurType, CurPtr, {Builder.getInt64(0)});
+    PtrI64s.push_back(valueToI64(Builder, GEP0));
     Value *GEP = Builder.CreateGEP(CurType, CurPtr, {index});
-    Value *AsI64 = valueToI64(Builder, GEP);
-    PtrI64s.push_back(AsI64);
+    PtrI64s.push_back(valueToI64(Builder, GEP));
     CurPtr = GEP;
     CurType = CurPtr->getType();
   }
@@ -171,8 +228,6 @@ void ModuleInstrument::instrumentGep(GetElementPtrInst *Gep, uint64_t Id) {
   Value *Val = Builder.getInt64(PtrI64s.size());
   Value *Type = Builder.getInt8(MEM_GEP);
 
-  // void trace_memory(uint64_t op_id, uint64_t addr, uint64_t size, uint64_t
-  //                   value, uint8_t mem_type, uint64_t *ptrs)
   Builder.CreateCall(TraceMemFn, {GepId, Addr, Size, Val, Type, Ptrs});
 }
 
@@ -184,7 +239,7 @@ void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
   // В начало первой инструкции — вставляем trace_called
   BasicBlock &EntryBB = F->getEntryBlock();
   Builder.SetInsertPoint(&EntryBB, EntryBB.begin());
-  Value *FuncName = Builder.CreateGlobalStringPtr(F->getName());
+  Value *FuncName = Builder.CreateGlobalString(F->getName());
 
   // Собираем аргументы как i64
   std::vector<Value *> ArgI64s;
@@ -200,7 +255,7 @@ void ModuleInstrument::instrumentFuncStart(Function *F, uint64_t Id) {
                                    Builder.getInt64(ArgI64s.size())});
 }
 
-void ModuleInstrument::InstrumentModule() {
+void ModuleInstrument::InstrumentModule(bool Debug) {
   outs() << "[UNITOOL] Instrumentation\n";
   initTracingFunctions();
 
@@ -228,6 +283,9 @@ void ModuleInstrument::InstrumentModule() {
   for (auto &[Id, F] : FuncsMap) {
     instrumentFuncStart(F, Id);
   }
+
+  if (Debug)
+    instruemntAllInstrs();
 
   bool verif = verifyModule(*M, &outs());
   outs() << "[UNITOOL] Instrumentation Verification: "

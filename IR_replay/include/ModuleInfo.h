@@ -24,7 +24,7 @@ public:
   std::unordered_map<uint64_t, llvm::GetElementPtrInst *> GepsMap;
 
   ModuleInfo(std::string path, llvm::LLVMContext &C);
-  void dumpModule(std::string path);
+  void dumpModule(std::string path, llvm::Module *ExtMod = nullptr);
   llvm::Function *getCallee(uint64_t id);
 
 private:

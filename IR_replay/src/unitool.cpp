@@ -22,8 +22,21 @@ cl::opt<std::string> InputIR("i", cl::desc("Input filename for LLVM IR"),
 cl::opt<std::string> OutputIR("o", cl::desc("Output filename for LLVM IR"),
                               cl::value_desc("output.ll"));
 
+cl::opt<std::string>
+    CompIR("c", cl::desc("Output filename for compensation LLVM IR"),
+           cl::value_desc("comp.ll"));
+
 cl::opt<std::string> TraceName("t", cl::desc("Trace filename"),
                                cl::value_desc("app.trace"));
+
+cl::opt<std::string> AllowFunsFile("a", cl::desc("Allowed Functions filename"),
+                                   cl::value_desc("funcs.txt"));
+
+cl::opt<bool> Start("p",
+                    cl::desc("Add preparation function call before replay"),
+                    cl::init(false));
+
+cl::opt<bool> Debug("d", cl::desc("Debug Mode"), cl::init(false));
 
 int main(int argc, char **argv) {
   cl::ParseCommandLineOptions(argc, argv);
@@ -37,7 +50,7 @@ int main(int argc, char **argv) {
     } else {
       outs() << "[UNITOOL] Start Instrumentation Mode\n";
       ModuleInstrument M(InputIR, Ctx);
-      M.InstrumentModule();
+      M.InstrumentModule(Debug);
       M.dumpModule(OutputIR);
     }
     break;
@@ -57,16 +70,18 @@ int main(int argc, char **argv) {
     }
     break;
   case ReplayGeneration:
-    if (TraceName.empty() || InputIR.empty() || OutputIR.empty()) {
-      errs() << "[UNITOOL] Trace, InputIR and OutputIR are required for Replay "
+    if (TraceName.empty() || InputIR.empty() || OutputIR.empty() || CompIR.empty()) {
+      errs() << "[UNITOOL] Trace, InputIR, OutputIR and CompIR are required for Replay "
                 "Generation.\n";
       return 1;
     } else {
       outs() << "[UNITOOL] Start Replay Generation Mode\n";
       TraceInfo Trace(TraceName);
       ReplayGen M(InputIR, Ctx);
-      M.replayGeneration(Trace);
-      M.dumpModule(OutputIR);
+      M.replayGeneration(Trace, AllowFunsFile, Debug);
+      if (Start)
+        M.addPrepCall();
+      M.dumpModules(OutputIR, CompIR);
     }
     break;
   }

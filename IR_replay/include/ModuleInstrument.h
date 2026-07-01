@@ -4,6 +4,7 @@
 #include "ModuleInfo.h"
 #include "TraceInfo.h"
 #include "llvm/IR/IRBuilder.h"
+#include <unordered_map>
 
 class ModuleInstrument : public ModuleInfo {
 protected:
@@ -24,6 +25,8 @@ protected:
   llvm::FunctionCallee TraceExternalCallFn;
   llvm::FunctionCallee TraceMemFn;
 
+  std::unordered_map<uint64_t, llvm::GlobalVariable *> Arrays;
+
   // Intrumentation
   void initTracingFunctions();
   llvm::Value *getTypeSize(llvm::IRBuilder<> &Builder, llvm::Type *Ty) {
@@ -33,12 +36,14 @@ protected:
       return Builder.getInt64(Ty->getScalarSizeInBits());
     }
   }
+  void instruemntAllInstrs();
   llvm::Value *valueToI64(llvm::IRBuilder<> &Builder, llvm::Value *V);
   llvm::Value *instrumentArray(llvm::IRBuilder<> &Builder,
                                std::vector<llvm::Value *> &Arr);
-
   void instrumentCall(llvm::CallInst *Call, uint64_t Id);
   void instrumentRet(llvm::ReturnInst *Ret, uint64_t Id);
+  bool isLocalMem(llvm::Value *V);
+  bool isAllocaMem(llvm::Value *V);
   void instrumentMem(llvm::Value *V, llvm::Value *A, llvm::Instruction *I,
                      uint64_t type, uint64_t Id);
   void instrumentGep(llvm::GetElementPtrInst *Gep, uint64_t Id);
@@ -47,7 +52,7 @@ protected:
 public:
   ModuleInstrument(std::string path, llvm::LLVMContext &C)
       : ModuleInfo(path, C) {}
-  void InstrumentModule();
+  void InstrumentModule(bool Debug = false);
   // bool ReplayGen(TraceInfo &T, ModuleInfo &M);
   // bool ExtReplayGen(TraceInfo &T, ModuleInfo &M);
 };

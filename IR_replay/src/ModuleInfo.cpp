@@ -1,7 +1,7 @@
 #include "../include/ModuleInfo.h"
-#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/SourceMgr.h"
+#include <llvm/IR/Instructions.h>
 
 using namespace llvm;
 
@@ -32,6 +32,8 @@ Function *ModuleInfo::getCallee(uint64_t id) {
 }
 
 void ModuleInfo::PrepareFuncInfo(Function &F) {
+  if (F.isIntrinsic())
+    return;
   FuncsMap[OpID] = &F;
   Id2Func[OpID] = &F;
   OpID++;
@@ -46,7 +48,7 @@ void ModuleInfo::PrepareFuncInfo(Function &F) {
 void ModuleInfo::PrepareInstrInfo(Instruction &I, Function &F) {
   Id2Func[OpID] = &F;
   if (auto *Call = dyn_cast<CallInst>(&I)) {
-    if (isa<IntrinsicInst>(Call))
+    if ((Call->getCalledFunction()->isIntrinsic()))
       return;
     CallsMap[OpID++] = Call;
   }
@@ -64,7 +66,7 @@ void ModuleInfo::PrepareInstrInfo(Instruction &I, Function &F) {
   }
 }
 
-void ModuleInfo::dumpModule(std::string path) {
+void ModuleInfo::dumpModule(std::string path, Module *ExtMod) {
   std::error_code EC;
   raw_fd_ostream OS(path, EC);
   if (EC) {
@@ -73,6 +75,10 @@ void ModuleInfo::dumpModule(std::string path) {
     return;
   }
   outs() << "[UNITOOL] Dump " << path << "\n";
-  M->print(OS, nullptr);
+  if (ExtMod) {
+    ExtMod->print(OS, nullptr);
+  } else {
+    M->print(OS, nullptr);
+  }
   OS.close();
 }
