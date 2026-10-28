@@ -1,7 +1,7 @@
+#include <cstdint>
 #include "elfio/elfio.hpp"
 #include "include/bin.h"
 #include "include/instr.h"
-#include <cstdint>
 #include <iomanip>
 #include <sstream>
 using namespace std;
